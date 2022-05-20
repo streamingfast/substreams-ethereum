@@ -1,26 +1,7 @@
-[package]
-name = "substreams-ethereum"
-version = "0.1.0"
-edition = "2021"
-description = "Substreams development kit for Ethereum chains, contains Firehose Block model and helpers as well as utilities for Ethereum ABI encoding/decoding."
-repository = "https://github.com/streamingfast/substreams-ethereum"
-
-[lib]
-crate-type = ["cdylib"]
-
-[dependencies]
-anyhow = "1"
-ethabi = "17.0"
-hex-literal = "0.3.4"
-prost = { version = "0.10.1" }
-prost-types = "0.10.1"
-substreams= { git = "https://github.com/streamingfast/substreams", branch = "develop" }
-
-# Required so that ethabi > ethereum-types build correctly under wasm32-unknown-unknown
-getrandom = { version = "0.2", features = ["custom"] }
-
-[build-dependencies]
-prost-build = "0.10.1"
+[workspace]
+members = [
+    "core",
+]
 
 [profile.release]
 lto = true
