@@ -1,5 +1,7 @@
 pub mod pb;
 
+use std::num::NonZeroU32;
+
 pub use substreams_ethereum_derive::EthabiContract;
 
 /// This macro can be used to import an Ethereum ABI file in JSON format and generate all the
@@ -38,11 +40,11 @@ macro_rules! use_contract {
     };
 }
 
-const GETRANDOM_UNVAILABLE_IN_SUBSTREAMS: u32 = Error::CUSTOM_START + 42;
+const GETRANDOM_UNVAILABLE_IN_SUBSTREAMS: u32 = getrandom::Error::CUSTOM_START + 42;
 
-pub fn getrandom_unavailable(_buf: &mut [u8]) -> Result<(), Error> {
+pub fn getrandom_unavailable(_buf: &mut [u8]) -> Result<(), getrandom::Error> {
     let code = NonZeroU32::new(GETRANDOM_UNVAILABLE_IN_SUBSTREAMS).unwrap();
-    Err(Error::from(code))
+    Err(getrandom::Error::from(code))
 }
 
 #[cfg(test)]
