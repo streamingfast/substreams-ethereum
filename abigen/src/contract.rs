@@ -52,6 +52,7 @@ impl Contract {
             // }
 
             /// Contract's events.
+            #[allow(dead_code)]
             pub mod events {
                 use super::INTERNAL_ERR;
                 #(#events)*

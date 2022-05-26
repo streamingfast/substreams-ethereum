@@ -6,6 +6,8 @@ pub use substreams_ethereum_derive::EthabiContract;
 
 use std::num::NonZeroU32;
 
+pub use substreams_ethereum_abigen::build::Abigen;
+
 /// Represents the empty address static array in bytes (20 bytes) which in hex is equivalent
 /// to:
 ///
@@ -22,19 +24,37 @@ pub const EMPTY_ADDRESS: [u8; 20] = [
 /// experience.
 ///
 /// ```no_run
-/// use_contract!(path = "../abi/erc20.json")
+/// use_contract!(path = "../abi/erc721.json")
 /// ```
 ///
 /// This invocation will generate the following code (signatures only for consiscness):
 ///
 /// ```
-/// mod erc20 {
-///   mod logs {
+/// mod erc721 {
+///     pub mod events {
+///         #[derive(Debug, Clone, PartialEq)]
+///         pub struct Transfer {
+///             pub from: Vec<u8>,
+///             pub to: Vec<u8>,
+///             pub token_id: ethabi::Uint,
+///         }
 ///
-///   }
-///   mod events {
+///         impl Transfer {
+///             pub fn match_log(log: &substreams_ethereum::pb::eth::v1::Log) -> bool {
+///                ...
+///             }
 ///
-///   }
+///             pub fn decode(log: &substreams_ethereum::pb::eth::v1::Log) -> Result<Transfer, String> {
+///                ...
+///             }
+///
+///             pub fn must_decode(log: &substreams_ethereum::pb::eth::v1::Log) -> Transfer {
+///                ...
+///             }
+///         }
+///
+///         ... Other events ...
+///     }
 /// }
 /// ```
 #[macro_export]
