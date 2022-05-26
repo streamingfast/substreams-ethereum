@@ -1,7 +1,6 @@
 pub mod pb;
 
 use std::num::NonZeroU32;
-
 pub use substreams_ethereum_derive::EthabiContract;
 
 /// This macro can be used to import an Ethereum ABI file in JSON format and generate all the
@@ -37,6 +36,16 @@ macro_rules! use_contract {
             #[ethabi_contract_options(path = $path)]
             struct _Dummy;
         }
+    };
+}
+
+/// The `init` macro registers a custom get random function in the system which is required
+/// because `ethabi` that we rely on for ABI decoding/encoding primitives and code
+///
+#[macro_export]
+macro_rules! init {
+    () => {
+        getrandom::register_custom_getrandom!(substreams_ethereum::getrandom_unavailable);
     };
 }
 
