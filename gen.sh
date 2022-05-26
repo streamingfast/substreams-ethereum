@@ -1,4 +1,4 @@
 #!/bin/bash
 
-ETH_SPKG="https://github.com/streamingfast/sf-ethereum/releases/download/v0.10.2/ethereum-v0.10.2.spkg"
-buf generate "$ETH_SPKG#format=bin" --exclude-path="sf/substreams/v1" --exclude-path="google/"
+ETH_SPKG="https://github.com/streamingfast/sf-ethereum/releases/download/v0.10.2/ethereum-v0.10.3.spkg"
+substreams protogen "$ETH_SPKG" --exclude-paths="sf/substreams/v1,google/" --output-path="./core/src/pb"
