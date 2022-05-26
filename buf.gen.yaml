@@ -1,0 +1,6 @@
+version: v1
+plugins:
+  - name: prost
+    out: ./core/src/pb
+    opt:
+      - bytes=.

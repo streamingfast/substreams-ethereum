@@ -1,4 +1,7 @@
+mod externs;
 pub mod pb;
+pub mod rpc;
+
 pub use substreams_ethereum_derive::EthabiContract;
 
 use std::num::NonZeroU32;
