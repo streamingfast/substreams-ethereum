@@ -1,7 +1,18 @@
 pub mod pb;
+pub use substreams_ethereum_derive::EthabiContract;
 
 use std::num::NonZeroU32;
-pub use substreams_ethereum_derive::EthabiContract;
+
+/// Represents the empty address static array in bytes (20 bytes) which in hex is equivalent
+/// to:
+///
+/// ```text
+/// 0000000000000000000000000000000000000000
+/// ```
+pub const EMPTY_ADDRESS: [u8; 20] = [
+    0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
+    0u8,
+];
 
 /// This macro can be used to import an Ethereum ABI file in JSON format and generate all the
 /// required bindings for ABI decoding/encoding in Rust, targetting `substreams` developer
