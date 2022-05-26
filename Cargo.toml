@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "core",
+    "derive",
 ]
 
 [profile.release]

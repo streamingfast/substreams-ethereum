@@ -1,5 +1,5 @@
 [package]
-name = "substreams-ethereum"
+name = "substreams-ethereum-derive"
 version = "0.1.0"
 edition = "2021"
 description = "Substreams development kit for Ethereum chains, contains Firehose Block model and helpers as well as utilities for Ethereum ABI encoding/decoding."
@@ -9,15 +9,18 @@ license = "Apache-2.0"
 readme = "../README.md"
 keywords = [ "substreams", "ethereum", "streamingfast", "firehose", "thegraph"]
 
+[lib]
+proc-macro = true
+
 [dependencies]
+anyhow = "1"
 ethabi = "17.0"
-prost = { version = "0.10.1" }
-prost-types = "0.10.1"
-substreams = { git = "https://github.com/streamingfast/substreams", branch = "develop" }
-substreams-ethereum-derive = { path = "../derive"}
+heck = "0.4"
+hex = "0.4"
+syn = { version = "1.0.13", default-features = false, features = ["derive", "parsing", "printing", "proc-macro"] }
+quote = "1.0.2"
+proc-macro2 = "1.0.7"
 
-# Required so that ethabi > ethereum-types build correctly under wasm32-unknown-unknown
-getrandom = { version = "0.2", features = ["custom"] }
-
-[build-dependencies]
-prost-build = "0.10.1"
+[dev-dependencies]
+prettyplease = "0.1"
+pretty_assertions = "1.2.1"
