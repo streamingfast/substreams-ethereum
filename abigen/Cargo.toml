@@ -8,6 +8,8 @@ repository = "https://github.com/streamingfast/substreams-ethereum"
 license = "Apache-2.0"
 readme = "../README.md"
 keywords = [ "substreams", "ethereum", "streamingfast", "firehose", "thegraph"]
+categories = ["api-bindings", "external-ffi-bindings", "wasm"]
+rust-version = "1.60"
 
 [dependencies]
 anyhow = "1"

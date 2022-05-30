@@ -13,10 +13,8 @@ version = "0.1.0"
 crate-type = ["cdylib"]
 
 [dependencies]
-substreams-ethereum = "1.0.0"
+substreams-ethereum = "0.1.0"
 ```
-
-
 
 ## Development
 
@@ -26,16 +24,8 @@ This means changes to Protobuf files must be manually re-generated and commit, s
 
 ### Regenerate Rust Firehose Block from Protobuf
 
-Clone repository https://github.com/streamingfast/sf-ethereum somewhere and checkout the correct
-reference you want to re-generate from.
-
-Then export environment variable `SUBTREAMS_ETHEREUM_PROTO_PATH` and make it point where you cloned
-the [sf-ethereum](https://github.com/streamingfast/sf-ethereum) repository.
-
-Then simply do:
-
 ```
-SUBTREAMS_ETHEREUM_REGENERATE_PROTO=true SUBTREAMS_ETHEREUM_PROTO_PATH=<path> cargo build --target wasm32-unknown-unknown --release
+./gen.sh
 ```
 
 ## Community
