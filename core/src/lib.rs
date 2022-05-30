@@ -8,13 +8,13 @@ use std::num::NonZeroU32;
 
 pub use substreams_ethereum_abigen::build::Abigen;
 
-/// Represents the empty address static array in bytes (20 bytes) which in hex is equivalent
+/// Represents the null address static array in bytes (20 bytes) which in hex is equivalent
 /// to:
 ///
 /// ```text
 /// 0000000000000000000000000000000000000000
 /// ```
-pub const EMPTY_ADDRESS: [u8; 20] = [
+pub const NULL_ADDRESS: [u8; 20] = [
     0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
     0u8,
 ];
