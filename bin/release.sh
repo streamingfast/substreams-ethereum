@@ -73,13 +73,13 @@ main() {
   fi
 
   # We need to publish one crate at a time, one after the one
-  cargo publish $args --target wasm32-unknown-unknown -p abigen
+  #cargo publish $args --target wasm32-unknown-unknown -p abigen
 
-  maybe_wait_publish
-  cargo publish $args --target wasm32-unknown-unknown -p derive
+  #maybe_wait_publish
+  #cargo publish $args --target wasm32-unknown-unknown -p derive
 
-  maybe_wait_publish
-  cargo publish $args --target wasm32-unknown-unknown -p core
+  #maybe_wait_publish
+  #cargo publish $args --target wasm32-unknown-unknown -p core
 }
 
 cleanup_tag() {

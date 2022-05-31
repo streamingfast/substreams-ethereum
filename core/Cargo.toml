@@ -20,6 +20,7 @@ substreams-ethereum-abigen = { version = "0.1.0", path = "../abigen" }
 substreams-ethereum-derive = { version = "0.1.0", path = "../derive" }
 
 # Required so that ethabi > ethereum-types build correctly under wasm32-unknown-unknown
+[target.wasm32-unknown-unknown.dependencies]
 getrandom = { version = "0.2", features = ["custom"] }
 
 [build-dependencies]

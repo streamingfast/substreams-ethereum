@@ -4,6 +4,7 @@ pub mod rpc;
 
 pub use substreams_ethereum_derive::EthabiContract;
 
+#[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
 use std::num::NonZeroU32;
 
 /// Builder struct for generating type-safe bindings from a contract's ABI
@@ -44,7 +45,9 @@ pub const NULL_ADDRESS: [u8; 20] = [
 /// experience.
 ///
 /// ```no_run
-///     substreams_ethereum::use_contract!(erc721, "./examples/abi/erc721.json");
+///     use substreams_ethereum::use_contract;
+///
+///     use_contract!(erc721, "./examples/abi/erc721.json");
 /// ```
 ///
 /// This invocation will generate the following code (signatures only for consiscness):
@@ -93,6 +96,7 @@ macro_rules! use_contract {
     };
 }
 
+#[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
 /// The `init` macro registers a custom get random function in the system which is required
 /// because `ethabi` that we rely on for ABI decoding/encoding primitives use it somewhere in
 /// its transitive set of dependencies and causes problem in `wasm32-unknown-unknown` target.
@@ -116,8 +120,10 @@ macro_rules! init {
     };
 }
 
-const GETRANDOM_UNVAILABLE_IN_SUBSTREAMS: u32 = getrandom::Error::CUSTOM_START + 42;
+#[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
+const GETRANDOM_UNVAILABLE_IN_SUBSTREAMS: u32 = getrandom::Error::CUSTOM_START + 5545;
 
+#[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
 pub fn getrandom_unavailable(_buf: &mut [u8]) -> Result<(), getrandom::Error> {
     let code = NonZeroU32::new(GETRANDOM_UNVAILABLE_IN_SUBSTREAMS).unwrap();
     Err(getrandom::Error::from(code))

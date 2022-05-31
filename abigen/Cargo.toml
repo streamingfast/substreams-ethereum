@@ -16,10 +16,14 @@ anyhow = "1"
 ethabi = "17.0"
 heck = "0.4"
 hex = "0.4"
-syn = { version = "1.0.13", default-features = false, features = ["derive", "parsing", "printing", "proc-macro"] }
+syn = { version = "1.0.95", default-features = false, features = ["derive", "parsing", "printing", "proc-macro"] }
 quote = "1.0.2"
 proc-macro2 = "1.0.7"
 prettyplease = "0.1"
+
+# Required so that ethabi > ethereum-types build correctly under wasm32-unknown-unknown
+[target.wasm32-unknown-unknown.dependencies]
+getrandom = { version = "0.2", features = ["custom"] }
 
 [dev-dependencies]
 pretty_assertions = "1.2.1"
