@@ -217,8 +217,9 @@ impl Event {
 
 #[cfg(test)]
 mod tests {
+    use crate::assertions::assert_ast_eq;
+
     use super::Event;
-    use pretty_assertions::assert_eq;
     use quote::quote;
 
     #[test]
@@ -231,33 +232,69 @@ mod tests {
 
         let e = Event::from(&ethabi_event);
 
-        let expected = quote! {
-            pub mod hello {
-                use ethabi;
-                use super::INTERNAL_ERR;
-
-                pub fn event() -> ethabi::Event {
-                    ethabi::Event {
-                        name: "Hello".into(),
-                        inputs: vec![],
-                        anonymous: false,
+        assert_ast_eq(
+            e.generate_event(),
+            quote! {
+                #[derive(Debug, Clone, PartialEq)]
+                pub struct Hello {}
+                impl Hello {
+                    const TOPIC_ID: [u8; 32] = [
+                        25u8,
+                        255u8,
+                        29u8,
+                        33u8,
+                        14u8,
+                        6u8,
+                        165u8,
+                        62u8,
+                        229u8,
+                        14u8,
+                        91u8,
+                        173u8,
+                        37u8,
+                        250u8,
+                        80u8,
+                        154u8,
+                        107u8,
+                        0u8,
+                        237u8,
+                        57u8,
+                        86u8,
+                        149u8,
+                        247u8,
+                        217u8,
+                        184u8,
+                        43u8,
+                        104u8,
+                        21u8,
+                        93u8,
+                        158u8,
+                        16u8,
+                        101u8
+                    ];
+                    pub fn match_log(log: &substreams_ethereum::pb::eth::v1::Log) -> bool {
+                        if log.topics.len() != 1usize {
+                            return false;
+                        }
+                        if log.data.len() != 0usize {
+                            return false;
+                        }
+                        return log.topics.get(0).expect("bounds already checked").as_ref()
+                            == Self::TOPIC_ID;
+                    }
+                    pub fn decode(
+                        log: &substreams_ethereum::pb::eth::v1::Log
+                    ) -> Result<Hello, String> {
+                        Ok(Self {})
+                    }
+                    pub fn must_decode(log: &substreams_ethereum::pb::eth::v1::Log) -> Hello {
+                        match Self::decode(log) {
+                            Ok(v) => v,
+                            Err(e) => panic!("Unable to decode logs.Hello event: {:#}", e),
+                        }
                     }
                 }
-
-                pub fn parse_log(log: ethabi::RawLog) -> ethabi::Result<super::super::logs::Hello> {
-                    let e = event();
-                    let mut log = e.parse_log(log)?.params.into_iter();
-                    let result = super::super::logs::Hello {};
-                    Ok(result)
-                }
-            }
-        };
-
-        assert_eq!(
-            expected.to_string(),
-            e.generate_event().to_string(),
-            "\n\nActual:\n {}",
-            pretty_print_item(e.generate_event())
+            },
         );
     }
 
@@ -275,39 +312,86 @@ mod tests {
 
         let e = Event::from(&ethabi_event);
 
-        let expected = quote! {
-            pub mod one {
-                use ethabi;
-                use super::INTERNAL_ERR;
-
-                pub fn event() -> ethabi::Event {
-                    ethabi::Event {
-                        name: "One".into(),
-                        inputs: vec![ethabi::EventParam {
-                            name: "foo".to_owned(),
-                            kind: ethabi::ParamType::Address,
-                            indexed: false
-                        }],
-                        anonymous: false,
+        assert_ast_eq(
+            e.generate_event(),
+            quote! {
+                #[derive(Debug, Clone, PartialEq)]
+                pub struct One {
+                    pub foo: Vec<u8>
+                }
+                impl One {
+                    const TOPIC_ID: [u8; 32] = [
+                        242u8,
+                        136u8,
+                        154u8,
+                        196u8,
+                        193u8,
+                        137u8,
+                        107u8,
+                        13u8,
+                        185u8,
+                        251u8,
+                        115u8,
+                        123u8,
+                        176u8,
+                        143u8,
+                        246u8,
+                        233u8,
+                        171u8,
+                        71u8,
+                        223u8,
+                        216u8,
+                        191u8,
+                        53u8,
+                        192u8,
+                        221u8,
+                        120u8,
+                        140u8,
+                        192u8,
+                        19u8,
+                        121u8,
+                        40u8,
+                        22u8,
+                        66u8
+                    ];
+                    pub fn match_log(log: &substreams_ethereum::pb::eth::v1::Log) -> bool {
+                        if log.topics.len() != 2usize {
+                            return false;
+                        }
+                        if log.data.len() != 0usize {
+                            return false;
+                        }
+                        return log.topics.get(0).expect("bounds already checked").as_ref()
+                            == Self::TOPIC_ID;
+                    }
+                    pub fn decode(
+                        log: &substreams_ethereum::pb::eth::v1::Log
+                    ) -> Result<One, String> {
+                        Ok(Self {
+                            foo: ethabi::decode(
+                                    &[ethabi::ParamType::Address],
+                                    log.topics[1usize].as_ref()
+                                )
+                                .map_err(|e| format!(
+                                    "unable to decode param 'foo' from topic of type 'address': {}",
+                                    e
+                                ))?
+                                .pop()
+                                .expect(INTERNAL_ERR)
+                                .into_address()
+                                .expect(INTERNAL_ERR)
+                                .as_bytes()
+                                .to_vec()
+                        })
+                    }
+                    pub fn must_decode(log: &substreams_ethereum::pb::eth::v1::Log) -> One {
+                        match Self::decode(log) {
+                            Ok(v) => v,
+                            Err(e) => panic!("Unable to decode logs.One event: {:#}", e),
+                        }
                     }
                 }
-
-                pub fn parse_log(log: ethabi::RawLog) -> ethabi::Result<super::super::logs::One> {
-                    let e = event();
-                    let mut log = e.parse_log(log)?.params.into_iter();
-                    let result = super::super::logs::One {
-                        foo: log.next().expect(INTERNAL_ERR).value.into_address().expect(INTERNAL_ERR)
-                    };
-                    Ok(result)
-                }
-            }
-        };
-
-        assert_eq!(
-            expected.to_string(),
-            e.generate_event().to_string(),
-            "\n\nActual:\n {}",
-            pretty_print_item(e.generate_event())
+            },
         );
     }
 
@@ -337,56 +421,111 @@ mod tests {
 
         let e = Event::from(&ethabi_event);
 
-        let expected = quote! {
-            #[derive(Debug, Clone, PartialEq)]
-            pub struct Transfer {
-                pub from: Vec<u8>,
-                pub to: Vec<u8>,
-                pub quantity: ethabi::Uint
-            }
-            impl Transfer {
-                const TOPIC_ID: [u8; 32] = [221u8 , 242u8 , 82u8 , 173u8 , 27u8 , 226u8 , 200u8 , 155u8 , 105u8 , 194u8 , 176u8 , 104u8 , 252u8 , 55u8 , 141u8 , 170u8 , 149u8 , 43u8 , 167u8 , 241u8 , 99u8 , 196u8 , 161u8 , 22u8 , 40u8 , 245u8 , 90u8 , 77u8 , 245u8 , 35u8 , 179u8 , 239u8];
-
-                pub fn match_log(log: &substreams_ethereum::pb::eth::v1::Log) -> bool {
-                    if log.topics.len() != 3usize {
-                        return false;
-                    }
-                    if log.data.len() != 32usize {
-                        return false;
-                    }
-                    return log.topics.get(0).expect("bounds already checked").as_ref()
-                        == Self::TOPIC_ID;
+        assert_ast_eq(
+            e.generate_event(),
+            quote! {
+                #[derive(Debug, Clone, PartialEq)]
+                pub struct Transfer {
+                    pub from: Vec<u8>,
+                    pub to: Vec<u8>,
+                    pub quantity: ethabi::Uint
                 }
-                pub fn decode(
-                    log: &substreams_ethereum::pb::eth::v1::Log
-                ) -> Result<Transfer, String> {
-                    let values = ethabi::decode(&[ethabi::ParamType::Uint(256usize)], log.data)?;
-                    Self {
-                        from: ethabi::decode(&[ethabi::ParamType::Address], log.topics[1usize].as_ref())?
-                            .pop()
-                            .expect(INTERNAL_ERR)
-                            .into_address()
-                            .expect(INTERNAL_ERR)
-                            .as_bytes()
-                            .to_vec(),
-                        to: ethabi::decode(&[ethabi::ParamType::Address], log.topics[2usize].as_ref())?
-                            .pop()
-                            .expect(INTERNAL_ERR)
-                            .into_address()
-                            .expect(INTERNAL_ERR)
-                            .as_bytes()
-                            .to_vec(),
-                        quantity: values.pop().expect(INTERNAL_ERR).into_uint().expect(INTERNAL_ERR)
+                impl Transfer {
+                    const TOPIC_ID: [u8; 32] = [
+                        221u8,
+                        242u8,
+                        82u8,
+                        173u8,
+                        27u8,
+                        226u8,
+                        200u8,
+                        155u8,
+                        105u8,
+                        194u8,
+                        176u8,
+                        104u8,
+                        252u8,
+                        55u8,
+                        141u8,
+                        170u8,
+                        149u8,
+                        43u8,
+                        167u8,
+                        241u8,
+                        99u8,
+                        196u8,
+                        161u8,
+                        22u8,
+                        40u8,
+                        245u8,
+                        90u8,
+                        77u8,
+                        245u8,
+                        35u8,
+                        179u8,
+                        239u8
+                    ];
+                    pub fn match_log(log: &substreams_ethereum::pb::eth::v1::Log) -> bool {
+                        if log.topics.len() != 3usize {
+                            return false;
+                        }
+                        if log.data.len() != 32usize {
+                            return false;
+                        }
+                        return log.topics.get(0).expect("bounds already checked").as_ref()
+                            == Self::TOPIC_ID;
+                    }
+                    pub fn decode(
+                        log: &substreams_ethereum::pb::eth::v1::Log
+                    ) -> Result<Transfer, String> {
+                        let mut values = ethabi::decode(
+                                &[ethabi::ParamType::Uint(256usize)],
+                                log.data.as_ref()
+                            )
+                            .map_err(|e| format!("unable to decode log.data: {}", e))?;
+                        Ok(Self {
+                            from: ethabi::decode(
+                                    &[ethabi::ParamType::Address],
+                                    log.topics[1usize].as_ref()
+                                )
+                                .map_err(|e| format!(
+                                    "unable to decode param 'from' from topic of type 'address': {}",
+                                    e
+                                ))?
+                                .pop()
+                                .expect(INTERNAL_ERR)
+                                .into_address()
+                                .expect(INTERNAL_ERR)
+                                .as_bytes()
+                                .to_vec(),
+                            to: ethabi::decode(
+                                    &[ethabi::ParamType::Address],
+                                    log.topics[2usize].as_ref()
+                                )
+                                .map_err(|e| format!(
+                                    "unable to decode param 'to' from topic of type 'address': {}", e
+                                ))?
+                                .pop()
+                                .expect(INTERNAL_ERR)
+                                .into_address()
+                                .expect(INTERNAL_ERR)
+                                .as_bytes()
+                                .to_vec(),
+                            quantity: values
+                                .pop()
+                                .expect(INTERNAL_ERR)
+                                .into_uint()
+                                .expect(INTERNAL_ERR)
+                        })
+                    }
+                    pub fn must_decode(log: &substreams_ethereum::pb::eth::v1::Log) -> Transfer {
+                        match Self::decode(log) {
+                            Ok(v) => v,
+                            Err(e) => panic!("Unable to decode logs.Transfer event: {:#}", e),
+                        }
                     }
                 }
-            }
-        };
-
-        assert_eq!(
-            expected.to_string(),
-            e.generate_event().to_string(),
-            "\n\nActual:\n {}",
-            pretty_print_item(e.generate_event())
+            },
         );
     }
 
@@ -416,86 +555,113 @@ mod tests {
 
         let e = Event::from(&ethabi_event);
 
-        let expected = quote! {
-            #[derive(Debug, Clone, PartialEq)]
-            pub struct Transfer {
-                pub from: Vec<u8>,
-                pub to: Vec<u8>,
-                pub token_id: ethabi::Uint
-            }
-            impl Transfer {
-                const TOPIC_ID: [u8; 32] = [221u8 , 242u8 , 82u8 , 173u8 , 27u8 , 226u8 , 200u8 , 155u8 , 105u8 , 194u8 , 176u8 , 104u8 , 252u8 , 55u8 , 141u8 , 170u8 , 149u8 , 43u8 , 167u8 , 241u8 , 99u8 , 196u8 , 161u8 , 22u8 , 40u8 , 245u8 , 90u8 , 77u8 , 245u8 , 35u8 , 179u8 , 239u8];
-
-                pub fn match_log(log: &substreams_ethereum::pb::eth::v1::Log) -> bool {
-                    if log.topics.len() != 4usize {
-                        return false;
-                    }
-                    if log.data.len() != 0usize {
-                        return false;
-                    }
-                    return log.topics.get(0).expect("bounds already checked").as_ref()
-                        == Self::TOPIC_ID;
+        assert_ast_eq(
+            e.generate_event(),
+            quote! {
+                #[derive(Debug, Clone, PartialEq)]
+                pub struct Transfer {
+                    pub from: Vec<u8>,
+                    pub to: Vec<u8>,
+                    pub token_id: ethabi::Uint
                 }
-                pub fn decode(
-                    log: &substreams_ethereum::pb::eth::v1::Log
-                ) -> Result<Transfer, String> {
-                    Self {
-                        from: ethabi::decode(&[ethabi::ParamType::Address], log.topics[1usize].as_ref())?
-                            .pop()
-                            .expect(INTERNAL_ERR)
-                            .into_address()
-                            .expect(INTERNAL_ERR)
-                            .as_bytes()
-                            .to_vec(),
-                        to: ethabi::decode(&[ethabi::ParamType::Address], log.topics[2usize].as_ref())?
-                            .pop()
-                            .expect(INTERNAL_ERR)
-                            .into_address()
-                            .expect(INTERNAL_ERR)
-                            .as_bytes()
-                            .to_vec(),
-                        token_id: ethabi::decode(
-                                &[ethabi::ParamType::Uint(256usize)],
-                                log.topics[3usize].as_ref()
-                            )?
-                            .pop()
-                            .expect(INTERNAL_ERR)
-                            .into_uint()
-                            .expect(INTERNAL_ERR)
+                impl Transfer {
+                    const TOPIC_ID: [u8; 32] = [
+                        221u8,
+                        242u8,
+                        82u8,
+                        173u8,
+                        27u8,
+                        226u8,
+                        200u8,
+                        155u8,
+                        105u8,
+                        194u8,
+                        176u8,
+                        104u8,
+                        252u8,
+                        55u8,
+                        141u8,
+                        170u8,
+                        149u8,
+                        43u8,
+                        167u8,
+                        241u8,
+                        99u8,
+                        196u8,
+                        161u8,
+                        22u8,
+                        40u8,
+                        245u8,
+                        90u8,
+                        77u8,
+                        245u8,
+                        35u8,
+                        179u8,
+                        239u8
+                    ];
+                    pub fn match_log(log: &substreams_ethereum::pb::eth::v1::Log) -> bool {
+                        if log.topics.len() != 4usize {
+                            return false;
+                        }
+                        if log.data.len() != 0usize {
+                            return false;
+                        }
+                        return log.topics.get(0).expect("bounds already checked").as_ref()
+                            == Self::TOPIC_ID;
+                    }
+                    pub fn decode(
+                        log: &substreams_ethereum::pb::eth::v1::Log
+                    ) -> Result<Transfer, String> {
+                        Ok(Self {
+                            from: ethabi::decode(
+                                    &[ethabi::ParamType::Address],
+                                    log.topics[1usize].as_ref()
+                                )
+                                .map_err(|e| format!(
+                                    "unable to decode param 'from' from topic of type 'address': {}",
+                                    e
+                                ))?
+                                .pop()
+                                .expect(INTERNAL_ERR)
+                                .into_address()
+                                .expect(INTERNAL_ERR)
+                                .as_bytes()
+                                .to_vec(),
+                            to: ethabi::decode(
+                                    &[ethabi::ParamType::Address],
+                                    log.topics[2usize].as_ref()
+                                )
+                                .map_err(|e| format!(
+                                    "unable to decode param 'to' from topic of type 'address': {}", e
+                                ))?
+                                .pop()
+                                .expect(INTERNAL_ERR)
+                                .into_address()
+                                .expect(INTERNAL_ERR)
+                                .as_bytes()
+                                .to_vec(),
+                            token_id: ethabi::decode(
+                                    &[ethabi::ParamType::Uint(256usize)],
+                                    log.topics[3usize].as_ref()
+                                )
+                                .map_err(|e| format!(
+                                    "unable to decode param 'token_id' from topic of type 'uint256': {}",
+                                    e
+                                ))?
+                                .pop()
+                                .expect(INTERNAL_ERR)
+                                .into_uint()
+                                .expect(INTERNAL_ERR)
+                        })
+                    }
+                    pub fn must_decode(log: &substreams_ethereum::pb::eth::v1::Log) -> Transfer {
+                        match Self::decode(log) {
+                            Ok(v) => v,
+                            Err(e) => panic!("Unable to decode logs.Transfer event: {:#}", e),
+                        }
                     }
                 }
-            }
-        };
-
-        assert_eq!(
-            expected.to_string(),
-            e.generate_event().to_string(),
-            "\n\nActual:\n {}",
-            pretty_print_item(e.generate_event())
+            },
         );
-    }
-
-    fn pretty_print_item(item: proc_macro2::TokenStream) -> String {
-        // Maybe just if it actually fails?
-        let mod_wrap = quote! {
-            mod pp {
-                #item
-            }
-        };
-
-        let as_string = mod_wrap.to_string();
-
-        let item = match syn::parse2(mod_wrap) {
-            Ok(item) => item,
-            Err(err) => return format!("unable to parse AST (due to {}): {}", err, as_string),
-        };
-
-        let file = syn::File {
-            attrs: vec![],
-            items: vec![item],
-            shebang: None,
-        };
-
-        prettyplease::unparse(&file)
     }
 }

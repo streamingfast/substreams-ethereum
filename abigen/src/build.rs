@@ -4,20 +4,6 @@ use crate::{generate_abi_code, normalize_path};
 use anyhow::Context;
 use quote::quote;
 
-/// Builder struct for generating type-safe bindings from a contract's ABI
-///
-/// # Example
-///
-/// Running the code below will generate a file called `token.rs` containing the
-/// bindings inside, which exports an `ERC20Token` struct, along with all its events. Put into a
-/// `build.rs` file this will generate the bindings during `cargo build`.
-///
-/// ```no_run
-/// # use ethers_contract_abigen::Abigen;
-/// # fn foo() -> Result<(), Box<dyn std::error::Error>> {
-/// Abigen::new("ERC20Token", "./abi.json")?.generate()?.write_to_file("token.rs")?;
-/// # Ok(())
-/// # }
 #[derive(Debug, Clone)]
 pub struct Abigen {
     /// The path where to fin the source of the ABI JSON for the contract whose bindings

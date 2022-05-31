@@ -25,6 +25,5 @@ getrandom = { version = "0.2", features = ["custom"] }
 [build-dependencies]
 prost-build = "0.10.1"
 
-
 [dev-dependencies]
 anyhow = "1"

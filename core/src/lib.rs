@@ -6,6 +6,26 @@ pub use substreams_ethereum_derive::EthabiContract;
 
 use std::num::NonZeroU32;
 
+/// Builder struct for generating type-safe bindings from a contract's ABI
+///
+/// # Example
+///
+/// Running the code below will generate a file called `token.rs` containing the
+/// bindings inside, which exports an `erc` struct, along with all its events. Put into a
+/// `build.rs` file this will generate the bindings during `cargo build`.
+///
+/// ```no_run
+///     use anyhow::{Ok, Result};
+///     use substreams_ethereum::Abigen;
+///
+///     fn main() -> Result<(), anyhow::Error> {
+///         Abigen::new("ERC721", "abi/erc721.json")?
+///             .generate()?
+///             .write_to_file("src/abi/erc721.rs")?;
+///
+///         Ok(())
+///     }
+/// ```
 pub use substreams_ethereum_abigen::build::Abigen;
 
 /// Represents the null address static array in bytes (20 bytes) which in hex is equivalent
@@ -24,12 +44,12 @@ pub const NULL_ADDRESS: [u8; 20] = [
 /// experience.
 ///
 /// ```no_run
-/// use_contract!(path = "../abi/erc721.json")
+///     substreams_ethereum::use_contract!(erc721, "./examples/abi/erc721.json");
 /// ```
 ///
 /// This invocation will generate the following code (signatures only for consiscness):
 ///
-/// ```
+/// ```rust,ignore
 /// mod erc721 {
 ///     pub mod events {
 ///         #[derive(Debug, Clone, PartialEq)]

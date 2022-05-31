@@ -45,7 +45,7 @@ impl Contract {
 
             // #constructor
 
-            /// Contract's functions.
+            // Contract's functions.
             // pub mod functions {
             //     use super::INTERNAL_ERR;
             //     #(#functions)*
@@ -57,13 +57,6 @@ impl Contract {
                 use super::INTERNAL_ERR;
                 #(#events)*
             }
-
-            // /// Contract's logs.
-            // pub mod logs {
-            //     use super::INTERNAL_ERR;
-            //     use ethabi;
-            //     #(#logs)*
-            // }
         }
     }
 }
@@ -71,6 +64,8 @@ impl Contract {
 #[cfg(test)]
 mod test {
     use quote::quote;
+
+    use crate::assertions::assert_ast_eq;
 
     use super::Contract;
 
@@ -87,27 +82,17 @@ mod test {
 
         let c = Contract::from(&ethabi_contract);
 
-        let expected = quote! {
-            use ethabi;
-            const INTERNAL_ERR: &'static str = "`ethabi_derive` internal error";
+        assert_ast_eq(
+            c.generate(),
+            quote! {
+                const INTERNAL_ERR: &'static str = "`ethabi_derive` internal error";
 
-            /// Contract's functions.
-            pub mod functions {
-                use super::INTERNAL_ERR;
-            }
-
-            /// Contract's events.
-            pub mod events {
-                use super::INTERNAL_ERR;
-            }
-
-            /// Contract's logs.
-            pub mod logs {
-                use super::INTERNAL_ERR;
-                use ethabi;
-            }
-        };
-
-        assert_eq!(expected.to_string(), c.generate().to_string());
+                /// Contract's events.
+                #[allow(dead_code)]
+                pub mod events {
+                    use super::INTERNAL_ERR;
+                }
+            },
+        );
     }
 }

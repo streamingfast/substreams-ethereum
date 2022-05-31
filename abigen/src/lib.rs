@@ -10,6 +10,7 @@
 
 extern crate proc_macro;
 
+mod assertions;
 pub mod build;
 // mod constructor;
 mod contract;
