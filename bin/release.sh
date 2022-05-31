@@ -72,14 +72,14 @@ main() {
     args="--dry-run $args"
   fi
 
-  # We need to publish one crate at a time, one after the one
-  #cargo publish $args --target wasm32-unknown-unknown -p abigen
+   We need to publish one crate at a time, one after the one
+  cargo publish $args --target wasm32-unknown-unknown -p substreams-ethereum-abigen
 
-  #maybe_wait_publish
-  #cargo publish $args --target wasm32-unknown-unknown -p derive
+  maybe_wait_publish
+  cargo publish $args --target wasm32-unknown-unknown -p substreams-ethereum-derive
 
-  #maybe_wait_publish
-  #cargo publish $args --target wasm32-unknown-unknown -p core
+  maybe_wait_publish
+  cargo publish $args --target wasm32-unknown-unknown -p substreams-ethereum
 }
 
 cleanup_tag() {
@@ -125,7 +125,8 @@ maybe_wait_publish() {
     #     no matching package named `substreams-macro` found
     #     location searched: registry `crates-io`
     #     required by package `substreams v0.0.8-beta (/Users/maoueh/work/sf/substreams/target/package/substreams-0.0.8-beta)`
-    sleep 10
+    echo "Waiting 30s giving time to crates.io to updates its public registry with new version..."
+    sleep 30
   fi
 }
 

@@ -1,3 +1,5 @@
+## Unreleased
+
 ## [v0.1.0](https://github.com/streamingfast/substreams-ethereum/releases/tag/0.1.0)
 
 * Added codegen API for ABI bindings that can be used instead of the macro for those who prefer that.
