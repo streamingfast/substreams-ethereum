@@ -1,6 +1,6 @@
 [package]
 name = "substreams-ethereum"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 description = "Substreams development kit for Ethereum chains, contains Firehose Block model and helpers as well as utilities for Ethereum ABI encoding/decoding."
 homepage = "https://substreams.streamingfast.io/"
@@ -16,8 +16,8 @@ ethabi = "17.0"
 prost = { version = "0.10.1" }
 prost-types = "0.10.1"
 substreams = { version = "0.0.8-beta" }
-substreams-ethereum-abigen = { version = "0.1.0", path = "../abigen" }
-substreams-ethereum-derive = { version = "0.1.0", path = "../derive" }
+substreams-ethereum-abigen = { version = "0.1.1", path = "../abigen" }
+substreams-ethereum-derive = { version = "0.1.1", path = "../derive" }
 
 # Required so that ethabi > ethereum-types build correctly under wasm32-unknown-unknown
 [target.wasm32-unknown-unknown.dependencies]
