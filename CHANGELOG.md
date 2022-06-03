@@ -1,5 +1,9 @@
 ## Unreleased
 
+## [v0.1.2](https://github.com/streamingfast/substreams-ethereum/releases/tag/0.1.2)
+
+* Bumped to Substreams [0.0.11](https://github.com/streamingfast/substreams/releases/tag/v0.0.11).
+
 * `substreams::init` is now always defined and the actual `getrandom` custom registration is conditional based on the platform you compile to. This will enable non `wasm32-unknown-unknown` target to compile which is required for unit testing
 
 ## [v0.1.1](https://github.com/streamingfast/substreams-ethereum/releases/tag/0.1.1)

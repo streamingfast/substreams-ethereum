@@ -7,7 +7,7 @@ Substreams development kit for Ethereum chains, contains Rust Firehose Block mod
 ```toml
 [package]
 name = "substreams-acme"
-version = "0.1.0"
+version = 0.1.2
 
 [lib]
 crate-type = ["cdylib"]
