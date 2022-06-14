@@ -196,7 +196,7 @@ impl Event {
                         == Self::TOPIC_ID;
                 }
 
-                pub fn decode(log: &substreams_ethereum::pb::eth::v1::Log) -> Result<#camel_name, String> {
+                pub fn decode(log: &substreams_ethereum::pb::eth::v1::Log) -> Result<Self, String> {
                     #decode_data
 
                     Ok(Self {
@@ -204,7 +204,7 @@ impl Event {
                     })
                 }
 
-                pub fn must_decode(log: &substreams_ethereum::pb::eth::v1::Log) -> #camel_name {
+                pub fn must_decode(log: &substreams_ethereum::pb::eth::v1::Log) -> Self {
                     match Self::decode(log) {
                         Ok(v) => v,
                         Err(e) => panic!(#must_decode_error_msg, e),
@@ -284,10 +284,10 @@ mod tests {
                     }
                     pub fn decode(
                         log: &substreams_ethereum::pb::eth::v1::Log
-                    ) -> Result<Hello, String> {
+                    ) -> Result<Self, String> {
                         Ok(Self {})
                     }
-                    pub fn must_decode(log: &substreams_ethereum::pb::eth::v1::Log) -> Hello {
+                    pub fn must_decode(log: &substreams_ethereum::pb::eth::v1::Log) -> Self {
                         match Self::decode(log) {
                             Ok(v) => v,
                             Err(e) => panic!("Unable to decode logs.Hello event: {:#}", e),
@@ -366,7 +366,7 @@ mod tests {
                     }
                     pub fn decode(
                         log: &substreams_ethereum::pb::eth::v1::Log
-                    ) -> Result<One, String> {
+                    ) -> Result<Self, String> {
                         Ok(Self {
                             foo: ethabi::decode(
                                     &[ethabi::ParamType::Address],
@@ -384,7 +384,7 @@ mod tests {
                                 .to_vec()
                         })
                     }
-                    pub fn must_decode(log: &substreams_ethereum::pb::eth::v1::Log) -> One {
+                    pub fn must_decode(log: &substreams_ethereum::pb::eth::v1::Log) -> Self {
                         match Self::decode(log) {
                             Ok(v) => v,
                             Err(e) => panic!("Unable to decode logs.One event: {:#}", e),
@@ -477,7 +477,7 @@ mod tests {
                     }
                     pub fn decode(
                         log: &substreams_ethereum::pb::eth::v1::Log
-                    ) -> Result<Transfer, String> {
+                    ) -> Result<Self, String> {
                         let mut values = ethabi::decode(
                                 &[ethabi::ParamType::Uint(256usize)],
                                 log.data.as_ref()
@@ -518,7 +518,7 @@ mod tests {
                                 .expect(INTERNAL_ERR)
                         })
                     }
-                    pub fn must_decode(log: &substreams_ethereum::pb::eth::v1::Log) -> Transfer {
+                    pub fn must_decode(log: &substreams_ethereum::pb::eth::v1::Log) -> Self {
                         match Self::decode(log) {
                             Ok(v) => v,
                             Err(e) => panic!("Unable to decode logs.Transfer event: {:#}", e),
@@ -611,7 +611,7 @@ mod tests {
                     }
                     pub fn decode(
                         log: &substreams_ethereum::pb::eth::v1::Log
-                    ) -> Result<Transfer, String> {
+                    ) -> Result<Self, String> {
                         Ok(Self {
                             from: ethabi::decode(
                                     &[ethabi::ParamType::Address],
@@ -654,7 +654,7 @@ mod tests {
                                 .expect(INTERNAL_ERR)
                         })
                     }
-                    pub fn must_decode(log: &substreams_ethereum::pb::eth::v1::Log) -> Transfer {
+                    pub fn must_decode(log: &substreams_ethereum::pb::eth::v1::Log) -> Self {
                         match Self::decode(log) {
                             Ok(v) => v,
                             Err(e) => panic!("Unable to decode logs.Transfer event: {:#}", e),

@@ -1,5 +1,7 @@
 ## Unreleased
 
+* Improved generated code for ABI generator for events to `Self` wherever possible.
+
 ## [v0.1.2](https://github.com/streamingfast/substreams-ethereum/releases/tag/0.1.2)
 
 * Bumped to Substreams [0.0.11](https://github.com/streamingfast/substreams/releases/tag/v0.0.11).
