@@ -1,7 +1,7 @@
 use crate::externs;
+use crate::pb;
 use substreams::memory;
 use substreams::proto;
-use crate::pb;
 
 fn eth_call_internal(input: Vec<u8>) -> Vec<u8> {
     unsafe {
