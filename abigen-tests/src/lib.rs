@@ -3,6 +3,7 @@ mod abi;
 #[cfg(test)]
 mod tests {
     use crate::abi::tests;
+    use ethabi::ethereum_types::U256;
     use pretty_assertions::assert_eq;
     use substreams::hex;
     use substreams_ethereum::pb;
@@ -30,6 +31,37 @@ mod tests {
             Ok(Event {
                 first: hex!("ab07a50ad459b41fe065f7bbab866d5390e9f705").to_vec(),
                 second: "second string".to_string(),
+            }),
+        );
+    }
+
+    #[test]
+    fn it_decode_event_address_idx_string_uint256_idx_bytes() {
+        use tests::events::EventAddressIdxStringUint256IdxBytes as Event;
+
+        // ethc tools encode --abi ./abigen-tests/abi/tests.json event 'EventAddressIdxStringUint256IdxBytes' "0xab07a50AD459B41Fe065f7BBAb866D5390e9f705" "second string" "0x1000000000" "0xabdeff90"
+        let log = pb::eth::v1::Log{
+            address: hex!("0000000000000000000000000000000000000000").to_vec(),
+            topics: vec![
+                hex!("13c827c8aff69c8c51a406825a22313c37b01da4b8e8cc1ab95ff9e5abd433a9").to_vec(),
+                hex!("000000000000000000000000ab07a50ad459b41fe065f7bbab866d5390e9f705").to_vec(),
+                hex!("0000000000000000000000000000000000000000000000000000001000000000").to_vec(),
+            ],
+            data: hex!("00000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000000d7365636f6e6420737472696e67000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000004abdeff90").to_vec(),
+            ..Default::default()
+        };
+
+        assert_eq!(Event::match_log(&log), true);
+
+        let event = Event::decode(&log);
+
+        assert_eq!(
+            event,
+            Ok(Event {
+                first: hex!("ab07a50ad459b41fe065f7bbab866d5390e9f705").to_vec(),
+                second: "second string".to_string(),
+                third: U256::from_str_radix("0x1000000000", 16).unwrap(),
+                fourth: hex!("abdeff90").to_vec(),
             }),
         );
     }

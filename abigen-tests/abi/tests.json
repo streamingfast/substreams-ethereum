@@ -19,6 +19,37 @@
 		"type": "event"
 	},
 	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "first",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "string",
+				"name": "second",
+				"type": "string"
+			},
+			{
+				"indexed": true,
+				"internalType": "uint256",
+				"name": "third",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "bytes",
+				"name": "fourth",
+				"type": "bytes"
+			}
+		],
+		"name": "EventAddressIdxStringUint256IdxBytes",
+		"type": "event"
+	},
+	{
 		"inputs": [
 			{
 				"internalType": "string",
