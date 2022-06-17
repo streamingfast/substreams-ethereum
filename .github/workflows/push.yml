@@ -1,0 +1,114 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches: [master, develop]
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: full
+
+jobs:
+  rustfmt:
+    name: Check rustfmt style
+    strategy:
+      matrix:
+        rust: ["stable"]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: Install Rust Toolchain(s)
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.rust }}
+          components: rustfmt
+          override: true
+
+      - name: Cache cargo registry
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: rustfmt-cargo-${{ hashFiles('**/Cargo.toml') }}
+
+      - name: Check formating
+        uses: actions-rs/cargo@v1
+        env:
+          RUSTFLAGS: "-D warnings"
+        with:
+          command: fmt
+          args: --all -- --check
+
+  build:
+    name: Build in release mode
+    strategy:
+      matrix:
+        rust: ["stable"]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: Install Rust Toolchain(s)
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          target: 'wasm32-unknown-unknown'
+          toolchain: ${{ matrix.rust }}
+          override: true
+
+      - name: Cache cargo registry
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: release-cargo-${{ hashFiles('**/Cargo.toml') }}
+
+      - name: Cargo check (release)
+        uses: actions-rs/cargo@v1
+        env:
+          RUSTFLAGS: "-D warnings"
+        with:
+          command: check
+          args: --release
+
+  tests:
+    name: Runs tests in release mode
+    strategy:
+      matrix:
+        rust: ["stable"]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: Install Rust Toolchain(s)
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          target: 'x86_64-unknown-linux-gnu'
+          toolchain: ${{ matrix.rust }}
+          override: true
+
+      - name: Cache cargo registry
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: release-cargo-${{ hashFiles('**/Cargo.toml') }}
+
+      - name: Cargo check (release)
+        uses: actions-rs/cargo@v1
+        env:
+          RUSTFLAGS: "-D warnings"
+        with:
+          command: test
+          args: --release --target x86_64-unknown-linux-gnu
