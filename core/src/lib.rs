@@ -1,3 +1,4 @@
+mod abi;
 mod externs;
 pub mod pb;
 pub mod rpc;
@@ -9,7 +10,7 @@ pub use substreams_ethereum_derive::EthabiContract;
 ///
 /// # Example
 ///
-/// Running the code below will generate a file called `token.rs` containing the
+/// Running the code below will generate a file called `erc721.rs` containing the
 /// bindings inside, which exports an `erc` struct, along with all its events. Put into a
 /// `build.rs` file this will generate the bindings during `cargo build`.
 ///
@@ -130,10 +131,4 @@ pub fn getrandom_unavailable(_buf: &mut [u8]) -> Result<(), getrandom::Error> {
 }
 
 #[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        let result = 2 + 2;
-        assert_eq!(result, 4);
-    }
-}
+mod tests {}

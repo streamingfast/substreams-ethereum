@@ -11,41 +11,39 @@ env:
   RUST_BACKTRACE: full
 
 jobs:
-  # Disabled until I check why we have issues, locally running `cargo fmt --all -- --check` yield
-  # nothings for me.
-  # rustfmt:
-  #   name: Check rustfmt style
-  #   strategy:
-  #     matrix:
-  #       rust: ["stable"]
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Checkout Code
-  #       uses: actions/checkout@v2
+  rustfmt:
+    name: Check rustfmt style
+    strategy:
+      matrix:
+        rust: ["stable"]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
 
-  #     - name: Install Rust Toolchain(s)
-  #       uses: actions-rs/toolchain@v1
-  #       with:
-  #         profile: minimal
-  #         toolchain: ${{ matrix.rust }}
-  #         components: rustfmt
-  #         override: true
+      - name: Install Rust Toolchain(s)
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.rust }}
+          components: rustfmt
+          override: true
 
-  #     - name: Cache cargo registry
-  #       uses: actions/cache@v2
-  #       with:
-  #         path: |
-  #           ~/.cargo/registry
-  #           ~/.cargo/git
-  #         key: rustfmt-cargo-${{ hashFiles('**/Cargo.toml') }}
+      - name: Cache cargo registry
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: rustfmt-cargo-${{ hashFiles('**/Cargo.toml') }}
 
-  #     - name: Check formating
-  #       uses: actions-rs/cargo@v1
-  #       env:
-  #         RUSTFLAGS: "-D warnings"
-  #       with:
-  #         command: fmt
-  #         args: --all -- --check
+      - name: Check formating
+        uses: actions-rs/cargo@v1
+        env:
+          RUSTFLAGS: "-D warnings"
+        with:
+          command: fmt
+          args: --all -- --check
 
   build:
     name: Build in release mode
