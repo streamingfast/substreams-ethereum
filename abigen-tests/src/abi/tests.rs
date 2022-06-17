@@ -5,8 +5,8 @@
         use super::INTERNAL_ERR;
         #[derive(Debug, Clone, PartialEq)]
         pub struct EventAddressIdxString {
-            pub indexed: Vec<u8>,
-            pub unindexed: String,
+            pub first: Vec<u8>,
+            pub second: String,
         }
         impl EventAddressIdxString {
             const TOPIC_ID: [u8; 32] = [
@@ -62,12 +62,12 @@
                     )
                     .map_err(|e| format!("unable to decode log.data: {}", e))?;
                 Ok(Self {
-                    indexed: ethabi::decode(
+                    first: ethabi::decode(
                             &[ethabi::ParamType::Address],
                             log.topics[1usize].as_ref(),
                         )
                         .map_err(|e| format!(
-                            "unable to decode param 'indexed' from topic of type 'address': {}",
+                            "unable to decode param 'first' from topic of type 'address': {}",
                             e
                         ))?
                         .pop()
@@ -76,7 +76,7 @@
                         .expect(INTERNAL_ERR)
                         .as_bytes()
                         .to_vec(),
-                    unindexed: values
+                    second: values
                         .pop()
                         .expect(INTERNAL_ERR)
                         .into_string()

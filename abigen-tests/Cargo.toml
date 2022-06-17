@@ -20,3 +20,6 @@ getrandom = { version = "0.2", features = ["custom"] }
 [build-dependencies]
 anyhow = "1"
 substreams-ethereum = { version = "0.1.2", path = "../core" }
+
+[dev-dependencies]
+pretty_assertions = "1.2.1"

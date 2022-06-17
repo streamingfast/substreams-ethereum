@@ -5,13 +5,13 @@
 			{
 				"indexed": true,
 				"internalType": "address",
-				"name": "indexed",
+				"name": "first",
 				"type": "address"
 			},
 			{
 				"indexed": false,
 				"internalType": "string",
-				"name": "unindexed",
+				"name": "second",
 				"type": "string"
 			}
 		],
