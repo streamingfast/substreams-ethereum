@@ -39,6 +39,10 @@ This means changes to Protobuf files must be manually re-generated and commit, s
 - Update the `CHANGELOG.md` to update the `## Unreleased` header to become `## [v0.1.2](https://github.com/streamingfast/substreams-ethereum/releases/tag/${version})
 - Commit everything with message `Preparing release of ${version}`.
 - `./bin/release.sh v${version}` (Add `-f` before `v${version}` to doing the real non-dry mode)
+- If everything went well, `git tag ${version}`
+- Git push everything
+
+You can then update the https://github.com/streamingfast/substreams-template with the latest
 
 ## Community
 
