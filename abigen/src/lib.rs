@@ -207,8 +207,11 @@ fn min_data_size(input: &ParamType) -> usize {
 
 fn from_token(kind: &ParamType, token: &proc_macro2::TokenStream) -> proc_macro2::TokenStream {
     match *kind {
-        ParamType::Address | ParamType::Bytes => {
+        ParamType::Address => {
             quote! { #token.into_address().expect(INTERNAL_ERR).as_bytes().to_vec() }
+        }
+        ParamType::Bytes => {
+            quote! { #token.into_bytes().expect(INTERNAL_ERR) }
         }
         ParamType::FixedBytes(size) => {
             let size: syn::Index = size.into();

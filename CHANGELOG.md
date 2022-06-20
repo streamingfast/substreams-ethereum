@@ -1,5 +1,9 @@
 ## Unreleased
 
+* Fixed `bytes` usage in Abigen (was generating `address` type).
+
+* Fixed bug on Abigen when event contains unindexed/indexed fields on certain ordering of them.
+
 * Improved generated code for ABI generator for events to `Self` wherever possible.
 
 ## [v0.1.2](https://github.com/streamingfast/substreams-ethereum/releases/tag/0.1.2)

@@ -169,12 +169,12 @@
                         .expect(INTERNAL_ERR)
                         .as_bytes()
                         .to_vec(),
-                    second: ethabi::decode(
+                    third: ethabi::decode(
                             &[ethabi::ParamType::Uint(256usize)],
                             log.topics[2usize].as_ref(),
                         )
                         .map_err(|e| format!(
-                            "unable to decode param 'second' from topic of type 'uint256': {}",
+                            "unable to decode param 'third' from topic of type 'uint256': {}",
                             e
                         ))?
                         .pop()
@@ -184,11 +184,9 @@
                     fourth: values
                         .pop()
                         .expect(INTERNAL_ERR)
-                        .into_address()
-                        .expect(INTERNAL_ERR)
-                        .as_bytes()
-                        .to_vec(),
-                    third: values
+                        .into_bytes()
+                        .expect(INTERNAL_ERR),
+                    second: values
                         .pop()
                         .expect(INTERNAL_ERR)
                         .into_string()
@@ -285,12 +283,12 @@
                         .expect(INTERNAL_ERR)
                         .as_bytes()
                         .to_vec(),
-                    second: ethabi::decode(
+                    fourth: ethabi::decode(
                             &[ethabi::ParamType::Address],
                             log.topics[2usize].as_ref(),
                         )
                         .map_err(|e| format!(
-                            "unable to decode param 'second' from topic of type 'address': {}",
+                            "unable to decode param 'fourth' from topic of type 'address': {}",
                             e
                         ))?
                         .pop()
@@ -299,12 +297,12 @@
                         .expect(INTERNAL_ERR)
                         .as_bytes()
                         .to_vec(),
-                    fourth: values
+                    third: values
                         .pop()
                         .expect(INTERNAL_ERR)
                         .into_uint()
                         .expect(INTERNAL_ERR),
-                    third: values
+                    second: values
                         .pop()
                         .expect(INTERNAL_ERR)
                         .into_uint()
