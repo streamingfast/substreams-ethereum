@@ -207,4 +207,120 @@
                 }
             }
         }
+        #[derive(Debug, Clone, PartialEq)]
+        pub struct EventAddressIdxUint256Uint256AddressIdx {
+            pub first: Vec<u8>,
+            pub second: ethabi::Uint,
+            pub third: ethabi::Uint,
+            pub fourth: Vec<u8>,
+        }
+        impl EventAddressIdxUint256Uint256AddressIdx {
+            const TOPIC_ID: [u8; 32] = [
+                186u8,
+                209u8,
+                95u8,
+                244u8,
+                23u8,
+                243u8,
+                118u8,
+                49u8,
+                29u8,
+                220u8,
+                111u8,
+                61u8,
+                204u8,
+                72u8,
+                76u8,
+                184u8,
+                184u8,
+                147u8,
+                202u8,
+                121u8,
+                27u8,
+                217u8,
+                39u8,
+                222u8,
+                98u8,
+                106u8,
+                220u8,
+                155u8,
+                216u8,
+                247u8,
+                217u8,
+                125u8,
+            ];
+            pub fn match_log(log: &substreams_ethereum::pb::eth::v1::Log) -> bool {
+                if log.topics.len() != 3usize {
+                    return false;
+                }
+                if log.data.len() != 64usize {
+                    return false;
+                }
+                return log.topics.get(0).expect("bounds already checked").as_ref()
+                    == Self::TOPIC_ID;
+            }
+            pub fn decode(
+                log: &substreams_ethereum::pb::eth::v1::Log,
+            ) -> Result<Self, String> {
+                let mut values = ethabi::decode(
+                        &[
+                            ethabi::ParamType::Uint(256usize),
+                            ethabi::ParamType::Uint(256usize),
+                        ],
+                        log.data.as_ref(),
+                    )
+                    .map_err(|e| format!("unable to decode log.data: {}", e))?;
+                Ok(Self {
+                    first: ethabi::decode(
+                            &[ethabi::ParamType::Address],
+                            log.topics[1usize].as_ref(),
+                        )
+                        .map_err(|e| format!(
+                            "unable to decode param 'first' from topic of type 'address': {}",
+                            e
+                        ))?
+                        .pop()
+                        .expect(INTERNAL_ERR)
+                        .into_address()
+                        .expect(INTERNAL_ERR)
+                        .as_bytes()
+                        .to_vec(),
+                    second: ethabi::decode(
+                            &[ethabi::ParamType::Address],
+                            log.topics[2usize].as_ref(),
+                        )
+                        .map_err(|e| format!(
+                            "unable to decode param 'second' from topic of type 'address': {}",
+                            e
+                        ))?
+                        .pop()
+                        .expect(INTERNAL_ERR)
+                        .into_address()
+                        .expect(INTERNAL_ERR)
+                        .as_bytes()
+                        .to_vec(),
+                    fourth: values
+                        .pop()
+                        .expect(INTERNAL_ERR)
+                        .into_uint()
+                        .expect(INTERNAL_ERR),
+                    third: values
+                        .pop()
+                        .expect(INTERNAL_ERR)
+                        .into_uint()
+                        .expect(INTERNAL_ERR),
+                })
+            }
+            pub fn must_decode(log: &substreams_ethereum::pb::eth::v1::Log) -> Self {
+                match Self::decode(log) {
+                    Ok(v) => v,
+                    Err(e) => {
+                        panic!(
+                            "Unable to decode logs.EventAddressIdxUint256Uint256AddressIdx event: {:#}",
+                            e
+                        )
+                    }
+                }
+            }
+        }
     }

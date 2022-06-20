@@ -50,6 +50,37 @@
 		"type": "event"
 	},
 	{
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "first",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "second",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "third",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "fourth",
+        "type": "address"
+      }
+    ],
+    "name": "EventAddressIdxUint256Uint256AddressIdx",
+    "type": "event"
+  },
+	{
 		"inputs": [
 			{
 				"internalType": "string",
