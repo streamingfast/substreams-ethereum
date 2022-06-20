@@ -63,6 +63,7 @@ impl<'a> From<&'a ethabi::Event> for Event {
             .iter()
             .map(|param| rust_type(&param.kind))
             .collect();
+
         let log_fields = names
             .iter()
             .zip(kinds.iter())
@@ -72,8 +73,8 @@ impl<'a> From<&'a ethabi::Event> for Event {
         let decode_indexed_fields = e
             .inputs
             .iter()
-            .filter(|param| param.indexed)
             .zip(names.iter())
+            .filter(|(param, _)| param.indexed)
             .enumerate()
             .map(|(index, (param, name))| {
                 let topic_index = index + 1;
@@ -107,8 +108,8 @@ impl<'a> From<&'a ethabi::Event> for Event {
             .inputs
             .iter()
             .rev()
-            .filter(|param| !param.indexed)
             .zip(names.iter().rev())
+            .filter(|(param, _)| !param.indexed)
             .map(|(param, name)| {
                 let data_access = quote! { values.pop().expect(INTERNAL_ERR) };
                 let decode_topic = from_token(&param.kind, &data_access);
