@@ -42,7 +42,7 @@ This means changes to Protobuf files must be manually re-generated and commit, s
 - If everything went well, `git tag ${version}`
 - Git push everything
 
-You can then update the https://github.com/streamingfast/substreams-template with the latest
+You can then update the https://github.com/streamingfast/substreams-template with the latest.
 
 ## Community
 

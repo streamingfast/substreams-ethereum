@@ -19,8 +19,8 @@ pub struct Event {
     decode_data: TokenStream,
 }
 
-impl<'a> From<&'a (String, ethabi::Event)> for Event {
-    fn from((name, e): &'a (String, ethabi::Event)) -> Self {
+impl<'a> From<(&'a String, &'a ethabi::Event)> for Event {
+    fn from((name, e): (&'a String, &'a ethabi::Event)) -> Self {
         let names: Vec<_> = e
             .inputs
             .iter()
@@ -231,7 +231,7 @@ mod tests {
             anonymous: false,
         };
 
-        let e = Event::from(&(ethabi_event.name.clone(), ethabi_event));
+        let e = Event::from((&ethabi_event.name, &ethabi_event));
 
         assert_ast_eq(
             e.generate_event(),
@@ -311,7 +311,7 @@ mod tests {
             anonymous: false,
         };
 
-        let e = Event::from(&(ethabi_event.name.clone(), ethabi_event));
+        let e = Event::from((&ethabi_event.name, &ethabi_event));
 
         assert_ast_eq(
             e.generate_event(),
@@ -420,7 +420,7 @@ mod tests {
             anonymous: false,
         };
 
-        let e = Event::from(&(ethabi_event.name.clone(), ethabi_event));
+        let e = Event::from((&ethabi_event.name, &ethabi_event));
 
         assert_ast_eq(
             e.generate_event(),
@@ -554,7 +554,7 @@ mod tests {
             anonymous: false,
         };
 
-        let e = Event::from(&(ethabi_event.name.clone(), ethabi_event));
+        let e = Event::from((&ethabi_event.name, &ethabi_event));
 
         assert_ast_eq(
             e.generate_event(),

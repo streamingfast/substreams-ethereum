@@ -1,5 +1,7 @@
 ## Unreleased
 
+* Fixed bug when an ABI has multiple times the same Event's name but with a different signature.
+
 ## [v0.1.3](https://github.com/streamingfast/substreams-ethereum/releases/tag/0.1.3)
 
 * Fixed `bytes` usage in Abigen (was generating `address` type).
