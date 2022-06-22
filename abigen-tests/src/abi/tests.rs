@@ -321,4 +321,240 @@
                 }
             }
         }
+        #[derive(Debug, Clone, PartialEq)]
+        pub struct EventWithOverloads1 {
+            pub first: Vec<u8>,
+        }
+        impl EventWithOverloads1 {
+            const TOPIC_ID: [u8; 32] = [
+                160u8,
+                232u8,
+                134u8,
+                105u8,
+                115u8,
+                6u8,
+                86u8,
+                80u8,
+                35u8,
+                114u8,
+                67u8,
+                175u8,
+                26u8,
+                126u8,
+                149u8,
+                252u8,
+                6u8,
+                106u8,
+                26u8,
+                73u8,
+                223u8,
+                243u8,
+                135u8,
+                140u8,
+                168u8,
+                239u8,
+                202u8,
+                85u8,
+                141u8,
+                39u8,
+                28u8,
+                21u8,
+            ];
+            pub fn match_log(log: &substreams_ethereum::pb::eth::v1::Log) -> bool {
+                if log.topics.len() != 2usize {
+                    return false;
+                }
+                if log.data.len() != 0usize {
+                    return false;
+                }
+                return log.topics.get(0).expect("bounds already checked").as_ref()
+                    == Self::TOPIC_ID;
+            }
+            pub fn decode(
+                log: &substreams_ethereum::pb::eth::v1::Log,
+            ) -> Result<Self, String> {
+                Ok(Self {
+                    first: ethabi::decode(
+                            &[ethabi::ParamType::Address],
+                            log.topics[1usize].as_ref(),
+                        )
+                        .map_err(|e| format!(
+                            "unable to decode param 'first' from topic of type 'address': {}",
+                            e
+                        ))?
+                        .pop()
+                        .expect(INTERNAL_ERR)
+                        .into_address()
+                        .expect(INTERNAL_ERR)
+                        .as_bytes()
+                        .to_vec(),
+                })
+            }
+            pub fn must_decode(log: &substreams_ethereum::pb::eth::v1::Log) -> Self {
+                match Self::decode(log) {
+                    Ok(v) => v,
+                    Err(e) => {
+                        panic!(
+                            "Unable to decode logs.EventWithOverloads1 event: {:#}", e
+                        )
+                    }
+                }
+            }
+        }
+        #[derive(Debug, Clone, PartialEq)]
+        pub struct EventWithOverloads2 {
+            pub second: String,
+        }
+        impl EventWithOverloads2 {
+            const TOPIC_ID: [u8; 32] = [
+                145u8,
+                118u8,
+                46u8,
+                207u8,
+                115u8,
+                54u8,
+                221u8,
+                72u8,
+                60u8,
+                196u8,
+                163u8,
+                135u8,
+                96u8,
+                124u8,
+                102u8,
+                200u8,
+                23u8,
+                92u8,
+                204u8,
+                138u8,
+                26u8,
+                202u8,
+                74u8,
+                78u8,
+                144u8,
+                18u8,
+                132u8,
+                75u8,
+                11u8,
+                147u8,
+                35u8,
+                150u8,
+            ];
+            pub fn match_log(log: &substreams_ethereum::pb::eth::v1::Log) -> bool {
+                if log.topics.len() != 2usize {
+                    return false;
+                }
+                if log.data.len() != 0usize {
+                    return false;
+                }
+                return log.topics.get(0).expect("bounds already checked").as_ref()
+                    == Self::TOPIC_ID;
+            }
+            pub fn decode(
+                log: &substreams_ethereum::pb::eth::v1::Log,
+            ) -> Result<Self, String> {
+                Ok(Self {
+                    second: ethabi::decode(
+                            &[ethabi::ParamType::String],
+                            log.topics[1usize].as_ref(),
+                        )
+                        .map_err(|e| format!(
+                            "unable to decode param 'second' from topic of type 'string': {}",
+                            e
+                        ))?
+                        .pop()
+                        .expect(INTERNAL_ERR)
+                        .into_string()
+                        .expect(INTERNAL_ERR),
+                })
+            }
+            pub fn must_decode(log: &substreams_ethereum::pb::eth::v1::Log) -> Self {
+                match Self::decode(log) {
+                    Ok(v) => v,
+                    Err(e) => {
+                        panic!(
+                            "Unable to decode logs.EventWithOverloads2 event: {:#}", e
+                        )
+                    }
+                }
+            }
+        }
+        #[derive(Debug, Clone, PartialEq)]
+        pub struct EventWithOverloads3 {
+            pub third: ethabi::Uint,
+        }
+        impl EventWithOverloads3 {
+            const TOPIC_ID: [u8; 32] = [
+                2u8,
+                227u8,
+                188u8,
+                100u8,
+                110u8,
+                72u8,
+                64u8,
+                66u8,
+                173u8,
+                42u8,
+                220u8,
+                51u8,
+                91u8,
+                78u8,
+                119u8,
+                162u8,
+                240u8,
+                131u8,
+                178u8,
+                30u8,
+                179u8,
+                110u8,
+                9u8,
+                69u8,
+                110u8,
+                117u8,
+                232u8,
+                227u8,
+                123u8,
+                96u8,
+                73u8,
+                118u8,
+            ];
+            pub fn match_log(log: &substreams_ethereum::pb::eth::v1::Log) -> bool {
+                if log.topics.len() != 2usize {
+                    return false;
+                }
+                if log.data.len() != 0usize {
+                    return false;
+                }
+                return log.topics.get(0).expect("bounds already checked").as_ref()
+                    == Self::TOPIC_ID;
+            }
+            pub fn decode(
+                log: &substreams_ethereum::pb::eth::v1::Log,
+            ) -> Result<Self, String> {
+                Ok(Self {
+                    third: ethabi::decode(
+                            &[ethabi::ParamType::Uint(256usize)],
+                            log.topics[1usize].as_ref(),
+                        )
+                        .map_err(|e| format!(
+                            "unable to decode param 'third' from topic of type 'uint256': {}",
+                            e
+                        ))?
+                        .pop()
+                        .expect(INTERNAL_ERR)
+                        .into_uint()
+                        .expect(INTERNAL_ERR),
+                })
+            }
+            pub fn must_decode(log: &substreams_ethereum::pb::eth::v1::Log) -> Self {
+                match Self::decode(log) {
+                    Ok(v) => v,
+                    Err(e) => {
+                        panic!(
+                            "Unable to decode logs.EventWithOverloads3 event: {:#}", e
+                        )
+                    }
+                }
+            }
+        }
     }

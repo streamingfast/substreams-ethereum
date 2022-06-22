@@ -21,10 +21,26 @@ pub struct Contract {
 
 impl<'a> From<&'a ethabi::Contract> for Contract {
     fn from(c: &'a ethabi::Contract) -> Self {
+        let mut events: Vec<(String, ethabi::Event)> = vec![];
+
+        for overloads in c.events.values() {
+            let count = overloads.len();
+
+            for (index, event) in overloads.iter().enumerate() {
+                let name = if count <= 1 {
+                    event.name.clone()
+                } else {
+                    format!("{}{}", event.name, index + 1)
+                };
+
+                events.push((name, event.clone()));
+            }
+        }
+
         Contract {
             // constructor: c.constructor.as_ref().map(Into::into),
             // functions: c.functions().map(Into::into).collect(),
-            events: c.events().map(Into::into).collect(),
+            events: events.iter().map(Into::into).collect(),
         }
     }
 }
