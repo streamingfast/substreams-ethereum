@@ -322,10 +322,10 @@
             }
         }
         #[derive(Debug, Clone, PartialEq)]
-        pub struct EventWithOverloads {
+        pub struct EventWithOverloads1 {
             pub first: Vec<u8>,
         }
-        impl EventWithOverloads {
+        impl EventWithOverloads1 {
             const TOPIC_ID: [u8; 32] = [
                 160u8,
                 232u8,
@@ -394,16 +394,18 @@
                 match Self::decode(log) {
                     Ok(v) => v,
                     Err(e) => {
-                        panic!("Unable to decode logs.EventWithOverloads event: {:#}", e)
+                        panic!(
+                            "Unable to decode logs.EventWithOverloads1 event: {:#}", e
+                        )
                     }
                 }
             }
         }
         #[derive(Debug, Clone, PartialEq)]
-        pub struct EventWithOverloads1 {
+        pub struct EventWithOverloads2 {
             pub second: String,
         }
-        impl EventWithOverloads1 {
+        impl EventWithOverloads2 {
             const TOPIC_ID: [u8; 32] = [
                 145u8,
                 118u8,
@@ -471,17 +473,17 @@
                     Ok(v) => v,
                     Err(e) => {
                         panic!(
-                            "Unable to decode logs.EventWithOverloads1 event: {:#}", e
+                            "Unable to decode logs.EventWithOverloads2 event: {:#}", e
                         )
                     }
                 }
             }
         }
         #[derive(Debug, Clone, PartialEq)]
-        pub struct EventWithOverloads2 {
+        pub struct EventWithOverloads3 {
             pub third: ethabi::Uint,
         }
-        impl EventWithOverloads2 {
+        impl EventWithOverloads3 {
             const TOPIC_ID: [u8; 32] = [
                 2u8,
                 227u8,
@@ -549,7 +551,7 @@
                     Ok(v) => v,
                     Err(e) => {
                         panic!(
-                            "Unable to decode logs.EventWithOverloads2 event: {:#}", e
+                            "Unable to decode logs.EventWithOverloads3 event: {:#}", e
                         )
                     }
                 }

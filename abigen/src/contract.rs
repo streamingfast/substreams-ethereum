@@ -24,10 +24,13 @@ impl<'a> From<&'a ethabi::Contract> for Contract {
         let mut events: Vec<(String, ethabi::Event)> = vec![];
 
         for overloads in c.events.values() {
+            let count = overloads.len();
+
             for (index, event) in overloads.iter().enumerate() {
-                let name = match index {
-                    0 => event.name.clone(),
-                    _ => format!("{}{}", event.name, index),
+                let name = if count <= 1 {
+                    event.name.clone()
+                } else {
+                    format!("{}{}", event.name, index + 1)
                 };
 
                 events.push((name, event.clone()));
