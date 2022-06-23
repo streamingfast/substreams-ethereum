@@ -40,7 +40,7 @@ This means changes to Protobuf files must be manually re-generated and commit, s
 - Commit everything with message `Preparing release of ${version}`.
 - `./bin/release.sh v${version}` (Add `-f` before `v${version}` to doing the real non-dry mode)
 - If everything went well, `git tag ${version}`
-- Git push everything
+- Git push everything (`git push origin develop v${version}`)
 
 You can then update the https://github.com/streamingfast/substreams-template with the latest.
 
