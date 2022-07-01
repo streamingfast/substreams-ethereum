@@ -1,6 +1,9 @@
 pub mod pb;
 pub mod rpc;
 
+/// Helpers to deal with block sources.
+pub mod block_view;
+
 mod abi;
 mod externs;
 
