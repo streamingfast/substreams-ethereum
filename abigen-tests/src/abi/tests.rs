@@ -66,10 +66,12 @@
                             &[ethabi::ParamType::Address],
                             log.topics[1usize].as_ref(),
                         )
-                        .map_err(|e| format!(
-                            "unable to decode param 'first' from topic of type 'address': {}",
-                            e
-                        ))?
+                        .map_err(|e| {
+                            format!(
+                                "unable to decode param 'first' from topic of type 'address': {}",
+                                e
+                            )
+                        })?
                         .pop()
                         .expect(INTERNAL_ERR)
                         .into_address()
@@ -159,10 +161,12 @@
                             &[ethabi::ParamType::Address],
                             log.topics[1usize].as_ref(),
                         )
-                        .map_err(|e| format!(
-                            "unable to decode param 'first' from topic of type 'address': {}",
-                            e
-                        ))?
+                        .map_err(|e| {
+                            format!(
+                                "unable to decode param 'first' from topic of type 'address': {}",
+                                e
+                            )
+                        })?
                         .pop()
                         .expect(INTERNAL_ERR)
                         .into_address()
@@ -173,10 +177,12 @@
                             &[ethabi::ParamType::Uint(256usize)],
                             log.topics[2usize].as_ref(),
                         )
-                        .map_err(|e| format!(
-                            "unable to decode param 'third' from topic of type 'uint256': {}",
-                            e
-                        ))?
+                        .map_err(|e| {
+                            format!(
+                                "unable to decode param 'third' from topic of type 'uint256': {}",
+                                e
+                            )
+                        })?
                         .pop()
                         .expect(INTERNAL_ERR)
                         .into_uint()
@@ -273,10 +279,12 @@
                             &[ethabi::ParamType::Address],
                             log.topics[1usize].as_ref(),
                         )
-                        .map_err(|e| format!(
-                            "unable to decode param 'first' from topic of type 'address': {}",
-                            e
-                        ))?
+                        .map_err(|e| {
+                            format!(
+                                "unable to decode param 'first' from topic of type 'address': {}",
+                                e
+                            )
+                        })?
                         .pop()
                         .expect(INTERNAL_ERR)
                         .into_address()
@@ -287,10 +295,12 @@
                             &[ethabi::ParamType::Address],
                             log.topics[2usize].as_ref(),
                         )
-                        .map_err(|e| format!(
-                            "unable to decode param 'fourth' from topic of type 'address': {}",
-                            e
-                        ))?
+                        .map_err(|e| {
+                            format!(
+                                "unable to decode param 'fourth' from topic of type 'address': {}",
+                                e
+                            )
+                        })?
                         .pop()
                         .expect(INTERNAL_ERR)
                         .into_address()
@@ -378,10 +388,12 @@
                             &[ethabi::ParamType::Address],
                             log.topics[1usize].as_ref(),
                         )
-                        .map_err(|e| format!(
-                            "unable to decode param 'first' from topic of type 'address': {}",
-                            e
-                        ))?
+                        .map_err(|e| {
+                            format!(
+                                "unable to decode param 'first' from topic of type 'address': {}",
+                                e
+                            )
+                        })?
                         .pop()
                         .expect(INTERNAL_ERR)
                         .into_address()
@@ -458,10 +470,12 @@
                             &[ethabi::ParamType::String],
                             log.topics[1usize].as_ref(),
                         )
-                        .map_err(|e| format!(
-                            "unable to decode param 'second' from topic of type 'string': {}",
-                            e
-                        ))?
+                        .map_err(|e| {
+                            format!(
+                                "unable to decode param 'second' from topic of type 'string': {}",
+                                e
+                            )
+                        })?
                         .pop()
                         .expect(INTERNAL_ERR)
                         .into_string()
@@ -536,10 +550,12 @@
                             &[ethabi::ParamType::Uint(256usize)],
                             log.topics[1usize].as_ref(),
                         )
-                        .map_err(|e| format!(
-                            "unable to decode param 'third' from topic of type 'uint256': {}",
-                            e
-                        ))?
+                        .map_err(|e| {
+                            format!(
+                                "unable to decode param 'third' from topic of type 'uint256': {}",
+                                e
+                            )
+                        })?
                         .pop()
                         .expect(INTERNAL_ERR)
                         .into_uint()
