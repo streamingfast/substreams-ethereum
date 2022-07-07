@@ -4,6 +4,7 @@ members = [
     "abigen-tests",
     "core",
     "derive",
+    "substreams-ethereum",
 ]
 
 [profile.release]
