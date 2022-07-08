@@ -16,7 +16,7 @@ ethabi = "17.0"
 prost = { version = "0.10.1" }
 prost-types = "0.10.1"
 substreams = { version = "0.0.11" }
-substreams-ethereum-abigen = { version = "0.1.4", path = "../abigen" }
+substreams-ethereum-abigen = { path = "../abigen" }
 substreams-ethereum-derive = { version = "0.1.4", path = "../derive" }
 
 # Required so that ethabi > ethereum-types build correctly under wasm32-unknown-unknown

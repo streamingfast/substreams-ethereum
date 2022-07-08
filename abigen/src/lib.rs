@@ -104,7 +104,7 @@ fn rust_type(input: &ParamType) -> proc_macro2::TokenStream {
         ParamType::Address => quote! { Vec<u8> },
         ParamType::Bytes => quote! { Vec<u8> },
         ParamType::FixedBytes(size) => quote! { [u8; #size] },
-        ParamType::Int(_) => quote! { ethabi::Int },
+        ParamType::Int(_) => quote! { num_bigint::BigInt },
         ParamType::Uint(_) => quote! { ethabi::Uint },
         ParamType::Bool => quote! { bool },
         ParamType::String => quote! { String },
@@ -208,7 +208,7 @@ fn min_data_size(input: &ParamType) -> usize {
 fn from_token(kind: &ParamType, token: &proc_macro2::TokenStream) -> proc_macro2::TokenStream {
     match *kind {
         ParamType::Address => {
-            quote! { #token.into_address().expect(INTERNAL_ERR).as_bytes().to_vec() }
+            quote! { #token.into_address().unwrap().as_bytes().to_vec() }
         }
         ParamType::Bytes => {
             quote! { #token.into_bytes().expect(INTERNAL_ERR) }
@@ -268,12 +268,22 @@ fn decode_topic(
         name, kind
     );
 
-    let decode_topic = quote! {
-        ethabi::decode(&[#syntax_type], #data_token)
-        .map_err(|e| format!(#error_msg, e))?
-        .pop()
-        .expect(INTERNAL_ERR)
+    match kind {
+        ParamType::Int(_) => {
+            quote! {
+                num_bigint::BigInt::from_signed_bytes_be(#data_token)
+            }
+        }
+        _ => {
+            let decode_topic = quote! {
+                ethabi::decode(&[#syntax_type], #data_token)
+                .map_err(|e| format!(#error_msg, e))?
+                .pop()
+                .expect(INTERNAL_ERR)
     };
 
-    from_token(kind, &decode_topic)
+            from_token(kind, &decode_topic)
+        }
+    }
+
 }
