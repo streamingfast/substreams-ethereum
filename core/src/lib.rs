@@ -17,3 +17,10 @@ pub const NULL_ADDRESS: [u8; 20] = [
     0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
     0u8,
 ];
+
+pub trait Event: Sized {
+    const NAME: &'static str;
+
+    fn match_log(log: &crate::pb::eth::v1::Log) -> bool;
+    fn decode(log: &crate::pb::eth::v1::Log) -> Result<Self, String>;
+}

@@ -1,4 +1,4 @@
-use crate::pb::eth::v1 as pb;
+use crate::{pb::eth::v1 as pb, Event};
 
 impl pb::Block {
     /// Iterates over succesful transactions.
@@ -23,6 +23,34 @@ impl pb::Block {
     /// Iterates over logs in receipts of succesful transactions.
     pub fn logs(&self) -> impl Iterator<Item = LogView> {
         self.receipts().map(|receipt| receipt.logs()).flatten()
+    }
+
+    /// Filters logs returned by `self.logs()` for events of type `E` matching any address in
+    /// `addresses`.
+    ///
+    /// Returns an iteratos over pairs of `(event, log)`.
+    pub fn events<'a, E: Event>(
+        &'a self,
+        addresses: &'a [&[u8]],
+    ) -> impl Iterator<Item = (E, LogView)> {
+        self.logs().filter_map(|log| {
+            if !addresses.contains(&log.address()) || !E::match_log(log.log) {
+                return None;
+            }
+
+            match E::decode(&log.log) {
+                Ok(event) => Some((event, log)),
+                Err(err) => {
+                    substreams::log::info!(
+                    "Log for event `{}` at index {} matched but failed to decode with error: {}",
+                    E::NAME,
+                    log.block_index(),
+                    err
+                );
+                    None
+                }
+            }
+        })
     }
 }
 
@@ -164,7 +192,7 @@ impl<'a> LogView<'a> {
     }
 
     pub fn block_index(self) -> u32 {
-        self.log.index
+        self.log.block_index
     }
 
     pub fn ordinal(self) -> u64 {
