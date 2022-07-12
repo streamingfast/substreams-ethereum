@@ -1,5 +1,4 @@
-pub use substreams_ethereum_core::pb;
-pub use substreams_ethereum_core::rpc;
+pub use substreams_ethereum_core::{pb, rpc, NULL_ADDRESS};
 pub use substreams_ethereum_derive::EthabiContract;
 
 #[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
@@ -27,17 +26,6 @@ pub use getrandom;
 ///     }
 /// ```
 pub use substreams_ethereum_abigen::build::Abigen;
-
-/// Represents the null address static array in bytes (20 bytes) which in hex is equivalent
-/// to:
-///
-/// ```text
-/// 0000000000000000000000000000000000000000
-/// ```
-pub const NULL_ADDRESS: [u8; 20] = [
-    0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
-    0u8,
-];
 
 /// This macro can be used to import an Ethereum ABI file in JSON format and generate all the
 /// required bindings for ABI decoding/encoding in Rust, targetting `substreams` developer
