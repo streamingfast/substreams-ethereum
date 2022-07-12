@@ -20,6 +20,7 @@ syn = { version = "1.0.95", default-features = false, features = ["derive", "par
 quote = "1.0.2"
 proc-macro2 = "1.0.7"
 prettyplease = "0.1"
+substreams-ethereum-core = { version = "0.1.4", path = "../core" }
 
 [dev-dependencies]
 pretty_assertions = "1.2.1"

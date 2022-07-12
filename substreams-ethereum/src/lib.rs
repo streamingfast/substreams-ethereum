@@ -1,4 +1,4 @@
-pub use substreams_ethereum_core::{pb, rpc, NULL_ADDRESS};
+pub use substreams_ethereum_core::{pb, rpc, Event, NULL_ADDRESS};
 pub use substreams_ethereum_derive::EthabiContract;
 
 #[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
