@@ -8,10 +8,7 @@ impl pb::Block {
 
     /// Iterates over transaction receipts of succesful transactions.
     pub fn receipts(&self) -> impl Iterator<Item = ReceiptView> {
-        self.transactions().map(|transaction| ReceiptView {
-            transaction,
-            receipt: transaction.receipt.as_ref().unwrap(),
-        })
+        self.transactions().map(|transaction| transaction.receipt())
     }
 
     /// Iterates over logs in receipts of succesful transactions.
@@ -19,31 +16,33 @@ impl pb::Block {
         self.receipts().map(|receipt| receipt.logs()).flatten()
     }
 
-    /// Filters logs returned by `self.logs()` for events of type `E` matching any address in
-    /// `addresses`.
+    /// A convenience for handlers that process a single type of event. Returns an iterator over
+    /// pairs of `(event, log)`.
     ///
-    /// Returns an iteratos over pairs of `(event, log)`.
+    /// If you need to process multiple event types in a single handler, try something like:
+    /// ```ignore
+    /// for log in block.logs() {
+    ///     if !addresses.contains(&log.address()) {
+    ///        continue;
+    ///     }
+    ///     
+    ///     if let Some(event) = E1::match_and_decode(log) {
+    ///         // Process events of type E1
+    ///     } else if let Some(event) = E2::match_and_decode(log) {
+    ///         // Process events of type E2
+    ///     }
+    /// }
+    /// ```
     pub fn events<'a, E: Event>(
         &'a self,
         addresses: &'a [&[u8]],
     ) -> impl Iterator<Item = (E, LogView)> {
         self.logs().filter_map(|log| {
-            if !addresses.contains(&log.address()) || !E::match_log(log.log) {
+            if !addresses.contains(&log.address()) {
                 return None;
             }
 
-            match E::decode(&log.log) {
-                Ok(event) => Some((event, log)),
-                Err(err) => {
-                    substreams::log::info!(
-                    "Log for event `{}` at index {} matched but failed to decode with error: {}",
-                    E::NAME,
-                    log.block_index(),
-                    err
-                );
-                    None
-                }
-            }
+            E::match_and_decode(log).map(|e| (e, log))
         })
     }
 }
@@ -116,5 +115,11 @@ impl<'a> LogView<'a> {
 
     pub fn ordinal(self) -> u64 {
         self.log.ordinal
+    }
+}
+
+impl AsRef<pb::Log> for LogView<'_> {
+    fn as_ref(&self) -> &pb::Log {
+        self.log
     }
 }
