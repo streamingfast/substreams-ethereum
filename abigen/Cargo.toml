@@ -21,9 +21,5 @@ quote = "1.0.2"
 proc-macro2 = "1.0.7"
 prettyplease = "0.1"
 
-# Required so that ethabi > ethereum-types build correctly under wasm32-unknown-unknown
-[target.wasm32-unknown-unknown.dependencies]
-getrandom = { version = "0.2", features = ["custom"] }
-
 [dev-dependencies]
 pretty_assertions = "1.2.1"
