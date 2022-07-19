@@ -154,11 +154,6 @@ impl Event {
         decode_fields.extend(self.decode_indexed_fields.iter());
         decode_fields.extend(self.decode_unindexed_fields.iter());
 
-        let must_decode_error_msg = format!(
-            "Unable to decode logs.{} event: {{:#}}",
-            self.name.to_upper_camel_case()
-        );
-
         let min_data_size = &self.min_data_size;
         let log_match_data = match &self.fixed_data_size {
             Some(fixed_data_size) => {
@@ -204,13 +199,6 @@ impl Event {
                     Ok(Self {
                         #(#decode_fields),*
                     })
-                }
-
-                pub fn must_decode(log: &substreams_ethereum::pb::eth::v1::Log) -> Self {
-                    match Self::decode(log) {
-                        Ok(v) => v,
-                        Err(e) => panic!(#must_decode_error_msg, e),
-                    }
                 }
             }
 
@@ -298,12 +286,6 @@ mod tests {
                         log: &substreams_ethereum::pb::eth::v1::Log
                     ) -> Result<Self, String> {
                         Ok(Self {})
-                    }
-                    pub fn must_decode(log: &substreams_ethereum::pb::eth::v1::Log) -> Self {
-                        match Self::decode(log) {
-                            Ok(v) => v,
-                            Err(e) => panic!("Unable to decode logs.Hello event: {:#}", e),
-                        }
                     }
                 }
                 impl substreams_ethereum::Event for Hello {
@@ -404,12 +386,6 @@ mod tests {
                                 .as_bytes()
                                 .to_vec()
                         })
-                    }
-                    pub fn must_decode(log: &substreams_ethereum::pb::eth::v1::Log) -> Self {
-                        match Self::decode(log) {
-                            Ok(v) => v,
-                            Err(e) => panic!("Unable to decode logs.One event: {:#}", e),
-                        }
                     }
                 }
                 impl substreams_ethereum::Event for One {
@@ -547,12 +523,6 @@ mod tests {
                                 .into_uint()
                                 .expect(INTERNAL_ERR)
                         })
-                    }
-                    pub fn must_decode(log: &substreams_ethereum::pb::eth::v1::Log) -> Self {
-                        match Self::decode(log) {
-                            Ok(v) => v,
-                            Err(e) => panic!("Unable to decode logs.Transfer event: {:#}", e),
-                        }
                     }
                 }
                 impl substreams_ethereum::Event for Transfer {
@@ -692,12 +662,6 @@ mod tests {
                                 .into_uint()
                                 .expect(INTERNAL_ERR)
                         })
-                    }
-                    pub fn must_decode(log: &substreams_ethereum::pb::eth::v1::Log) -> Self {
-                        match Self::decode(log) {
-                            Ok(v) => v,
-                            Err(e) => panic!("Unable to decode logs.Transfer event: {:#}", e),
-                        }
                     }
                 }
                 impl substreams_ethereum::Event for Transfer {

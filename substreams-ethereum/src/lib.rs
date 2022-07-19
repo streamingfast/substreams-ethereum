@@ -59,11 +59,6 @@ pub use substreams_ethereum_abigen::build::Abigen;
 ///                // ...
 ///                # todo!()
 ///             }
-///
-///             pub fn must_decode(log: &substreams_ethereum::pb::eth::v1::Log) -> Transfer {
-///                // ...
-///                # todo!()
-///             }
 ///         }
 ///
 ///         // ... Other events ...

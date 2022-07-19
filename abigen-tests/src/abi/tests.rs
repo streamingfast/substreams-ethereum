@@ -85,16 +85,6 @@
                         .expect(INTERNAL_ERR),
                 })
             }
-            pub fn must_decode(log: &substreams_ethereum::pb::eth::v1::Log) -> Self {
-                match Self::decode(log) {
-                    Ok(v) => v,
-                    Err(e) => {
-                        panic!(
-                            "Unable to decode logs.EventAddressIdxString event: {:#}", e
-                        )
-                    }
-                }
-            }
         }
         impl substreams_ethereum::Event for EventAddressIdxString {
             const NAME: &'static str = "EventAddressIdxString";
@@ -209,17 +199,6 @@
                         .into_string()
                         .expect(INTERNAL_ERR),
                 })
-            }
-            pub fn must_decode(log: &substreams_ethereum::pb::eth::v1::Log) -> Self {
-                match Self::decode(log) {
-                    Ok(v) => v,
-                    Err(e) => {
-                        panic!(
-                            "Unable to decode logs.EventAddressIdxStringUint256IdxBytes event: {:#}",
-                            e
-                        )
-                    }
-                }
             }
         }
         impl substreams_ethereum::Event for EventAddressIdxStringUint256IdxBytes {
@@ -341,17 +320,6 @@
                         .expect(INTERNAL_ERR),
                 })
             }
-            pub fn must_decode(log: &substreams_ethereum::pb::eth::v1::Log) -> Self {
-                match Self::decode(log) {
-                    Ok(v) => v,
-                    Err(e) => {
-                        panic!(
-                            "Unable to decode logs.EventAddressIdxUint256Uint256AddressIdx event: {:#}",
-                            e
-                        )
-                    }
-                }
-            }
         }
         impl substreams_ethereum::Event for EventAddressIdxUint256Uint256AddressIdx {
             const NAME: &'static str = "EventAddressIdxUint256Uint256AddressIdx";
@@ -435,16 +403,6 @@
                         .to_vec(),
                 })
             }
-            pub fn must_decode(log: &substreams_ethereum::pb::eth::v1::Log) -> Self {
-                match Self::decode(log) {
-                    Ok(v) => v,
-                    Err(e) => {
-                        panic!(
-                            "Unable to decode logs.EventWithOverloads1 event: {:#}", e
-                        )
-                    }
-                }
-            }
         }
         impl substreams_ethereum::Event for EventWithOverloads1 {
             const NAME: &'static str = "EventWithOverloads1";
@@ -526,16 +484,6 @@
                         .expect(INTERNAL_ERR),
                 })
             }
-            pub fn must_decode(log: &substreams_ethereum::pb::eth::v1::Log) -> Self {
-                match Self::decode(log) {
-                    Ok(v) => v,
-                    Err(e) => {
-                        panic!(
-                            "Unable to decode logs.EventWithOverloads2 event: {:#}", e
-                        )
-                    }
-                }
-            }
         }
         impl substreams_ethereum::Event for EventWithOverloads2 {
             const NAME: &'static str = "EventWithOverloads2";
@@ -616,16 +564,6 @@
                         .into_uint()
                         .expect(INTERNAL_ERR),
                 })
-            }
-            pub fn must_decode(log: &substreams_ethereum::pb::eth::v1::Log) -> Self {
-                match Self::decode(log) {
-                    Ok(v) => v,
-                    Err(e) => {
-                        panic!(
-                            "Unable to decode logs.EventWithOverloads3 event: {:#}", e
-                        )
-                    }
-                }
             }
         }
         impl substreams_ethereum::Event for EventWithOverloads3 {
