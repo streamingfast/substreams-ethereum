@@ -1,3 +1,10 @@
+
+## Next
+
+* Changed crate structure to separate `substreams-ethereum-core` from `substreams-ethereum`.
+* Added helpers to `pb::Block` and `pb::TransactionTrace` to facilitate iterating over events.
+* Removed `Event::must_decode`, use the new `Event::match_and_decode` instead.
+
 ## [v0.1.4](https://github.com/streamingfast/substreams-ethereum/releases/tag/0.1.4)
 
 * Fixed bug when an ABI has multiple times the same Event's name but with a different signature.

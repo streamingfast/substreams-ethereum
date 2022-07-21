@@ -154,6 +154,7 @@ impl<'a> From<(&'a String, &'a ethabi::Event)> for Event {
 impl Event {
     /// Generates rust interface for contract's event.
     pub fn generate_event(&self) -> TokenStream {
+        let name = &self.name;
         let topic_count = &self.topic_count;
         let topic_hash_bytes: Vec<_> = self
             .topic_hash
@@ -169,11 +170,6 @@ impl Event {
         );
         decode_fields.extend(self.decode_indexed_fields.iter());
         decode_fields.extend(self.decode_unindexed_fields.iter());
-
-        let must_decode_error_msg = format!(
-            "Unable to decode logs.{} event: {{:#}}",
-            self.name.to_upper_camel_case()
-        );
 
         let min_data_size = &self.min_data_size;
         let log_match_data = match &self.fixed_data_size {
@@ -221,12 +217,15 @@ impl Event {
                         #(#decode_fields),*
                     })
                 }
+            }
 
-                pub fn must_decode(log: &substreams_ethereum::pb::eth::v1::Log) -> Self {
-                    match Self::decode(log) {
-                        Ok(v) => v,
-                        Err(e) => panic!(#must_decode_error_msg, e),
-                    }
+            impl substreams_ethereum::Event for #camel_name {
+                const NAME: &'static str = #name;
+                fn match_log(log: &substreams_ethereum::pb::eth::v1::Log) -> bool {
+                    Self::match_log(log)
+                }
+                fn decode(log: &substreams_ethereum::pb::eth::v1::Log) -> Result<Self, String> {
+                    Self::decode(log)
                 }
             }
         }
@@ -305,11 +304,14 @@ mod tests {
                     ) -> Result<Self, String> {
                         Ok(Self {})
                     }
-                    pub fn must_decode(log: &substreams_ethereum::pb::eth::v1::Log) -> Self {
-                        match Self::decode(log) {
-                            Ok(v) => v,
-                            Err(e) => panic!("Unable to decode logs.Hello event: {:#}", e),
-                        }
+                }
+                impl substreams_ethereum::Event for Hello {
+                    const NAME: &'static str = "hello";
+                    fn match_log(log: &substreams_ethereum::pb::eth::v1::Log) -> bool {
+                        Self::match_log(log)
+                    }
+                    fn decode(log: &substreams_ethereum::pb::eth::v1::Log) -> Result<Self, String> {
+                        Self::decode(log)
                     }
                 }
             },
@@ -402,11 +404,14 @@ mod tests {
                                 .to_vec()
                         })
                     }
-                    pub fn must_decode(log: &substreams_ethereum::pb::eth::v1::Log) -> Self {
-                        match Self::decode(log) {
-                            Ok(v) => v,
-                            Err(e) => panic!("Unable to decode logs.One event: {:#}", e),
-                        }
+                }
+                impl substreams_ethereum::Event for One {
+                    const NAME: &'static str = "one";
+                    fn match_log(log: &substreams_ethereum::pb::eth::v1::Log) -> bool {
+                        Self::match_log(log)
+                    }
+                    fn decode(log: &substreams_ethereum::pb::eth::v1::Log) -> Result<Self, String> {
+                        Self::decode(log)
                     }
                 }
             },
@@ -536,11 +541,14 @@ mod tests {
                                 .expect(INTERNAL_ERR)
                         })
                     }
-                    pub fn must_decode(log: &substreams_ethereum::pb::eth::v1::Log) -> Self {
-                        match Self::decode(log) {
-                            Ok(v) => v,
-                            Err(e) => panic!("Unable to decode logs.Transfer event: {:#}", e),
-                        }
+                }
+                impl substreams_ethereum::Event for Transfer {
+                    const NAME: &'static str = "Transfer";
+                    fn match_log(log: &substreams_ethereum::pb::eth::v1::Log) -> bool {
+                        Self::match_log(log)
+                    }
+                    fn decode(log: &substreams_ethereum::pb::eth::v1::Log) -> Result<Self, String> {
+                        Self::decode(log)
                     }
                 }
             },
@@ -672,11 +680,14 @@ mod tests {
                                 .expect(INTERNAL_ERR)
                         })
                     }
-                    pub fn must_decode(log: &substreams_ethereum::pb::eth::v1::Log) -> Self {
-                        match Self::decode(log) {
-                            Ok(v) => v,
-                            Err(e) => panic!("Unable to decode logs.Transfer event: {:#}", e),
-                        }
+                }
+                impl substreams_ethereum::Event for Transfer {
+                    const NAME: &'static str = "Transfer";
+                    fn match_log(log: &substreams_ethereum::pb::eth::v1::Log) -> bool {
+                        Self::match_log(log)
+                    }
+                    fn decode(log: &substreams_ethereum::pb::eth::v1::Log) -> Result<Self, String> {
+                        Self::decode(log)
                     }
                 }
             },
