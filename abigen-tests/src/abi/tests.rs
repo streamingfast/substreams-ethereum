@@ -61,6 +61,7 @@
                         log.data.as_ref(),
                     )
                     .map_err(|e| format!("unable to decode log.data: {}", e))?;
+                values.reverse();
                 Ok(Self {
                     first: ethabi::decode(
                             &[ethabi::ParamType::Address],
@@ -157,6 +158,7 @@
                         log.data.as_ref(),
                     )
                     .map_err(|e| format!("unable to decode log.data: {}", e))?;
+                values.reverse();
                 Ok(Self {
                     first: ethabi::decode(
                             &[ethabi::ParamType::Address],
@@ -188,15 +190,15 @@
                         .expect(INTERNAL_ERR)
                         .into_uint()
                         .expect(INTERNAL_ERR),
-                    fourth: values
-                        .pop()
-                        .expect(INTERNAL_ERR)
-                        .into_bytes()
-                        .expect(INTERNAL_ERR),
                     second: values
                         .pop()
                         .expect(INTERNAL_ERR)
                         .into_string()
+                        .expect(INTERNAL_ERR),
+                    fourth: values
+                        .pop()
+                        .expect(INTERNAL_ERR)
+                        .into_bytes()
                         .expect(INTERNAL_ERR),
                 })
             }
@@ -275,6 +277,7 @@
                         log.data.as_ref(),
                     )
                     .map_err(|e| format!("unable to decode log.data: {}", e))?;
+                values.reverse();
                 Ok(Self {
                     first: ethabi::decode(
                             &[ethabi::ParamType::Address],
@@ -308,12 +311,12 @@
                         .expect(INTERNAL_ERR)
                         .as_bytes()
                         .to_vec(),
-                    third: values
+                    second: values
                         .pop()
                         .expect(INTERNAL_ERR)
                         .into_uint()
                         .expect(INTERNAL_ERR),
-                    second: values
+                    third: values
                         .pop()
                         .expect(INTERNAL_ERR)
                         .into_uint()

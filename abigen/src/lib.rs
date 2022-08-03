@@ -104,7 +104,7 @@ fn rust_type(input: &ParamType) -> proc_macro2::TokenStream {
         ParamType::Address => quote! { Vec<u8> },
         ParamType::Bytes => quote! { Vec<u8> },
         ParamType::FixedBytes(size) => quote! { [u8; #size] },
-        ParamType::Int(_) => quote! { ethabi::Int },
+        ParamType::Int(_) => quote! { num_bigint::BigInt },
         ParamType::Uint(_) => quote! { ethabi::Uint },
         ParamType::Bool => quote! { bool },
         ParamType::String => quote! { String },
@@ -268,12 +268,21 @@ fn decode_topic(
         name, kind
     );
 
-    let decode_topic = quote! {
-        ethabi::decode(&[#syntax_type], #data_token)
-        .map_err(|e| format!(#error_msg, e))?
-        .pop()
-        .expect(INTERNAL_ERR)
-    };
+    match kind {
+        ParamType::Int(_) => {
+            quote! {
+                num_bigint::BigInt::from_signed_bytes_be(#data_token)
+            }
+        }
+        _ => {
+            let decode_topic = quote! {
+                        ethabi::decode(&[#syntax_type], #data_token)
+                        .map_err(|e| format!(#error_msg, e))?
+                        .pop()
+                        .expect(INTERNAL_ERR)
+            };
 
-    from_token(kind, &decode_topic)
+            from_token(kind, &decode_topic)
+        }
+    }
 }
