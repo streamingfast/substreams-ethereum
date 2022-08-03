@@ -276,14 +276,13 @@ fn decode_topic(
         }
         _ => {
             let decode_topic = quote! {
-                ethabi::decode(&[#syntax_type], #data_token)
-                .map_err(|e| format!(#error_msg, e))?
-                .pop()
-                .expect(INTERNAL_ERR)
-    };
+                        ethabi::decode(&[#syntax_type], #data_token)
+                        .map_err(|e| format!(#error_msg, e))?
+                        .pop()
+                        .expect(INTERNAL_ERR)
+            };
 
             from_token(kind, &decode_topic)
         }
     }
-
 }
