@@ -76,7 +76,7 @@
                         .pop()
                         .expect(INTERNAL_ERR)
                         .into_address()
-                        .unwrap()
+                        .expect(INTERNAL_ERR)
                         .as_bytes()
                         .to_vec(),
                     second: values
@@ -173,7 +173,7 @@
                         .pop()
                         .expect(INTERNAL_ERR)
                         .into_address()
-                        .unwrap()
+                        .expect(INTERNAL_ERR)
                         .as_bytes()
                         .to_vec(),
                     third: ethabi::decode(
@@ -292,7 +292,7 @@
                         .pop()
                         .expect(INTERNAL_ERR)
                         .into_address()
-                        .unwrap()
+                        .expect(INTERNAL_ERR)
                         .as_bytes()
                         .to_vec(),
                     fourth: ethabi::decode(
@@ -308,7 +308,7 @@
                         .pop()
                         .expect(INTERNAL_ERR)
                         .into_address()
-                        .unwrap()
+                        .expect(INTERNAL_ERR)
                         .as_bytes()
                         .to_vec(),
                     second: values
@@ -401,7 +401,7 @@
                         .pop()
                         .expect(INTERNAL_ERR)
                         .into_address()
-                        .unwrap()
+                        .expect(INTERNAL_ERR)
                         .as_bytes()
                         .to_vec(),
                 })

@@ -506,6 +506,7 @@ mod tests {
                                 log.data.as_ref()
                             )
                             .map_err(|e| format!("unable to decode log.data: {}", e))?;
+                        values.reverse();
                         Ok(Self {
                             from: ethabi::decode(
                                     &[ethabi::ParamType::Address],
