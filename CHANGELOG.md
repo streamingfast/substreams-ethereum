@@ -5,6 +5,12 @@
 * Added helpers to `pb::Block` and `pb::TransactionTrace` to facilitate iterating over events.
 * Removed `Event::must_decode`, use the new `Event::match_and_decode` instead.
 
+## [v0.1.5](https://github.com/streamingfast/substreams-ethereum/releases/tag/0.1.5)
+
+* Adding helper functions for block handling (transactions, receipts and logs)
+* Rework of crate structure
+* Fix bug where underlying `ethabi` library was incorrectly decoding an `int24` to an un-overflowing value. This resulted  in always having a positive number. Switching to using `BigInt`, proper overflowing of int24 value makes it that we can have negative values.
+
 ## [v0.1.4](https://github.com/streamingfast/substreams-ethereum/releases/tag/0.1.4)
 
 * Fixed bug when an ABI has multiple times the same Event's name but with a different signature.
