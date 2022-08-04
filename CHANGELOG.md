@@ -5,6 +5,10 @@
 * Added helpers to `pb::Block` and `pb::TransactionTrace` to facilitate iterating over events.
 * Removed `Event::must_decode`, use the new `Event::match_and_decode` instead.
 
+## [v0.1.6](https://github.com/streamingfast/substreams-ethereum/releases/tag/0.1.6)
+
+* Bump versions in release and bump substreams create dependency
+
 ## [v0.1.5](https://github.com/streamingfast/substreams-ethereum/releases/tag/0.1.5)
 
 * Adding helper functions for block handling (transactions, receipts and logs)
