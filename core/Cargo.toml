@@ -22,3 +22,7 @@ prost-build = "0.10.1"
 
 [dev-dependencies]
 anyhow = "1"
+
+# Required so that ethabi > ethereum-types build correctly under wasm32-unknown-unknown
+[target.wasm32-unknown-unknown.dependencies]
+getrandom = { version = "0.2", features = ["custom"] }
