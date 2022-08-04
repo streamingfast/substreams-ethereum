@@ -72,7 +72,9 @@ main() {
     args="--dry-run $args"
   fi
 
-  #We need to publish one crate at a time, one after the one
+  cargo publish $args --target wasm32-unknown-unknown -p substreams-ethereum-core
+
+  maybe_wait_publish
   cargo publish $args --target wasm32-unknown-unknown -p substreams-ethereum-abigen
 
   maybe_wait_publish
