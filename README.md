@@ -37,6 +37,8 @@ This means changes to Protobuf files must be manually re-generated and commit, s
 - Find & replace all occurrences of Regex `^version = "[^"]+"` in all `Cargo.toml` files to `version = "${version}"`
 - Find & replace all occurrences of Regex `^substreams-ethereum(-[^ =]+)\s*=\s*\{\s*version\s*=\s*"[^"]+"` in all `Cargo.toml` files to `substreams-ethereum$1 = { version = "${version}"`
 - Update the `CHANGELOG.md` to update the `## Unreleased` header to become `## [v${version}](https://github.com/streamingfast/substreams-ethereum/releases/tag/${version})`
+- Ensure that Keybase is running and logged in
+- Ensure that `cargo login` has been done in your terminal
 - Commit everything with message `Preparing release of ${version}`.
 - `./bin/release.sh v${version}` (Add `-f` before `v${version}` to doing the real non-dry mode)
 - If everything went well, `git tag ${version}`
