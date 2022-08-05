@@ -6,7 +6,7 @@ impl pb::Block {
         self.transaction_traces.iter().filter(|tx| tx.status == 1)
     }
 
-    /// Iterates over transaction receipts of succesful transactions.
+    /// Iterates over transaction receipts of successful transactions.
     pub fn receipts(&self) -> impl Iterator<Item = ReceiptView> {
         self.transactions().map(|transaction| transaction.receipt())
     }

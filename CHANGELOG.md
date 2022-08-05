@@ -1,9 +1,9 @@
 
 ## Next
 
-* Changed crate structure to separate `substreams-ethereum-core` from `substreams-ethereum`.
-* Added helpers to `pb::Block` and `pb::TransactionTrace` to facilitate iterating over events.
-* Removed `Event::must_decode`, use the new `Event::match_and_decode` instead.
+## [v0.1.7](https://github.com/streamingfast/substreams-ethereum/releases/tag/0.1.7)
+
+* Bumped `substreams` version to `0.0.17`
 
 ## [v0.1.6](https://github.com/streamingfast/substreams-ethereum/releases/tag/0.1.6)
 
@@ -14,6 +14,9 @@
 * Adding helper functions for block handling (transactions, receipts and logs)
 * Rework of crate structure
 * Fix bug where underlying `ethabi` library was incorrectly decoding an `int24` to an un-overflowing value. This resulted  in always having a positive number. Switching to using `BigInt`, proper overflowing of int24 value makes it that we can have negative values.
+* Changed crate structure to separate `substreams-ethereum-core` from `substreams-ethereum`.
+* Added helpers to `pb::Block` and `pb::TransactionTrace` to facilitate iterating over events.
+* Removed `Event::must_decode`, use the new `Event::match_and_decode` instead.
 
 ## [v0.1.4](https://github.com/streamingfast/substreams-ethereum/releases/tag/0.1.4)
 
