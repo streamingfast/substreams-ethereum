@@ -1,6 +1,6 @@
 [package]
 name = "substreams-ethereum-core"
-version = "0.1.7"
+version = "0.1.8"
 edition = "2021"
 description = "Substreams development kit for Ethereum chains, contains Firehose Block model and helpers as well as utilities for Ethereum ABI encoding/decoding."
 homepage = "https://substreams.streamingfast.io/"
@@ -15,7 +15,7 @@ rust-version = "1.60"
 ethabi = "17.0"
 prost = { version = "0.10.1" }
 prost-types = "0.10.1"
-substreams = { version = "~0.0.16" }
+substreams = { version = "~0.0.18" }
 
 [build-dependencies]
 prost-build = "0.10.1"
