@@ -69,7 +69,7 @@ main() {
 
   args="${CARGO_PUBISH_ARGS:-}"
   if [[ "$force" == "false" ]]; then
-    args="--dry-run $args"
+    args="--dry-run --allow-dirty $args"
   fi
 
   cargo publish $args --target wasm32-unknown-unknown -p substreams-ethereum-core
