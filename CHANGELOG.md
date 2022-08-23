@@ -1,6 +1,20 @@
 
 ## Next
 
+## Unreleased
+
+* **Breaking** Replaced `substreams-ethereum/pb::eth::v1` to `substreams-ethereum/pb::eth::v2` (perform a global replace of any references of `substreams-ethereum/pb::eth::v1` to `substreams-ethereum/pb::eth::v2` and don't forget to re-generate ABI bindings also which depends on `substreams-ethereum/pb::eth::v1`).
+
+* **Breaking** `substreams-ethereum/pb::eth::rpc::RpcCall#method_signature` is now named `data`.
+
+* **Breaking** Bumped `prost` to `^0.11.0` (will requires you to bump `substreams = "~0.0.19"`).
+
+## [v0.1.9](https://github.com/streamingfast/substreams-ethereum/releases/tag/0.1.9)
+
+* Fixed packaging issue.
+
+> Skipped `v0.1.8` by mistake
+
 ## [v0.1.7](https://github.com/streamingfast/substreams-ethereum/releases/tag/0.1.7)
 
 * Bumped `substreams` version to `0.0.17`

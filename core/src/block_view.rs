@@ -1,4 +1,4 @@
-use crate::{pb::eth::v1 as pb, Event};
+use crate::{pb::eth::v2 as pb, Event};
 
 impl pb::Block {
     /// Iterates over succesful transactions.
@@ -25,7 +25,7 @@ impl pb::Block {
     ///     if !addresses.contains(&log.address()) {
     ///        continue;
     ///     }
-    ///     
+    ///
     ///     if let Some(event) = E1::match_and_decode(log) {
     ///         // Process events of type E1
     ///     } else if let Some(event) = E2::match_and_decode(log) {

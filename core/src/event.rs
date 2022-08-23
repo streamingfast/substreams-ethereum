@@ -1,4 +1,4 @@
-use crate::pb::eth::v1::Log;
+use crate::pb::eth::v2::Log;
 
 pub trait Event: Sized {
     const NAME: &'static str;

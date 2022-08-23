@@ -50,12 +50,12 @@ pub use substreams_ethereum_abigen::build::Abigen;
 ///         }
 ///
 ///         impl Transfer {
-///             pub fn match_log(log: &substreams_ethereum::pb::eth::v1::Log) -> bool {
+///             pub fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
 ///                // ...
 ///                # todo!()
 ///             }
 ///
-///             pub fn decode(log: &substreams_ethereum::pb::eth::v1::Log) -> Result<Transfer, String> {
+///             pub fn decode(log: &substreams_ethereum::pb::eth::v2::Log) -> Result<Transfer, String> {
 ///                // ...
 ///                # todo!()
 ///             }

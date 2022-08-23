@@ -8,9 +8,9 @@ rust-version = "1.60"
 
 [dependencies]
 ethabi = "17.0"
-prost = { version = "0.10.1" }
-prost-types = "0.10.1"
-substreams = { version = "~0.0.18" }
+prost = { version = "^0.11.0" }
+prost-types = "^0.11.0"
+substreams = { version = "~0.0.19" }
 substreams-ethereum = { version = "0.1.9", path = "../substreams-ethereum" }
 
 [build-dependencies]

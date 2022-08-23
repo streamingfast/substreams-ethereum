@@ -13,7 +13,7 @@ mod tests {
         use tests::events::EventAddressIdxString as Event;
 
         // ethc tools encode --abi ./abigen-tests/abi/tests.json event 'EventAddressIdxString' "0xab07a50AD459B41Fe065f7BBAb866D5390e9f705"  "second string"
-        let log = pb::eth::v1::Log{
+        let log = pb::eth::v2::Log{
             address: hex!("0000000000000000000000000000000000000000").to_vec(),
             topics: vec![
                 hex!("3cdb310171efa4c08617535044016fb81ec0a9db468c06b008d2f446ee9346a8").to_vec(),
@@ -40,7 +40,7 @@ mod tests {
         use tests::events::EventAddressIdxStringUint256IdxBytes as Event;
 
         // ethc tools encode --abi ./abigen-tests/abi/tests.json event 'EventAddressIdxStringUint256IdxBytes' "0xab07a50AD459B41Fe065f7BBAb866D5390e9f705" "second string" "0x1000000000" "0xabdeff90"
-        let log = pb::eth::v1::Log{
+        let log = pb::eth::v2::Log{
             address: hex!("0000000000000000000000000000000000000000").to_vec(),
             topics: vec![
                 hex!("13c827c8aff69c8c51a406825a22313c37b01da4b8e8cc1ab95ff9e5abd433a9").to_vec(),
@@ -71,7 +71,7 @@ mod tests {
         use tests::events::EventAddressIdxUint256Uint256AddressIdx as Event;
 
         // ethc tools encode --abi ./abigen-tests/abi/tests.json event 'EventAddressIdxUint256Uint256AddressIdx' "0xab07a50AD459B41Fe065f7BBAb866D5390e9f705"  "0x1000000000000000" "0x2000000000000000000" "0xcd91a50AD459B41Fe065f7BBAb866D5390e945fa"
-        let log = pb::eth::v1::Log{
+        let log = pb::eth::v2::Log{
             address: hex!("0000000000000000000000000000000000000000").to_vec(),
             topics: vec![
                 hex!("bad15ff417f376311ddc6f3dcc484cb8b893ca791bd927de626adc9bd8f7d97d").to_vec(),

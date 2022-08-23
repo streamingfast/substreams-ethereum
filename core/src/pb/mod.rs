@@ -1,6 +1,6 @@
 #[rustfmt::skip]
-#[path = "sf.ethereum.type.v1.rs"]
-mod sf_ethereum_type_v1;
+#[path = "sf.ethereum.type.v2.rs"]
+mod sf_ethereum_type_v2;
 
 #[rustfmt::skip]
 #[path = "sf.ethereum.substreams.v1.rs"]
@@ -8,8 +8,8 @@ mod sf_ethereum_type_v1;
 mod sf_ethereum_substreams_v1;
 
 pub mod eth {
-    pub mod v1 {
-        pub use crate::pb::sf_ethereum_type_v1::*;
+    pub mod v2 {
+        pub use crate::pb::sf_ethereum_type_v2::*;
     }
     pub mod rpc {
         pub use crate::pb::sf_ethereum_substreams_v1::*;

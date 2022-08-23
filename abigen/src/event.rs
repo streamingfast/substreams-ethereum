@@ -199,7 +199,7 @@ impl Event {
                 // FIXME: We should generate the [u8; 32] directly and avoid hex_literal crate
                 const TOPIC_ID: [u8; 32] = [#(#topic_hash_bytes),*];
 
-                pub fn match_log(log: &substreams_ethereum::pb::eth::v1::Log) -> bool {
+                pub fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
                     if log.topics.len() != #topic_count {
                         return false;
                     }
@@ -210,7 +210,7 @@ impl Event {
                         == Self::TOPIC_ID;
                 }
 
-                pub fn decode(log: &substreams_ethereum::pb::eth::v1::Log) -> Result<Self, String> {
+                pub fn decode(log: &substreams_ethereum::pb::eth::v2::Log) -> Result<Self, String> {
                     #decode_data
 
                     Ok(Self {
@@ -221,10 +221,10 @@ impl Event {
 
             impl substreams_ethereum::Event for #camel_name {
                 const NAME: &'static str = #name;
-                fn match_log(log: &substreams_ethereum::pb::eth::v1::Log) -> bool {
+                fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
                     Self::match_log(log)
                 }
-                fn decode(log: &substreams_ethereum::pb::eth::v1::Log) -> Result<Self, String> {
+                fn decode(log: &substreams_ethereum::pb::eth::v2::Log) -> Result<Self, String> {
                     Self::decode(log)
                 }
             }
@@ -289,7 +289,7 @@ mod tests {
                         16u8,
                         101u8
                     ];
-                    pub fn match_log(log: &substreams_ethereum::pb::eth::v1::Log) -> bool {
+                    pub fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
                         if log.topics.len() != 1usize {
                             return false;
                         }
@@ -300,17 +300,17 @@ mod tests {
                             == Self::TOPIC_ID;
                     }
                     pub fn decode(
-                        log: &substreams_ethereum::pb::eth::v1::Log
+                        log: &substreams_ethereum::pb::eth::v2::Log
                     ) -> Result<Self, String> {
                         Ok(Self {})
                     }
                 }
                 impl substreams_ethereum::Event for Hello {
                     const NAME: &'static str = "hello";
-                    fn match_log(log: &substreams_ethereum::pb::eth::v1::Log) -> bool {
+                    fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
                         Self::match_log(log)
                     }
-                    fn decode(log: &substreams_ethereum::pb::eth::v1::Log) -> Result<Self, String> {
+                    fn decode(log: &substreams_ethereum::pb::eth::v2::Log) -> Result<Self, String> {
                         Self::decode(log)
                     }
                 }
@@ -374,7 +374,7 @@ mod tests {
                         22u8,
                         66u8
                     ];
-                    pub fn match_log(log: &substreams_ethereum::pb::eth::v1::Log) -> bool {
+                    pub fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
                         if log.topics.len() != 2usize {
                             return false;
                         }
@@ -385,7 +385,7 @@ mod tests {
                             == Self::TOPIC_ID;
                     }
                     pub fn decode(
-                        log: &substreams_ethereum::pb::eth::v1::Log
+                        log: &substreams_ethereum::pb::eth::v2::Log
                     ) -> Result<Self, String> {
                         Ok(Self {
                             foo: ethabi::decode(
@@ -407,10 +407,10 @@ mod tests {
                 }
                 impl substreams_ethereum::Event for One {
                     const NAME: &'static str = "one";
-                    fn match_log(log: &substreams_ethereum::pb::eth::v1::Log) -> bool {
+                    fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
                         Self::match_log(log)
                     }
-                    fn decode(log: &substreams_ethereum::pb::eth::v1::Log) -> Result<Self, String> {
+                    fn decode(log: &substreams_ethereum::pb::eth::v2::Log) -> Result<Self, String> {
                         Self::decode(log)
                     }
                 }
@@ -488,7 +488,7 @@ mod tests {
                         179u8,
                         239u8
                     ];
-                    pub fn match_log(log: &substreams_ethereum::pb::eth::v1::Log) -> bool {
+                    pub fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
                         if log.topics.len() != 3usize {
                             return false;
                         }
@@ -499,7 +499,7 @@ mod tests {
                             == Self::TOPIC_ID;
                     }
                     pub fn decode(
-                        log: &substreams_ethereum::pb::eth::v1::Log
+                        log: &substreams_ethereum::pb::eth::v2::Log
                     ) -> Result<Self, String> {
                         let mut values = ethabi::decode(
                                 &[ethabi::ParamType::Uint(256usize)],
@@ -545,10 +545,10 @@ mod tests {
                 }
                 impl substreams_ethereum::Event for Transfer {
                     const NAME: &'static str = "Transfer";
-                    fn match_log(log: &substreams_ethereum::pb::eth::v1::Log) -> bool {
+                    fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
                         Self::match_log(log)
                     }
-                    fn decode(log: &substreams_ethereum::pb::eth::v1::Log) -> Result<Self, String> {
+                    fn decode(log: &substreams_ethereum::pb::eth::v2::Log) -> Result<Self, String> {
                         Self::decode(log)
                     }
                 }
@@ -626,7 +626,7 @@ mod tests {
                         179u8,
                         239u8
                     ];
-                    pub fn match_log(log: &substreams_ethereum::pb::eth::v1::Log) -> bool {
+                    pub fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
                         if log.topics.len() != 4usize {
                             return false;
                         }
@@ -637,7 +637,7 @@ mod tests {
                             == Self::TOPIC_ID;
                     }
                     pub fn decode(
-                        log: &substreams_ethereum::pb::eth::v1::Log
+                        log: &substreams_ethereum::pb::eth::v2::Log
                     ) -> Result<Self, String> {
                         Ok(Self {
                             from: ethabi::decode(
@@ -684,10 +684,10 @@ mod tests {
                 }
                 impl substreams_ethereum::Event for Transfer {
                     const NAME: &'static str = "Transfer";
-                    fn match_log(log: &substreams_ethereum::pb::eth::v1::Log) -> bool {
+                    fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
                         Self::match_log(log)
                     }
-                    fn decode(log: &substreams_ethereum::pb::eth::v1::Log) -> Result<Self, String> {
+                    fn decode(log: &substreams_ethereum::pb::eth::v2::Log) -> Result<Self, String> {
                         Self::decode(log)
                     }
                 }
