@@ -9,6 +9,24 @@
 
 * **Breaking** Bumped `prost` to `^0.11.0` (will requires you to bump `substreams = "~0.0.19"`).
 
+* **Breaking** Removed `must_decode` on ABI generated Event code. Instead, use `if let Some(event) = <EventType>::match_and_decode(&log)`. For example, if you had the following code:
+
+  ```
+  if !abi::erc721::events::Transfer::match_log(log) {
+    return None;
+  }
+
+  let transfer = abi::erc721::events::Transfer::must_decode(log);
+  ```
+
+  Replace it with
+
+  ```
+  if let Some(transfer) = abi::erc721::events::Transfer::match_and_decode(log) {
+    // Do something
+  }
+  ```
+
 ## [0.1.9](https://github.com/streamingfast/substreams-ethereum/releases/tag/0.1.9)
 
 * Fixed packaging issue.

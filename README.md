@@ -42,7 +42,7 @@ This means changes to Protobuf files must be manually re-generated and commit, s
 - Ensure build `cargo build` and tests `cargo test --target aarch64-apple-darwin` still pass (adapt `--target` value to fit your machine's architecture)
 - Commit everything with message `Preparing release of ${version}`.
 - `./bin/release.sh -f v${version}`
-- Git push everything (`git push origin develop v${version}`)
+- If everything goes well, `crates.io` will be update and Git should be in a synced state (the release script does a `git push` of the branch and the tag).
 - Go to https://github.com/streamingfast/substreams-ethereum/releases/tag/v${version} and update the release notes, use content of section `## [v${version}]` in [CHANGELOG.md](CHANGELOG.md), edit GitHub release and paste content before commits listing, keep both:
 
   ```
