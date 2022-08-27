@@ -6,41 +6,19 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use heck::ToSnakeCase;
+use heck::ToUpperCamelCase;
 use proc_macro2::{Span, TokenStream};
 use quote::quote;
 
-use super::{
-    from_template_param, from_token, get_output_kinds, get_template_names, input_names, rust_type,
-    template_param_type, to_ethabi_param_vec, to_token,
-};
+use crate::to_syntax_string;
 
-struct TemplateParam {
-    /// Template param declaration.
-    ///
-    /// ```text
-    /// [T0: Into<Uint>, T1: Into<Bytes>, T2: IntoIterator<Item = U2>, U2 = Into<Uint>]
-    /// ```
-    declaration: TokenStream,
-    /// Template param definition.
-    ///
-    /// ```text
-    /// [param0: T0, hello_world: T1, param2: T2]
-    /// ```
-    definition: TokenStream,
-}
+use super::{from_token, get_output_kinds, param_names, rust_type, to_token};
 
 struct Inputs {
-    /// Collects template params into vector.
-    ///
-    /// ```text
-    /// [Token::Uint(param0.into()), Token::Bytes(hello_world.into()), Token::Array(param2.into_iter().map(Into::into).collect())]
-    /// ```
     tokenize: Vec<TokenStream>,
-    /// Template params.
-    template_params: Vec<TemplateParam>,
-    /// Quote used to recreate `Vec<ethabi::Param>`
-    recreate_quote: TokenStream,
+    decoded_values: TokenStream,
+    decoded_fields: Vec<TokenStream>,
+    fields: Vec<TokenStream>,
 }
 
 struct Outputs {
@@ -48,61 +26,73 @@ struct Outputs {
     implementation: TokenStream,
     /// Decode result.
     result: TokenStream,
-    /// Quote used to recreate `Vec<ethabi::Param>`.
-    recreate_quote: TokenStream,
+
+    count: usize,
 }
 
 /// Structure used to generate contract's function interface.
 pub struct Function {
     /// Function name.
-    name: String,
+    pub(crate) name: String,
+
+    short_signature: [u8; 4],
     /// Function input params.
     inputs: Inputs,
     /// Function output params.
     outputs: Outputs,
-    #[deprecated(
-        note = "The constant attribute was removed in Solidity 0.5.0 and has been \
-				replaced with stateMutability."
-    )]
-    /// Constant function.
-    constant: bool,
-    /// Whether the function reads or modifies blockchain state
-    state_mutability: ethabi::StateMutability,
 }
 
-impl<'a> From<&'a ethabi::Function> for Function {
-    fn from(f: &'a ethabi::Function) -> Self {
+impl<'a> From<(&'a String, &'a ethabi::Function)> for Function {
+    fn from((name, f): (&'a String, &'a ethabi::Function)) -> Self {
         // [param0, hello_world, param2]
-        let input_names = input_names(&f.inputs);
-
-        // [T0: Into<Uint>, T1: Into<Bytes>, T2: IntoIterator<Item = U2>, U2 = Into<Uint>]
-        let declarations = f
-            .inputs
-            .iter()
-            .enumerate()
-            .map(|(index, param)| template_param_type(&param.kind, index));
+        let input_names = param_names(&f.inputs);
 
         // [Uint, Bytes, Vec<Uint>]
-        let kinds: Vec<_> = f
+        let input_kinds: Vec<_> = f
             .inputs
             .iter()
             .map(|param| rust_type(&param.kind))
             .collect();
 
-        // [T0, T1, T2]
-        let template_names: Vec<_> = get_template_names(&kinds);
-
-        // [param0: T0, hello_world: T1, param2: T2]
-        let definitions = input_names
+        let input_struct_fields = input_names
             .iter()
-            .zip(template_names.iter())
-            .map(|(param_name, template_name)| quote! { #param_name: #template_name });
+            .zip(input_kinds.iter())
+            .map(|(param_name, kind)| quote! { pub #param_name: #kind })
+            .collect();
 
-        let template_params = declarations
-            .zip(definitions)
-            .map(|(declaration, definition)| TemplateParam {
-                declaration,
-                definition,
+        let input_ethabi_param_types = if !f.inputs.is_empty() {
+            let params: Vec<_> = f
+                .inputs
+                .iter()
+                .map(|input| to_syntax_string(&input.kind))
+                .collect();
+
+            quote! {
+                let maybe_data = call.input.get(4..);
+                if maybe_data.is_none() {
+                    return Err("no data to decode".to_string());
+                }
+
+                let mut values = ethabi::decode(&[#(#params),*], maybe_data.unwrap())
+                        .map_err(|e| format!("unable to decode call.input: {}", e))?;
+                values.reverse();
+            }
+        } else {
+            quote! {}
+        };
+
+        // We go reverse in the iteration because we use a series of `.pop()` to correctly
+        // extract elements and put them in the good fields.
+        let input_struct_decoded_fields = f
+            .inputs
+            .iter()
+            .zip(input_names.iter())
+            .map(|(param, name)| {
+                let data_access = quote! { values.pop().expect(INTERNAL_ERR) };
+                let decode_input = from_token(&param.kind, &data_access);
+                quote! {
+                   #name: #decode_input
+                }
             })
             .collect();
 
@@ -110,37 +100,75 @@ impl<'a> From<&'a ethabi::Function> for Function {
         let tokenize: Vec<_> = input_names
             .iter()
             .zip(f.inputs.iter())
-            .map(|(param_name, param)| {
-                to_token(&from_template_param(&param.kind, param_name), &param.kind)
-            })
+            .map(|(param_name, param)| to_token(&quote! { self.#param_name }, &param.kind))
             .collect();
 
         let output_result = get_output_kinds(&f.outputs);
 
+        let output_param_types: Vec<_> = f
+            .outputs
+            .iter()
+            .map(|output| to_syntax_string(&output.kind))
+            .collect();
+
         let output_implementation = match f.outputs.len() {
-            0 => quote! {
-                let _output = output;
-                Ok(())
-            },
+            0 => quote! {},
             1 => {
-                let o = quote! { out };
-                let from_first = from_token(&f.outputs[0].kind, &o);
+                let decode_param_type = &output_param_types[0];
+                let data_access =
+                    quote! { values.pop().expect("one output data should have existed") };
+                let decode_input = from_token(&f.outputs[0].kind, &data_access);
+
                 quote! {
-                    let out = self.0.decode_output(output)?.into_iter().next().expect(INTERNAL_ERR);
-                    Ok(#from_first)
+                    pub fn output_call(call: &substreams_ethereum::pb::eth::v2::Call) -> Result<#output_result, String> {
+                        Self::output(call.return_data.as_ref())
+                    }
+
+                    pub fn output(data: &[u8]) -> Result<#output_result, String> {
+                        let mut values = ethabi::decode(&[#decode_param_type], data.as_ref())
+                        .map_err(|e| format!("unable to decode output data: {}", e))?;
+
+                        Ok(#decode_input)
+                    }
                 }
             }
             _ => {
-                let o = quote! { out.next().expect(INTERNAL_ERR) };
-                let outs: Vec<_> = f
+                let output_tuple_fields: Vec<_> = f
                     .outputs
                     .iter()
-                    .map(|param| from_token(&param.kind, &o))
+                    .map(|input| to_syntax_string(&input.kind))
+                    .collect();
+
+                let output_ethabi_decoded_values = quote! {
+                    let mut values = ethabi::decode(&[#(#output_tuple_fields),*], data.as_ref())
+                            .map_err(|e| format!("unable to decode output data: {}", e))?;
+                    values.reverse();
+                };
+
+                // We go reverse in the iteration because we use a series of `.pop()` to correctly
+                // extract elements and put them in the good fields.
+                let output_tuple_decoded_fields: Vec<TokenStream> = f
+                    .outputs
+                    .iter()
+                    .map(|param| {
+                        let data_access = quote! { values.pop().expect(INTERNAL_ERR) };
+                        let decode_input = from_token(&param.kind, &data_access);
+                        quote! {
+                           #decode_input
+                        }
+                    })
                     .collect();
 
                 quote! {
-                    let mut out = self.0.decode_output(output)?.into_iter();
-                    Ok(( #(#outs),* ))
+                    pub fn output_call(call: &substreams_ethereum::pb::eth::v2::Call) -> Result<#output_result, String> {
+                        Self::output(call.return_data.as_ref())
+                    }
+
+                    pub fn output(data: &[u8]) -> Result<#output_result, String> {
+                        #output_ethabi_decoded_values
+
+                        Ok((#(#output_tuple_decoded_fields),*))
+                    }
                 }
             }
         };
@@ -150,19 +178,19 @@ impl<'a> From<&'a ethabi::Function> for Function {
         // it must go on the entire struct
         #[allow(deprecated)]
         Function {
-            name: f.name.clone(),
+            name: name.clone(),
+            short_signature: f.short_signature(),
             inputs: Inputs {
                 tokenize,
-                template_params,
-                recreate_quote: to_ethabi_param_vec(&f.inputs),
+                decoded_values: input_ethabi_param_types,
+                decoded_fields: input_struct_decoded_fields,
+                fields: input_struct_fields,
             },
             outputs: Outputs {
                 implementation: output_implementation,
                 result: output_result,
-                recreate_quote: to_ethabi_param_vec(&f.outputs),
+                count: f.outputs.len(),
             },
-            constant: f.constant.unwrap_or_default(),
-            state_mutability: f.state_mutability,
         }
     }
 }
@@ -171,342 +199,107 @@ impl Function {
     /// Generates the interface for contract's function.
     pub fn generate(&self) -> TokenStream {
         let name = &self.name;
-        let module_name = syn::Ident::new(&self.name.to_snake_case(), Span::call_site());
+        let camel_name = syn::Ident::new(&self.name.to_upper_camel_case(), Span::call_site());
+
+        let signature_hash_bytes: Vec<_> = self
+            .short_signature
+            .iter()
+            .map(|value| quote! { #value })
+            .collect();
+
+        let function_fields = &self.inputs.fields;
         let tokenize = &self.inputs.tokenize;
-        let declarations: &Vec<_> = &self
-            .inputs
-            .template_params
-            .iter()
-            .map(|i| &i.declaration)
-            .collect();
-        let definitions: &Vec<_> = &self
-            .inputs
-            .template_params
-            .iter()
-            .map(|i| &i.definition)
-            .collect();
-        let recreate_inputs = &self.inputs.recreate_quote;
-        let recreate_outputs = &self.outputs.recreate_quote;
-        #[allow(deprecated)]
-        let constant = self.constant;
-        let state_mutability = match self.state_mutability {
-            ethabi::StateMutability::Pure => quote! { ::ethabi::StateMutability::Pure },
-            ethabi::StateMutability::Payable => quote! { ::ethabi::StateMutability::Payable },
-            ethabi::StateMutability::NonPayable => quote! { ::ethabi::StateMutability::NonPayable },
-            ethabi::StateMutability::View => quote! { ::ethabi::StateMutability::View },
-        };
+        let decoded_input_values = &self.inputs.decoded_values;
+        let decoded_input_fields = &self.inputs.decoded_fields;
+
+        let output_implementation = &self.outputs.implementation;
         let outputs_result = &self.outputs.result;
-        let outputs_implementation = &self.outputs.implementation;
+
+        let call_implementation = match self.outputs.count {
+            0 => quote! {},
+            _ => quote! {
+                pub fn call(&self, address: Vec<u8>) -> Option<#outputs_result> {
+                    use substreams_ethereum::pb::eth::rpc;
+
+                    let rpc_calls = rpc::RpcCalls {
+                        calls: vec![rpc::RpcCall {
+                            to_addr: address,
+                            data: self.encode(),
+                        }],
+                    };
+
+                    let responses = substreams_ethereum::rpc::eth_call(&rpc_calls).responses;
+                    let response = responses.get(0).expect("one response should have existed");
+
+                    if response.failed {
+                        return None;
+                    }
+
+                    match Self::output(response.raw.as_ref()) {
+                        Ok(data) => Some(data),
+                        Err(err) => {
+                            use substreams_ethereum::Function;
+
+                            substreams::log::info!(
+                                "Call output for function `{}` failed to decode with error: {}",
+                                Self::NAME,
+                                err
+                            );
+                            None
+                        }
+                    }
+                }
+            },
+        };
 
         quote! {
-            pub mod #module_name {
-                use ethabi;
-                use super::INTERNAL_ERR;
+            #[derive(Debug, Clone, PartialEq)]
+            pub struct #camel_name {
+                #(#function_fields),*
+            }
 
-                fn function() -> ethabi::Function {
-                    ethabi::Function {
-                        name: #name.into(),
-                        inputs: #recreate_inputs,
-                        outputs: #recreate_outputs,
-                        constant: Some(#constant),
-                        state_mutability: #state_mutability
+            impl #camel_name {
+                const METHOD_ID: [u8; 4] = [#(#signature_hash_bytes),*];
+
+                pub fn decode(call: &substreams_ethereum::pb::eth::v2::Call) -> Result<Self, String> {
+                    #decoded_input_values
+
+                    Ok(Self {
+                        #(#decoded_input_fields),*
+                    })
+                }
+
+                pub fn encode(&self) -> Vec<u8> {
+                    let data = ethabi::encode(&[#(#tokenize),*]);
+
+                    let mut encoded = Vec::with_capacity(4 + data.len());
+                    encoded.extend(Self::METHOD_ID);
+                    encoded.extend(data);
+
+                    encoded
+                }
+
+                #output_implementation
+
+                pub fn match_call(call: &substreams_ethereum::pb::eth::v2::Call) -> bool {
+                    match call.input.get(0..4) {
+                        Some(signature) => Self::METHOD_ID == signature,
+                        None => false
                     }
                 }
 
-                /// Generic function output decoder.
-                pub struct Decoder(ethabi::Function);
+                #call_implementation
+            }
 
-                impl ethabi::FunctionOutputDecoder for Decoder {
-                    type Output = #outputs_result;
-
-                    fn decode(&self, output: &[u8]) -> ethabi::Result<Self::Output> {
-                        #outputs_implementation
-                    }
+            impl substreams_ethereum::Function for #camel_name {
+                const NAME: &'static str = #name;
+                fn match_call(call: &substreams_ethereum::pb::eth::v2::Call) -> bool {
+                    Self::match_call(call)
                 }
-
-                /// Encodes function input.
-                pub fn encode_input<#(#declarations),*>(#(#definitions),*) -> ethabi::Bytes {
-                    let f = function();
-                    let tokens = vec![#(#tokenize),*];
-                    f.encode_input(&tokens).expect(INTERNAL_ERR)
-                }
-
-                /// Decodes function output.
-                pub fn decode_output(output: &[u8]) -> ethabi::Result<#outputs_result> {
-                    ethabi::FunctionOutputDecoder::decode(&Decoder(function()), output)
-                }
-
-                /// Encodes function output and creates a `Decoder` instance.
-                pub fn call<#(#declarations),*>(#(#definitions),*) -> (ethabi::Bytes, Decoder) {
-                    let f = function();
-                    let tokens = vec![#(#tokenize),*];
-                    (f.encode_input(&tokens).expect(INTERNAL_ERR), Decoder(f))
+                fn decode(call: &substreams_ethereum::pb::eth::v2::Call) -> Result<Self, String> {
+                    Self::decode(call)
                 }
             }
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::Function;
-    use quote::quote;
-
-    #[test]
-    fn test_no_params() {
-        #[allow(deprecated)]
-        let ethabi_function = ethabi::Function {
-            name: "empty".into(),
-            inputs: vec![],
-            outputs: vec![],
-            constant: None,
-            state_mutability: ethabi::StateMutability::Payable,
-        };
-
-        let f = Function::from(&ethabi_function);
-
-        let expected = quote! {
-            pub mod empty {
-                use ethabi;
-                use super::INTERNAL_ERR;
-
-                fn function() -> ethabi::Function {
-                    ethabi::Function {
-                        name: "empty".into(),
-                        inputs: vec![],
-                        outputs: vec![],
-                        constant: Some(false),
-                        state_mutability: ::ethabi::StateMutability::Payable
-                    }
-                }
-
-                /// Generic function output decoder.
-                pub struct Decoder(ethabi::Function);
-
-                impl ethabi::FunctionOutputDecoder for Decoder {
-                    type Output = ();
-
-                    fn decode(&self, output: &[u8]) -> ethabi::Result<Self::Output> {
-                        let _output = output;
-                        Ok(())
-                    }
-                }
-
-                /// Encodes function input.
-                pub fn encode_input<>() -> ethabi::Bytes {
-                    let f = function();
-                    let tokens = vec![];
-                    f.encode_input(&tokens).expect(INTERNAL_ERR)
-                }
-
-                /// Decodes function output.
-                pub fn decode_output(output: &[u8]) -> ethabi::Result<()> {
-                    ethabi::FunctionOutputDecoder::decode(&Decoder(function()), output)
-                }
-
-                /// Encodes function output and creates a `Decoder` instance.
-                pub fn call<>() -> (ethabi::Bytes, Decoder) {
-                    let f = function();
-                    let tokens = vec![];
-                    (f.encode_input(&tokens).expect(INTERNAL_ERR), Decoder(f))
-                }
-            }
-        };
-
-        assert_eq!(expected.to_string(), f.generate().to_string());
-    }
-
-    #[test]
-    fn test_one_param() {
-        #[allow(deprecated)]
-        let ethabi_function = ethabi::Function {
-            name: "hello".into(),
-            inputs: vec![ethabi::Param {
-                name: "foo".into(),
-                kind: ethabi::ParamType::Address,
-                internal_type: None,
-            }],
-            outputs: vec![ethabi::Param {
-                name: "bar".into(),
-                kind: ethabi::ParamType::Uint(256),
-                internal_type: None,
-            }],
-            constant: None,
-            state_mutability: ethabi::StateMutability::Payable,
-        };
-
-        let f = Function::from(&ethabi_function);
-
-        let expected = quote! {
-            pub mod hello {
-                use ethabi;
-                use super::INTERNAL_ERR;
-
-                fn function() -> ethabi::Function {
-                    ethabi::Function {
-                        name: "hello".into(),
-                        inputs: vec![ethabi::Param {
-                            name: "foo".to_owned(),
-                            kind: ethabi::ParamType::Address,
-                            internal_type: None
-                        }],
-                        outputs: vec![ethabi::Param {
-                            name: "bar".to_owned(),
-                            kind: ethabi::ParamType::Uint(256usize),
-                            internal_type: None
-                        }],
-                        constant: Some(false),
-                        state_mutability: ::ethabi::StateMutability::Payable
-                    }
-                }
-
-                /// Generic function output decoder.
-                pub struct Decoder(ethabi::Function);
-
-                impl ethabi::FunctionOutputDecoder for Decoder {
-                    type Output = ethabi::Uint;
-
-                    fn decode(&self, output: &[u8]) -> ethabi::Result<Self::Output> {
-                        let out = self.0.decode_output(output)?.into_iter().next().expect(INTERNAL_ERR);
-                        Ok(out.into_uint().expect(INTERNAL_ERR))
-                    }
-                }
-
-                /// Encodes function input.
-                pub fn encode_input<T0: Into<ethabi::Address> >(foo: T0) -> ethabi::Bytes {
-                    let f = function();
-                    let tokens = vec![ethabi::Token::Address(foo.into())];
-                    f.encode_input(&tokens).expect(INTERNAL_ERR)
-                }
-
-                /// Decodes function output.
-                pub fn decode_output(output: &[u8]) -> ethabi::Result<ethabi::Uint> {
-                    ethabi::FunctionOutputDecoder::decode(&Decoder(function()), output)
-                }
-
-                /// Encodes function output and creates a `Decoder` instance.
-                pub fn call<T0: Into<ethabi::Address> >(foo: T0) -> (ethabi::Bytes, Decoder) {
-                    let f = function();
-                    let tokens = vec![ethabi::Token::Address(foo.into())];
-                    (f.encode_input(&tokens).expect(INTERNAL_ERR), Decoder(f))
-                }
-            }
-        };
-
-        assert_eq!(expected.to_string(), f.generate().to_string());
-    }
-
-    #[test]
-    fn test_multiple_params() {
-        #[allow(deprecated)]
-        let ethabi_function = ethabi::Function {
-            name: "multi".into(),
-            inputs: vec![
-                ethabi::Param {
-                    name: "foo".into(),
-                    kind: ethabi::ParamType::FixedArray(Box::new(ethabi::ParamType::Address), 2),
-                    internal_type: None,
-                },
-                ethabi::Param {
-                    name: "bar".into(),
-                    kind: ethabi::ParamType::Array(Box::new(ethabi::ParamType::Uint(256))),
-                    internal_type: None,
-                },
-            ],
-            outputs: vec![
-                ethabi::Param {
-                    name: "".into(),
-                    kind: ethabi::ParamType::Uint(256),
-                    internal_type: None,
-                },
-                ethabi::Param {
-                    name: "".into(),
-                    kind: ethabi::ParamType::String,
-                    internal_type: None,
-                },
-            ],
-            constant: None,
-            state_mutability: ethabi::StateMutability::Payable,
-        };
-
-        let f = Function::from(&ethabi_function);
-
-        let expected = quote! {
-            pub mod multi {
-                use ethabi;
-                use super::INTERNAL_ERR;
-
-                fn function() -> ethabi::Function {
-                    ethabi::Function {
-                        name: "multi".into(),
-                        inputs: vec![ethabi::Param {
-                            name: "foo".to_owned(),
-                            kind: ethabi::ParamType::FixedArray(Box::new(ethabi::ParamType::Address), 2usize),
-                            internal_type: None
-                        }, ethabi::Param {
-                            name: "bar".to_owned(),
-                            kind: ethabi::ParamType::Array(Box::new(ethabi::ParamType::Uint(256usize))),
-                            internal_type: None
-                        }],
-                        outputs: vec![ethabi::Param {
-                            name: "".to_owned(),
-                            kind: ethabi::ParamType::Uint(256usize),
-                            internal_type: None
-                        }, ethabi::Param {
-                            name: "".to_owned(),
-                            kind: ethabi::ParamType::String,
-                            internal_type: None
-                        }],
-                        constant: Some(false),
-                        state_mutability: ::ethabi::StateMutability::Payable
-                    }
-                }
-
-                /// Generic function output decoder.
-                pub struct Decoder(ethabi::Function);
-
-                impl ethabi::FunctionOutputDecoder for Decoder {
-                    type Output = (ethabi::Uint, String);
-
-                    fn decode(&self, output: &[u8]) -> ethabi::Result<Self::Output> {
-                        let mut out = self.0.decode_output(output)?.into_iter();
-                        Ok((out.next().expect(INTERNAL_ERR).into_uint().expect(INTERNAL_ERR), out.next().expect(INTERNAL_ERR).into_string().expect(INTERNAL_ERR)))
-                    }
-                }
-
-                /// Encodes function input.
-                pub fn encode_input<T0: Into<[U0; 2usize]>, U0: Into<ethabi::Address>, T1: IntoIterator<Item = U1>, U1: Into<ethabi::Uint> >(foo: T0, bar: T1) -> ethabi::Bytes {
-                    let f = function();
-                    let tokens = vec![{
-                        let v = (Box::new(foo.into()) as Box<[_]>).into_vec().into_iter().map(Into::into).collect::<Vec<_>>().into_iter().map(|inner| ethabi::Token::Address(inner)).collect();
-                        ethabi::Token::FixedArray(v)
-                    }, {
-                        let v = bar.into_iter().map(Into::into).collect::<Vec<_>>().into_iter().map(|inner| ethabi::Token::Uint(inner)).collect();
-                        ethabi::Token::Array(v)
-                    }];
-                    f.encode_input(&tokens).expect(INTERNAL_ERR)
-                }
-
-                /// Decodes function output.
-                pub fn decode_output(output: &[u8]) -> ethabi::Result<(ethabi::Uint, String)> {
-                    ethabi::FunctionOutputDecoder::decode(&Decoder(function()), output)
-                }
-
-                /// Encodes function output and creates a `Decoder` instance.
-                pub fn call<T0: Into<[U0; 2usize]>, U0: Into<ethabi::Address>, T1: IntoIterator<Item = U1>, U1: Into<ethabi::Uint> >(foo: T0, bar: T1) -> (ethabi::Bytes, Decoder) {
-                    let f = function();
-                    let tokens = vec![{
-                        let v = (Box::new(foo.into()) as Box<[_]>).into_vec().into_iter().map(Into::into).collect::<Vec<_>>().into_iter().map(|inner| ethabi::Token::Address(inner)).collect();
-                        ethabi::Token::FixedArray(v)
-                    }, {
-                        let v = bar.into_iter().map(Into::into).collect::<Vec<_>>().into_iter().map(|inner| ethabi::Token::Uint(inner)).collect();
-                        ethabi::Token::Array(v)
-                    }];
-                    (f.encode_input(&tokens).expect(INTERNAL_ERR), Decoder(f))
-                }
-            }
-        };
-
-        assert_eq!(expected.to_string(), f.generate().to_string());
     }
 }

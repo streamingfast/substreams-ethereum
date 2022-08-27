@@ -8,7 +8,7 @@ use super::{from_token, rust_type, to_syntax_string};
 
 /// Structure used to generate contract's event interface.
 pub struct Event {
-    name: String,
+    pub(crate) name: String,
     topic_hash: [u8; 32],
     topic_count: usize,
     min_data_size: usize,
@@ -180,7 +180,6 @@ impl Event {
             }
 
             impl #camel_name {
-                // FIXME: We should generate the [u8; 32] directly and avoid hex_literal crate
                 const TOPIC_ID: [u8; 32] = [#(#topic_hash_bytes),*];
 
                 pub fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {

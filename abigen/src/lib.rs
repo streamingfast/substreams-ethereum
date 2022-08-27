@@ -15,11 +15,13 @@ pub mod build;
 // mod constructor;
 mod contract;
 mod event;
-// mod function;
+mod function;
 
 use anyhow::format_err;
 // use ethabi::{Contract, Error, Param, ParamType, Result};
-use ethabi::{Contract, Error, ParamType};
+use ethabi::{Contract, Error, Param, ParamType};
+use heck::ToSnakeCase;
+use proc_macro2::Span;
 // use heck::ToSnakeCase;
 use quote::quote;
 use std::{
@@ -203,13 +205,78 @@ fn min_data_size(input: &ParamType) -> usize {
 
 // fn from_template_param(input: &ParamType, name: &syn::Ident) -> proc_macro2::TokenStream {
 //     match *input {
-//         ParamType::Array(_) => quote! { #name.into_iter().map(Into::into).collect::<Vec<_>>() },
-//         ParamType::FixedArray(_, _) => {
-//             quote! { (Box::new(#name.into()) as Box<[_]>).into_vec().into_iter().map(Into::into).collect::<Vec<_>>() }
+//         ParamType::Array(_) => {
+//             quote! { self.#name.into_iter().map(Into::into).collect::<Vec<_>>() }
 //         }
-//         _ => quote! {#name.into() },
+//         ParamType::FixedArray(_, _) => {
+//             quote! { (Box::new(self.#name.into()) as Box<[_]>).into_vec().into_iter().map(Into::into).collect::<Vec<_>>() }
+//         }
+//         ParamType::Address => quote! { ethabi::Address::from_slice(self.#name.as_ref() ) },
+//         _ => firehose_into_ethabi_type(input, quote! { self.#name }),
 //     }
 // }
+
+// fn firehose_into_ethabi_type(
+//     input: &ParamType,
+//     variable: proc_macro2::TokenStream,
+// ) -> proc_macro2::TokenStream {
+//     match *input {
+//         ParamType::Address => quote! { ethabi::Address::from_slice(#variable) },
+//         ParamType::String => quote! { #variable.clone() },
+//         _ => quote! {#variable.into() },
+//     }
+// }
+
+fn to_token(name: &proc_macro2::TokenStream, kind: &ParamType) -> proc_macro2::TokenStream {
+    match *kind {
+        ParamType::Address => {
+            quote! { ethabi::Token::Address(ethabi::Address::from_slice(&#name)) }
+        }
+        ParamType::Bytes => quote! { ethabi::Token::Bytes(#name.clone()) },
+        ParamType::FixedBytes(_) => quote! { ethabi::Token::FixedBytes(#name.as_ref().to_vec()) },
+        ParamType::Int(_) => {
+            quote! {
+                {
+                    let non_full_signed_bytes = #name.to_signed_bytes_be();
+                    let mut full_signed_bytes = [0xff as u8; 32];
+                    non_full_signed_bytes.into_iter().rev().enumerate().for_each(|(i, byte)| full_signed_bytes[31 - i] = byte);
+
+                    ethabi::Token::Int(ethabi::Int::from_big_endian(full_signed_bytes.as_ref()))
+                }
+            }
+        }
+        ParamType::Uint(_) => quote! { ethabi::Token::Uint(#name) },
+        ParamType::Bool => quote! { ethabi::Token::Bool(#name) },
+        ParamType::String => quote! { ethabi::Token::String(#name.clone()) },
+        ParamType::Array(ref kind) => {
+            let inner_name = quote! { inner };
+            let inner_loop = to_token(&inner_name, kind);
+            quote! {
+                // note the double {{
+                {
+                    let v = #name.iter().map(|#inner_name| #inner_loop).collect();
+                    ethabi::Token::Array(v)
+                }
+            }
+        }
+        ParamType::FixedArray(ref kind, _) => {
+            let inner_name = quote! { inner };
+            let inner_loop = to_token(&inner_name, kind);
+            quote! {
+                // note the double {{
+                {
+                    let v = #name.iter().map(|#inner_name| #inner_loop).collect();
+                    ethabi::Token::FixedArray(v)
+                }
+            }
+        }
+        ParamType::Tuple(_) => {
+            unimplemented!(
+                "Tuples are not supported. https://github.com/openethereum/ethabi/issues/175"
+            )
+        }
+    }
+}
 
 fn from_token(kind: &ParamType, token: &proc_macro2::TokenStream) -> proc_macro2::TokenStream {
     match *kind {
@@ -299,5 +366,65 @@ fn decode_topic(
 
             from_token(kind, &decode_topic)
         }
+    }
+}
+
+fn param_names(inputs: &[Param]) -> Vec<syn::Ident> {
+    inputs
+        .iter()
+        .enumerate()
+        .map(|(index, param)| {
+            if param.name.is_empty() {
+                syn::Ident::new(&format!("param{}", index), Span::call_site())
+            } else {
+                syn::Ident::new(&rust_variable(&param.name), Span::call_site())
+            }
+        })
+        .collect()
+}
+
+// fn get_template_names(kinds: &[proc_macro2::TokenStream]) -> Vec<syn::Ident> {
+//     kinds
+//         .iter()
+//         .enumerate()
+//         .map(|(index, _)| syn::Ident::new(&format!("T{}", index), Span::call_site()))
+//         .collect()
+// }
+
+fn get_output_kinds(outputs: &[Param]) -> proc_macro2::TokenStream {
+    match outputs.len() {
+        0 => quote! {()},
+        1 => {
+            let t = rust_type(&outputs[0].kind);
+            quote! { #t }
+        }
+        _ => {
+            let outs: Vec<_> = outputs.iter().map(|param| rust_type(&param.kind)).collect();
+            quote! { (#(#outs),*) }
+        }
+    }
+}
+
+/// Convert input into a rust variable name.
+///
+/// Avoid using keywords by escaping them.
+fn rust_variable(name: &str) -> String {
+    // avoid keyword parameters
+    match name {
+        "self" => "_self".to_string(),
+        other => other.to_snake_case(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn from_firehose_types_to_ethabi_token() {
+        use substreams::hex;
+
+        let firehose_address = hex!("0000000000000000000000000000000000000000").to_vec();
+
+        // Compilation is enough for those tests
+        ethabi::Token::Address(ethabi::Address::from_slice(firehose_address.as_ref()));
     }
 }
