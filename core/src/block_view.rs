@@ -16,6 +16,11 @@ impl pb::Block {
         self.receipts().map(|receipt| receipt.logs()).flatten()
     }
 
+    /// Iterates over calls of succesful transactions.
+    pub fn calls(&self) -> impl Iterator<Item = CallView> {
+        self.transactions().map(|trx| trx.calls()).flatten()
+    }
+
     /// A convenience for handlers that process a single type of event. Returns an iterator over
     /// pairs of `(event, log)`.
     ///
@@ -59,7 +64,26 @@ pub struct LogView<'a> {
     pub log: &'a pb::Log,
 }
 
+#[derive(Copy, Clone)]
+pub struct CallView<'a> {
+    pub transaction: &'a pb::TransactionTrace,
+    pub call: &'a pb::Call,
+}
+
+impl AsRef<pb::Call> for CallView<'_> {
+    fn as_ref(&self) -> &pb::Call {
+        self.call
+    }
+}
+
 impl pb::TransactionTrace {
+    pub fn calls<'a>(&'a self) -> impl Iterator<Item = CallView<'a>> {
+        self.calls.iter().map(move |call| CallView {
+            transaction: self,
+            call,
+        })
+    }
+
     pub fn receipt(&self) -> ReceiptView {
         ReceiptView {
             transaction: self,

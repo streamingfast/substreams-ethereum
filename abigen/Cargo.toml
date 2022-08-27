@@ -24,3 +24,4 @@ substreams-ethereum-core = { version = "0.2.0", path = "../core" }
 
 [dev-dependencies]
 pretty_assertions = "1.2.1"
+substreams = { version = "~0.0.19" }
