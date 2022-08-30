@@ -36,6 +36,35 @@ mod tests {
     }
 
     #[test]
+    fn it_decode_event_fixed_bytes_uint_address_idx() {
+        use tests::events::EventFixedBytesUintAddressIdx as Event;
+
+        // ethc tools encode --abi ./abigen-tests/abi/tests.json event 'EventFixedBytesUintAddressIdx' "0x245414afb5b0fd4cd1285d0ff67e7d40218df67e1426c7e37c835cf2b5090cd2" "0x1000000000" "0xab07a50AD459B41Fe065f7BBAb866D5390e9f705"
+        let log = pb::eth::v2::Log {
+            address: hex!("0000000000000000000000000000000000000000").to_vec(),
+            topics: vec![
+                hex!("34a2be0095da04081ed275c393f1fdfc609a62273fff2231285c906d5a9491b3").to_vec(),
+                hex!("000000000000000000000000ab07a50ad459b41fe065f7bbab866d5390e9f705").to_vec(),
+            ],
+            data: hex!("245414afb5b0fd4cd1285d0ff67e7d40218df67e1426c7e37c835cf2b5090cd20000000000000000000000000000000000000000000000000000001000000000").to_vec(),
+            ..Default::default()
+        };
+
+        assert_eq!(Event::match_log(&log), true);
+
+        let event = Event::decode(&log);
+
+        assert_eq!(
+            event,
+            Ok(Event {
+                first: hex!("245414afb5b0fd4cd1285d0ff67e7d40218df67e1426c7e37c835cf2b5090cd2"),
+                second: U256::from_str_radix("0x1000000000", 16).unwrap(),
+                third: hex!("ab07a50ad459b41fe065f7bbab866d5390e9f705").to_vec()
+            }),
+        );
+    }
+
+    #[test]
     fn it_decode_event_address_idx_string_uint256_idx_bytes() {
         use tests::events::EventAddressIdxStringUint256IdxBytes as Event;
 

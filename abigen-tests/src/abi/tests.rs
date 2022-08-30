@@ -336,6 +336,115 @@
             }
         }
         #[derive(Debug, Clone, PartialEq)]
+        pub struct EventFixedBytesUintAddressIdx {
+            pub first: [u8; 32usize],
+            pub second: ethabi::Uint,
+            pub third: Vec<u8>,
+        }
+        impl EventFixedBytesUintAddressIdx {
+            const TOPIC_ID: [u8; 32] = [
+                52u8,
+                162u8,
+                190u8,
+                0u8,
+                149u8,
+                218u8,
+                4u8,
+                8u8,
+                30u8,
+                210u8,
+                117u8,
+                195u8,
+                147u8,
+                241u8,
+                253u8,
+                252u8,
+                96u8,
+                154u8,
+                98u8,
+                39u8,
+                63u8,
+                255u8,
+                34u8,
+                49u8,
+                40u8,
+                92u8,
+                144u8,
+                109u8,
+                90u8,
+                148u8,
+                145u8,
+                179u8,
+            ];
+            pub fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
+                if log.topics.len() != 2usize {
+                    return false;
+                }
+                if log.data.len() != 64usize {
+                    return false;
+                }
+                return log.topics.get(0).expect("bounds already checked").as_ref()
+                    == Self::TOPIC_ID;
+            }
+            pub fn decode(
+                log: &substreams_ethereum::pb::eth::v2::Log,
+            ) -> Result<Self, String> {
+                let mut values = ethabi::decode(
+                        &[
+                            ethabi::ParamType::FixedBytes(32usize),
+                            ethabi::ParamType::Uint(256usize),
+                        ],
+                        log.data.as_ref(),
+                    )
+                    .map_err(|e| format!("unable to decode log.data: {}", e))?;
+                values.reverse();
+                Ok(Self {
+                    third: ethabi::decode(
+                            &[ethabi::ParamType::Address],
+                            log.topics[1usize].as_ref(),
+                        )
+                        .map_err(|e| {
+                            format!(
+                                "unable to decode param 'third' from topic of type 'address': {}",
+                                e
+                            )
+                        })?
+                        .pop()
+                        .expect(INTERNAL_ERR)
+                        .into_address()
+                        .expect(INTERNAL_ERR)
+                        .as_bytes()
+                        .to_vec(),
+                    first: {
+                        let mut result = [0u8; 32];
+                        let v = values
+                            .pop()
+                            .expect(INTERNAL_ERR)
+                            .into_fixed_bytes()
+                            .expect(INTERNAL_ERR);
+                        result.copy_from_slice(&v);
+                        result
+                    },
+                    second: values
+                        .pop()
+                        .expect(INTERNAL_ERR)
+                        .into_uint()
+                        .expect(INTERNAL_ERR),
+                })
+            }
+        }
+        impl substreams_ethereum::Event for EventFixedBytesUintAddressIdx {
+            const NAME: &'static str = "EventFixedBytesUintAddressIdx";
+            fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
+                Self::match_log(log)
+            }
+            fn decode(
+                log: &substreams_ethereum::pb::eth::v2::Log,
+            ) -> Result<Self, String> {
+                Self::decode(log)
+            }
+        }
+        #[derive(Debug, Clone, PartialEq)]
         pub struct EventWithOverloads1 {
             pub first: Vec<u8>,
         }

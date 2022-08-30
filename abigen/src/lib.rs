@@ -127,7 +127,7 @@ fn rust_type(input: &ParamType) -> proc_macro2::TokenStream {
 fn fixed_data_size(input: &ParamType) -> Option<usize> {
     match *input {
         ParamType::Address | ParamType::Int(_) | ParamType::Uint(_) | ParamType::Bool => Some(32),
-        ParamType::FixedBytes(byte_count) => Some((byte_count / 32) + 1),
+        ParamType::FixedBytes(byte_count) => Some(byte_count),
         ParamType::Bytes | ParamType::String | ParamType::Array(_) => None,
         ParamType::FixedArray(_, _) if input.is_dynamic() => None,
         ParamType::FixedArray(ref sub_type, count) => {
