@@ -336,44 +336,153 @@
             }
         }
         #[derive(Debug, Clone, PartialEq)]
-        pub struct EventFixedBytesUintAddressIdx {
+        pub struct EventBytes20UintAddressIdx {
+            pub first: [u8; 20usize],
+            pub second: ethabi::Uint,
+            pub third: Vec<u8>,
+        }
+        impl EventBytes20UintAddressIdx {
+            const TOPIC_ID: [u8; 32] = [
+                130u8,
+                252u8,
+                100u8,
+                31u8,
+                27u8,
+                89u8,
+                229u8,
+                170u8,
+                29u8,
+                114u8,
+                181u8,
+                106u8,
+                121u8,
+                91u8,
+                106u8,
+                55u8,
+                182u8,
+                124u8,
+                76u8,
+                74u8,
+                112u8,
+                156u8,
+                148u8,
+                128u8,
+                139u8,
+                142u8,
+                18u8,
+                200u8,
+                60u8,
+                188u8,
+                147u8,
+                225u8,
+            ];
+            pub fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
+                if log.topics.len() != 2usize {
+                    return false;
+                }
+                if log.data.len() != 64usize {
+                    return false;
+                }
+                return log.topics.get(0).expect("bounds already checked").as_ref()
+                    == Self::TOPIC_ID;
+            }
+            pub fn decode(
+                log: &substreams_ethereum::pb::eth::v2::Log,
+            ) -> Result<Self, String> {
+                let mut values = ethabi::decode(
+                        &[
+                            ethabi::ParamType::FixedBytes(20usize),
+                            ethabi::ParamType::Uint(256usize),
+                        ],
+                        log.data.as_ref(),
+                    )
+                    .map_err(|e| format!("unable to decode log.data: {}", e))?;
+                values.reverse();
+                Ok(Self {
+                    third: ethabi::decode(
+                            &[ethabi::ParamType::Address],
+                            log.topics[1usize].as_ref(),
+                        )
+                        .map_err(|e| {
+                            format!(
+                                "unable to decode param 'third' from topic of type 'address': {}",
+                                e
+                            )
+                        })?
+                        .pop()
+                        .expect(INTERNAL_ERR)
+                        .into_address()
+                        .expect(INTERNAL_ERR)
+                        .as_bytes()
+                        .to_vec(),
+                    first: {
+                        let mut result = [0u8; 20];
+                        let v = values
+                            .pop()
+                            .expect(INTERNAL_ERR)
+                            .into_fixed_bytes()
+                            .expect(INTERNAL_ERR);
+                        result.copy_from_slice(&v);
+                        result
+                    },
+                    second: values
+                        .pop()
+                        .expect(INTERNAL_ERR)
+                        .into_uint()
+                        .expect(INTERNAL_ERR),
+                })
+            }
+        }
+        impl substreams_ethereum::Event for EventBytes20UintAddressIdx {
+            const NAME: &'static str = "EventBytes20UintAddressIdx";
+            fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
+                Self::match_log(log)
+            }
+            fn decode(
+                log: &substreams_ethereum::pb::eth::v2::Log,
+            ) -> Result<Self, String> {
+                Self::decode(log)
+            }
+        }
+        #[derive(Debug, Clone, PartialEq)]
+        pub struct EventBytes32UintAddressIdx {
             pub first: [u8; 32usize],
             pub second: ethabi::Uint,
             pub third: Vec<u8>,
         }
-        impl EventFixedBytesUintAddressIdx {
+        impl EventBytes32UintAddressIdx {
             const TOPIC_ID: [u8; 32] = [
-                52u8,
-                162u8,
-                190u8,
-                0u8,
-                149u8,
-                218u8,
-                4u8,
-                8u8,
-                30u8,
-                210u8,
-                117u8,
-                195u8,
-                147u8,
-                241u8,
-                253u8,
-                252u8,
-                96u8,
-                154u8,
+                168u8,
                 98u8,
-                39u8,
-                63u8,
-                255u8,
-                34u8,
-                49u8,
-                40u8,
-                92u8,
-                144u8,
-                109u8,
-                90u8,
-                148u8,
-                145u8,
+                190u8,
+                18u8,
+                161u8,
+                177u8,
+                122u8,
+                105u8,
+                123u8,
+                83u8,
+                68u8,
+                67u8,
+                62u8,
+                60u8,
+                188u8,
+                116u8,
+                76u8,
+                127u8,
+                158u8,
+                43u8,
+                11u8,
+                195u8,
+                155u8,
+                175u8,
+                77u8,
+                196u8,
+                9u8,
+                165u8,
+                168u8,
+                198u8,
+                176u8,
                 179u8,
             ];
             pub fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
@@ -433,8 +542,8 @@
                 })
             }
         }
-        impl substreams_ethereum::Event for EventFixedBytesUintAddressIdx {
-            const NAME: &'static str = "EventFixedBytesUintAddressIdx";
+        impl substreams_ethereum::Event for EventBytes32UintAddressIdx {
+            const NAME: &'static str = "EventBytes32UintAddressIdx";
             fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
                 Self::match_log(log)
             }

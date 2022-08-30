@@ -110,7 +110,32 @@
         "type": "address"
       }
     ],
-    "name": "EventFixedBytesUintAddressIdx",
+    "name": "EventBytes32UintAddressIdx",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "bytes20",
+        "name": "first",
+        "type": "bytes20"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "second",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "third",
+        "type": "address"
+      }
+    ],
+    "name": "EventBytes20UintAddressIdx",
     "type": "event"
   },
   {

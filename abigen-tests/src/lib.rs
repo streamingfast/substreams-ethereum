@@ -36,14 +36,14 @@ mod tests {
     }
 
     #[test]
-    fn it_decode_event_fixed_bytes_uint_address_idx() {
-        use tests::events::EventFixedBytesUintAddressIdx as Event;
+    fn it_decode_event_bytes_32_uint_address_idx() {
+        use tests::events::EventBytes32UintAddressIdx as Event;
 
-        // ethc tools encode --abi ./abigen-tests/abi/tests.json event 'EventFixedBytesUintAddressIdx' "0x245414afb5b0fd4cd1285d0ff67e7d40218df67e1426c7e37c835cf2b5090cd2" "0x1000000000" "0xab07a50AD459B41Fe065f7BBAb866D5390e9f705"
+        // ethc tools encode --abi ./abigen-tests/abi/tests.json event 'EventBytes32UintAddressIdx' "0x245414afb5b0fd4cd1285d0ff67e7d40218df67e1426c7e37c835cf2b5090cd2" "0x1000000000" "0xab07a50AD459B41Fe065f7BBAb866D5390e9f705"
         let log = pb::eth::v2::Log {
             address: hex!("0000000000000000000000000000000000000000").to_vec(),
             topics: vec![
-                hex!("34a2be0095da04081ed275c393f1fdfc609a62273fff2231285c906d5a9491b3").to_vec(),
+                hex!("a862be12a1b17a697b5344433e3cbc744c7f9e2b0bc39baf4dc409a5a8c6b0b3").to_vec(),
                 hex!("000000000000000000000000ab07a50ad459b41fe065f7bbab866d5390e9f705").to_vec(),
             ],
             data: hex!("245414afb5b0fd4cd1285d0ff67e7d40218df67e1426c7e37c835cf2b5090cd20000000000000000000000000000000000000000000000000000001000000000").to_vec(),
@@ -58,6 +58,35 @@ mod tests {
             event,
             Ok(Event {
                 first: hex!("245414afb5b0fd4cd1285d0ff67e7d40218df67e1426c7e37c835cf2b5090cd2"),
+                second: U256::from_str_radix("0x1000000000", 16).unwrap(),
+                third: hex!("ab07a50ad459b41fe065f7bbab866d5390e9f705").to_vec()
+            }),
+        );
+    }
+
+    #[test]
+    fn it_decode_event_bytes_20_uint_address_idx() {
+        use tests::events::EventBytes20UintAddressIdx as Event;
+
+        // ethc tools encode --abi ./abigen-tests/abi/tests.json event 'EventBytes20UintAddressIdx' "0xab07a50ad459b41fe065f7bbab866d5390e9f705" "0x1000000000" "0xab07a50AD459B41Fe065f7BBAb866D5390e9f705"
+        let log = pb::eth::v2::Log {
+            address: hex!("0000000000000000000000000000000000000000").to_vec(),
+            topics: vec![
+                hex!("82fc641f1b59e5aa1d72b56a795b6a37b67c4c4a709c94808b8e12c83cbc93e1").to_vec(),
+                hex!("000000000000000000000000ab07a50ad459b41fe065f7bbab866d5390e9f705").to_vec(),
+            ],
+            data: hex!("ab07a50ad459b41fe065f7bbab866d5390e9f7050000000000000000000000000000000000000000000000000000000000000000000000000000001000000000").to_vec(),
+            ..Default::default()
+        };
+
+        assert_eq!(Event::match_log(&log), true);
+
+        let event = Event::decode(&log);
+
+        assert_eq!(
+            event,
+            Ok(Event {
+                first: hex!("ab07a50ad459b41fe065f7bbab866d5390e9f705"),
                 second: U256::from_str_radix("0x1000000000", 16).unwrap(),
                 third: hex!("ab07a50ad459b41fe065f7bbab866d5390e9f705").to_vec()
             }),
