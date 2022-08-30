@@ -1,5 +1,5 @@
 [package]
-name = "substreams-abigen-tests"
+name = "substreams-ethereum-abigen-tests"
 version = "0.2.0"
 edition = "2021"
 description = "Tests package meant to test the generated code of the abigen"
@@ -8,6 +8,7 @@ rust-version = "1.60"
 
 [dependencies]
 ethabi = "17.0"
+num-bigint = "0.4.3"
 prost = { version = "^0.11.0" }
 prost-types = "^0.11.0"
 substreams = { version = "~0.0.19" }

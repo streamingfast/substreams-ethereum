@@ -114,7 +114,7 @@ fn rust_type(input: &ParamType) -> proc_macro2::TokenStream {
         }
         ParamType::FixedArray(ref kind, size) => {
             let t = rust_type(&*kind);
-            quote! { [#t, #size] }
+            quote! { [#t; #size] }
         }
         ParamType::Tuple(_) => {
             unimplemented!(
@@ -145,10 +145,10 @@ fn fixed_data_size(input: &ParamType) -> Option<usize> {
 }
 
 fn min_data_size(input: &ParamType) -> usize {
-    let is_dynamic = input.is_dynamic();
-
     match *input {
-        ParamType::FixedArray(ref sub_type, count) if is_dynamic => count * min_data_size(sub_type),
+        ParamType::FixedArray(ref sub_type, count) if sub_type.is_dynamic() => {
+            count * min_data_size(sub_type)
+        }
         ParamType::Address
         | ParamType::Int(_)
         | ParamType::Uint(_)
@@ -157,6 +157,9 @@ fn min_data_size(input: &ParamType) -> usize {
         | ParamType::FixedArray(_, _) => {
             fixed_data_size(input).expect("not dynamic, will always be Some(_)")
         }
+        // Those are dynamic type meaning there is first an offset where to find the data written (32 bytes)
+        // and then minimally a length (32 bytes) so minimum size is `size(offset) + size(length)` which is
+        // `32 + 32`.
         ParamType::Bytes | ParamType::String | ParamType::Array(_) => 32 + 32,
         ParamType::Tuple(_) => {
             unimplemented!(
@@ -227,7 +230,16 @@ fn from_token(kind: &ParamType, token: &proc_macro2::TokenStream) -> proc_macro2
                 }
             }
         }
-        ParamType::Int(_) => quote! { #token.into_int().expect(INTERNAL_ERR) },
+        ParamType::Int(_) => {
+            quote! {
+                {
+                    let mut v = [0 as u8; 32];
+                    #token.into_int().expect(INTERNAL_ERR).to_big_endian(v.as_mut_slice());
+
+                    num_bigint::BigInt::from_signed_bytes_be(&v)
+                }
+            }
+        }
         ParamType::Uint(_) => quote! { #token.into_uint().expect(INTERNAL_ERR) },
         ParamType::Bool => quote! { #token.into_bool().expect(INTERNAL_ERR) },
         ParamType::String => quote! { #token.into_string().expect(INTERNAL_ERR) },
@@ -243,10 +255,10 @@ fn from_token(kind: &ParamType, token: &proc_macro2::TokenStream) -> proc_macro2
         ParamType::FixedArray(ref kind, size) => {
             let inner = quote! { inner };
             let inner_loop = from_token(kind, &inner);
-            let to_array = vec![quote! { iter.next() }; size];
+            let to_array = vec![quote! { iter.next().expect(INTERNAL_ERR) }; size];
             quote! {
                 {
-                    let iter = #token.to_array().expect(INTERNAL_ERR).into_iter()
+                    let mut iter = #token.into_fixed_array().expect(INTERNAL_ERR).into_iter()
                         .map(|#inner| #inner_loop);
                     [#(#to_array),*]
                 }

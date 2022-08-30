@@ -1,6 +1,12 @@
 
 ## Next
 
+* Fixed decoding of event where some indexed fields were `intN` (`int8` to `int256` by increment of 8).
+
+* Fixed decoding of event where some unindexed fields were fixed array with sub element being dynamic types (`bytes[2]`).
+
+* Fixed decoding of event where some unindexed fields were fixed bytes (`bytes8` to `bytes32`).
+
 ## [0.2.0](https://github.com/streamingfast/substreams-ethereum/releases/tag/v0.2.0)
 
 * **Breaking** Replaced `substreams-ethereum/pb::eth::v1` to `substreams-ethereum/pb::eth::v2` (perform a global replace of any references of `substreams-ethereum/pb::eth::v1` to `substreams-ethereum/pb::eth::v2` and don't forget to re-generate ABI bindings also which depends on `substreams-ethereum/pb::eth::v1`).

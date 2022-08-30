@@ -1,4 +1,3 @@
-use ethabi::ParamType;
 use heck::{ToSnakeCase, ToUpperCamelCase};
 use proc_macro2::{Span, TokenStream};
 use quote::quote;
@@ -107,32 +106,17 @@ impl<'a> From<(&'a String, &'a ethabi::Event)> for Event {
 
         // We go reverse in the iteration because we use a series of `.pop()` to correctly
         // extract elements.
-        let mut pop_count: i32 = 0;
         let decode_unindexed_fields = e
             .inputs
             .iter()
             .zip(names.iter())
             .filter(|(param, _)| !param.indexed)
             .map(|(param, name)| {
-                pop_count += 1;
-                let start_index = (pop_count as usize - 1) * 32;
-                let end_index = (pop_count as usize) * 32;
-                match param.kind {
-                    ParamType::Int(_) => {
-                        quote! {
-                            #name: {
-                                values.pop().expect(INTERNAL_ERR);
-                                num_bigint::BigInt::from_signed_bytes_be(log.data[#start_index..#end_index].as_ref())
-                            }
-                        }
-                    }
-                    _ => {
-                        let data_access = quote! { values.pop().expect(INTERNAL_ERR) };
-                        let decode_topic = from_token(&param.kind, &data_access);
-                        quote! {
-                           #name: #decode_topic
-                        }
-                    }
+                let data_access = quote! { values.pop().expect(INTERNAL_ERR) };
+                let decode_topic = from_token(&param.kind, &data_access);
+
+                quote! {
+                   #name: #decode_topic
                 }
             })
             .collect();

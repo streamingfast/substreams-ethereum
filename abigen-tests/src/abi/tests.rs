@@ -554,6 +554,468 @@
             }
         }
         #[derive(Debug, Clone, PartialEq)]
+        pub struct EventInt256 {
+            pub param0: num_bigint::BigInt,
+        }
+        impl EventInt256 {
+            const TOPIC_ID: [u8; 32] = [
+                160u8,
+                188u8,
+                122u8,
+                85u8,
+                50u8,
+                156u8,
+                194u8,
+                159u8,
+                153u8,
+                11u8,
+                124u8,
+                72u8,
+                217u8,
+                244u8,
+                98u8,
+                78u8,
+                76u8,
+                12u8,
+                53u8,
+                235u8,
+                149u8,
+                90u8,
+                238u8,
+                53u8,
+                143u8,
+                123u8,
+                22u8,
+                68u8,
+                29u8,
+                185u8,
+                237u8,
+                69u8,
+            ];
+            pub fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
+                if log.topics.len() != 1usize {
+                    return false;
+                }
+                if log.data.len() != 32usize {
+                    return false;
+                }
+                return log.topics.get(0).expect("bounds already checked").as_ref()
+                    == Self::TOPIC_ID;
+            }
+            pub fn decode(
+                log: &substreams_ethereum::pb::eth::v2::Log,
+            ) -> Result<Self, String> {
+                let mut values = ethabi::decode(
+                        &[ethabi::ParamType::Int(256usize)],
+                        log.data.as_ref(),
+                    )
+                    .map_err(|e| format!("unable to decode log.data: {}", e))?;
+                values.reverse();
+                Ok(Self {
+                    param0: {
+                        let mut v = [0 as u8; 32];
+                        values
+                            .pop()
+                            .expect(INTERNAL_ERR)
+                            .into_int()
+                            .expect(INTERNAL_ERR)
+                            .to_big_endian(v.as_mut_slice());
+                        num_bigint::BigInt::from_signed_bytes_be(&v)
+                    },
+                })
+            }
+        }
+        impl substreams_ethereum::Event for EventInt256 {
+            const NAME: &'static str = "EventInt256";
+            fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
+                Self::match_log(log)
+            }
+            fn decode(
+                log: &substreams_ethereum::pb::eth::v2::Log,
+            ) -> Result<Self, String> {
+                Self::decode(log)
+            }
+        }
+        #[derive(Debug, Clone, PartialEq)]
+        pub struct EventInt256Idx {
+            pub param0: num_bigint::BigInt,
+        }
+        impl EventInt256Idx {
+            const TOPIC_ID: [u8; 32] = [
+                8u8,
+                77u8,
+                106u8,
+                162u8,
+                162u8,
+                72u8,
+                65u8,
+                251u8,
+                164u8,
+                190u8,
+                44u8,
+                39u8,
+                243u8,
+                190u8,
+                3u8,
+                225u8,
+                156u8,
+                49u8,
+                34u8,
+                101u8,
+                253u8,
+                62u8,
+                106u8,
+                115u8,
+                233u8,
+                44u8,
+                229u8,
+                140u8,
+                32u8,
+                42u8,
+                71u8,
+                39u8,
+            ];
+            pub fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
+                if log.topics.len() != 2usize {
+                    return false;
+                }
+                if log.data.len() != 0usize {
+                    return false;
+                }
+                return log.topics.get(0).expect("bounds already checked").as_ref()
+                    == Self::TOPIC_ID;
+            }
+            pub fn decode(
+                log: &substreams_ethereum::pb::eth::v2::Log,
+            ) -> Result<Self, String> {
+                Ok(Self {
+                    param0: num_bigint::BigInt::from_signed_bytes_be(
+                        log.topics[1usize].as_ref(),
+                    ),
+                })
+            }
+        }
+        impl substreams_ethereum::Event for EventInt256Idx {
+            const NAME: &'static str = "EventInt256Idx";
+            fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
+                Self::match_log(log)
+            }
+            fn decode(
+                log: &substreams_ethereum::pb::eth::v2::Log,
+            ) -> Result<Self, String> {
+                Self::decode(log)
+            }
+        }
+        #[derive(Debug, Clone, PartialEq)]
+        pub struct EventUBytes8UBytes16UBytes24UBytes32 {
+            pub param0: [u8; 8usize],
+            pub param1: [u8; 16usize],
+            pub param2: [u8; 24usize],
+            pub param3: [u8; 32usize],
+        }
+        impl EventUBytes8UBytes16UBytes24UBytes32 {
+            const TOPIC_ID: [u8; 32] = [
+                117u8,
+                163u8,
+                183u8,
+                105u8,
+                165u8,
+                81u8,
+                172u8,
+                34u8,
+                102u8,
+                86u8,
+                223u8,
+                144u8,
+                28u8,
+                150u8,
+                58u8,
+                227u8,
+                241u8,
+                114u8,
+                6u8,
+                108u8,
+                111u8,
+                135u8,
+                51u8,
+                238u8,
+                216u8,
+                185u8,
+                110u8,
+                7u8,
+                16u8,
+                185u8,
+                176u8,
+                196u8,
+            ];
+            pub fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
+                if log.topics.len() != 1usize {
+                    return false;
+                }
+                if log.data.len() != 128usize {
+                    return false;
+                }
+                return log.topics.get(0).expect("bounds already checked").as_ref()
+                    == Self::TOPIC_ID;
+            }
+            pub fn decode(
+                log: &substreams_ethereum::pb::eth::v2::Log,
+            ) -> Result<Self, String> {
+                let mut values = ethabi::decode(
+                        &[
+                            ethabi::ParamType::FixedBytes(8usize),
+                            ethabi::ParamType::FixedBytes(16usize),
+                            ethabi::ParamType::FixedBytes(24usize),
+                            ethabi::ParamType::FixedBytes(32usize),
+                        ],
+                        log.data.as_ref(),
+                    )
+                    .map_err(|e| format!("unable to decode log.data: {}", e))?;
+                values.reverse();
+                Ok(Self {
+                    param0: {
+                        let mut result = [0u8; 8];
+                        let v = values
+                            .pop()
+                            .expect(INTERNAL_ERR)
+                            .into_fixed_bytes()
+                            .expect(INTERNAL_ERR);
+                        result.copy_from_slice(&v);
+                        result
+                    },
+                    param1: {
+                        let mut result = [0u8; 16];
+                        let v = values
+                            .pop()
+                            .expect(INTERNAL_ERR)
+                            .into_fixed_bytes()
+                            .expect(INTERNAL_ERR);
+                        result.copy_from_slice(&v);
+                        result
+                    },
+                    param2: {
+                        let mut result = [0u8; 24];
+                        let v = values
+                            .pop()
+                            .expect(INTERNAL_ERR)
+                            .into_fixed_bytes()
+                            .expect(INTERNAL_ERR);
+                        result.copy_from_slice(&v);
+                        result
+                    },
+                    param3: {
+                        let mut result = [0u8; 32];
+                        let v = values
+                            .pop()
+                            .expect(INTERNAL_ERR)
+                            .into_fixed_bytes()
+                            .expect(INTERNAL_ERR);
+                        result.copy_from_slice(&v);
+                        result
+                    },
+                })
+            }
+        }
+        impl substreams_ethereum::Event for EventUBytes8UBytes16UBytes24UBytes32 {
+            const NAME: &'static str = "EventUBytes8UBytes16UBytes24UBytes32";
+            fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
+                Self::match_log(log)
+            }
+            fn decode(
+                log: &substreams_ethereum::pb::eth::v2::Log,
+            ) -> Result<Self, String> {
+                Self::decode(log)
+            }
+        }
+        #[derive(Debug, Clone, PartialEq)]
+        pub struct EventUFixedArraySubDynamic {
+            pub param0: [Vec<u8>; 2usize],
+        }
+        impl EventUFixedArraySubDynamic {
+            const TOPIC_ID: [u8; 32] = [
+                214u8,
+                61u8,
+                69u8,
+                230u8,
+                205u8,
+                245u8,
+                228u8,
+                18u8,
+                225u8,
+                196u8,
+                5u8,
+                126u8,
+                186u8,
+                108u8,
+                181u8,
+                247u8,
+                102u8,
+                97u8,
+                138u8,
+                231u8,
+                48u8,
+                109u8,
+                12u8,
+                175u8,
+                109u8,
+                171u8,
+                126u8,
+                55u8,
+                97u8,
+                182u8,
+                140u8,
+                216u8,
+            ];
+            pub fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
+                if log.topics.len() != 1usize {
+                    return false;
+                }
+                if log.data.len() < 128usize {
+                    return false;
+                }
+                return log.topics.get(0).expect("bounds already checked").as_ref()
+                    == Self::TOPIC_ID;
+            }
+            pub fn decode(
+                log: &substreams_ethereum::pb::eth::v2::Log,
+            ) -> Result<Self, String> {
+                let mut values = ethabi::decode(
+                        &[
+                            ethabi::ParamType::FixedArray(
+                                Box::new(ethabi::ParamType::Bytes),
+                                2usize,
+                            ),
+                        ],
+                        log.data.as_ref(),
+                    )
+                    .map_err(|e| format!("unable to decode log.data: {}", e))?;
+                values.reverse();
+                Ok(Self {
+                    param0: {
+                        let mut iter = values
+                            .pop()
+                            .expect(INTERNAL_ERR)
+                            .into_fixed_array()
+                            .expect(INTERNAL_ERR)
+                            .into_iter()
+                            .map(|inner| inner.into_bytes().expect(INTERNAL_ERR));
+                        [
+                            iter.next().expect(INTERNAL_ERR),
+                            iter.next().expect(INTERNAL_ERR),
+                        ]
+                    },
+                })
+            }
+        }
+        impl substreams_ethereum::Event for EventUFixedArraySubDynamic {
+            const NAME: &'static str = "EventUFixedArraySubDynamic";
+            fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
+                Self::match_log(log)
+            }
+            fn decode(
+                log: &substreams_ethereum::pb::eth::v2::Log,
+            ) -> Result<Self, String> {
+                Self::decode(log)
+            }
+        }
+        #[derive(Debug, Clone, PartialEq)]
+        pub struct EventUFixedArraySubFixed {
+            pub param0: [Vec<u8>; 2usize],
+        }
+        impl EventUFixedArraySubFixed {
+            const TOPIC_ID: [u8; 32] = [
+                22u8,
+                94u8,
+                52u8,
+                167u8,
+                38u8,
+                186u8,
+                221u8,
+                105u8,
+                133u8,
+                181u8,
+                69u8,
+                163u8,
+                4u8,
+                1u8,
+                135u8,
+                60u8,
+                189u8,
+                40u8,
+                248u8,
+                164u8,
+                143u8,
+                120u8,
+                73u8,
+                131u8,
+                239u8,
+                158u8,
+                186u8,
+                238u8,
+                40u8,
+                225u8,
+                171u8,
+                178u8,
+            ];
+            pub fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
+                if log.topics.len() != 1usize {
+                    return false;
+                }
+                if log.data.len() != 64usize {
+                    return false;
+                }
+                return log.topics.get(0).expect("bounds already checked").as_ref()
+                    == Self::TOPIC_ID;
+            }
+            pub fn decode(
+                log: &substreams_ethereum::pb::eth::v2::Log,
+            ) -> Result<Self, String> {
+                let mut values = ethabi::decode(
+                        &[
+                            ethabi::ParamType::FixedArray(
+                                Box::new(ethabi::ParamType::Address),
+                                2usize,
+                            ),
+                        ],
+                        log.data.as_ref(),
+                    )
+                    .map_err(|e| format!("unable to decode log.data: {}", e))?;
+                values.reverse();
+                Ok(Self {
+                    param0: {
+                        let mut iter = values
+                            .pop()
+                            .expect(INTERNAL_ERR)
+                            .into_fixed_array()
+                            .expect(INTERNAL_ERR)
+                            .into_iter()
+                            .map(|inner| {
+                                inner
+                                    .into_address()
+                                    .expect(INTERNAL_ERR)
+                                    .as_bytes()
+                                    .to_vec()
+                            });
+                        [
+                            iter.next().expect(INTERNAL_ERR),
+                            iter.next().expect(INTERNAL_ERR),
+                        ]
+                    },
+                })
+            }
+        }
+        impl substreams_ethereum::Event for EventUFixedArraySubFixed {
+            const NAME: &'static str = "EventUFixedArraySubFixed";
+            fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
+                Self::match_log(log)
+            }
+            fn decode(
+                log: &substreams_ethereum::pb::eth::v2::Log,
+            ) -> Result<Self, String> {
+                Self::decode(log)
+            }
+        }
+        #[derive(Debug, Clone, PartialEq)]
         pub struct EventWithOverloads1 {
             pub first: Vec<u8>,
         }

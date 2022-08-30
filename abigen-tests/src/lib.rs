@@ -9,6 +9,132 @@ mod tests {
     use substreams_ethereum::pb;
 
     #[test]
+    fn it_decode_event_int256_idx() {
+        use tests::events::EventInt256Idx as Event;
+
+        let log = pb::eth::v2::Log {
+            address: hex!("0000000000000000000000000000000000000000").to_vec(),
+            topics: vec![
+                hex!("084d6aa2a24841fba4be2c27f3be03e19c312265fd3e6a73e92ce58c202a4727").to_vec(),
+                hex!("fffffffffffffffffffffffffffffffffffffffffffffffffffff713f526b11d").to_vec(),
+            ],
+            ..Default::default()
+        };
+
+        assert_eq!(Event::match_log(&log), true);
+
+        let event = Event::decode(&log);
+        assert_eq!(
+            event,
+            Ok(Event {
+                param0: num_bigint::ToBigInt::to_bigint(&-9809887317731i64).unwrap(),
+            }),
+        );
+    }
+
+    #[test]
+    fn it_decode_event_int256() {
+        use tests::events::EventInt256 as Event;
+
+        let log = pb::eth::v2::Log {
+            address: hex!("0000000000000000000000000000000000000000").to_vec(),
+            topics: vec![
+                hex!("a0bc7a55329cc29f990b7c48d9f4624e4c0c35eb955aee358f7b16441db9ed45").to_vec(),
+            ],
+            data: hex!("fffffffffffffffffffffffffffffffffffffffffffffffffffff713f526b11d").to_vec(),
+            ..Default::default()
+        };
+
+        assert_eq!(Event::match_log(&log), true);
+
+        let event = Event::decode(&log);
+        assert_eq!(
+            event,
+            Ok(Event {
+                param0: num_bigint::ToBigInt::to_bigint(&-9809887317731i64).unwrap(),
+            }),
+        );
+    }
+
+    #[test]
+    fn it_decode_event_bytes8_bytes16_bytes24_bytes32() {
+        use tests::events::EventUBytes8UBytes16UBytes24UBytes32 as Event;
+
+        let log = pb::eth::v2::Log{
+            address: hex!("0000000000000000000000000000000000000000").to_vec(),
+            topics: vec![
+                hex!("75a3b769a551ac226656df901c963ae3f172066c6f8733eed8b96e0710b9b0c4").to_vec(),
+            ],
+            data: hex!("c5abac1e99944b1d00000000000000000000000000000000000000000000000057dbc30b9acfebfb86bcc5f9e2fe3fa00000000000000000000000000000000004a81d8d5c3958b07e558ff8e58e1edf1871c14b34ecdc1c0000000000000000f154bf9817019c089414b85e6c5a19fd5d1ea04c103fcd039314132b354ca184").to_vec(),
+            ..Default::default()
+        };
+
+        assert_eq!(Event::match_log(&log), true);
+
+        let event = Event::decode(&log);
+        assert_eq!(
+            event,
+            Ok(Event {
+                param0: hex!("c5abac1e99944b1d"),
+                param1: hex!("57dbc30b9acfebfb86bcc5f9e2fe3fa0"),
+                param2: hex!("04a81d8d5c3958b07e558ff8e58e1edf1871c14b34ecdc1c"),
+                param3: hex!("f154bf9817019c089414b85e6c5a19fd5d1ea04c103fcd039314132b354ca184"),
+            }),
+        );
+    }
+
+    #[test]
+    fn it_decode_event_fixed_array_sub_fixed() {
+        use tests::events::EventUFixedArraySubFixed as Event;
+
+        let log = pb::eth::v2::Log{
+            address: hex!("0000000000000000000000000000000000000000").to_vec(),
+            topics: vec![
+                hex!("165e34a726badd6985b545a30401873cbd28f8a48f784983ef9ebaee28e1abb2").to_vec(),
+            ],
+            data: hex!("000000000000000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa000000000000000000000000ffffffffffffffffffffffffffffffffffffffff").to_vec(),
+            ..Default::default()
+        };
+
+        assert_eq!(Event::match_log(&log), true);
+
+        let event = Event::decode(&log);
+        assert_eq!(
+            event,
+            Ok(Event {
+                param0: [
+                    hex!("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa").to_vec(),
+                    hex!("ffffffffffffffffffffffffffffffffffffffff").to_vec()
+                ],
+            }),
+        );
+    }
+
+    #[test]
+    fn it_decode_event_fixed_array_sub_dynamic() {
+        use tests::events::EventUFixedArraySubDynamic as Event;
+
+        let log = pb::eth::v2::Log{
+            address: hex!("0000000000000000000000000000000000000000").to_vec(),
+            topics: vec![
+                hex!("d63d45e6cdf5e412e1c4057eba6cb5f766618ae7306d0caf6dab7e3761b68cd8").to_vec(),
+            ],
+            data: hex!("0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000005aaaaaaaaaa0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005ffffffffff000000000000000000000000000000000000000000000000000000").to_vec(),
+            ..Default::default()
+        };
+
+        assert_eq!(Event::match_log(&log), true);
+
+        let event = Event::decode(&log);
+        assert_eq!(
+            event,
+            Ok(Event {
+                param0: [hex!("aaaaaaaaaa").to_vec(), hex!("ffffffffff").to_vec()],
+            }),
+        );
+    }
+
+    #[test]
     fn it_decode_event_address_idx_string() {
         use tests::events::EventAddressIdxString as Event;
 
