@@ -7,6 +7,10 @@
 
 * Fixed decoding of event where some unindexed fields were fixed bytes (`bytes8` to `bytes32`).
 
+## [0.2.1](https://github.com/streamingfast/substreams-ethereum/releases/tag/v0.2.1)
+
+* Adding tests for decoding of different value types
+
 ## [0.2.0](https://github.com/streamingfast/substreams-ethereum/releases/tag/v0.2.0)
 
 * **Breaking** Replaced `substreams-ethereum/pb::eth::v1` to `substreams-ethereum/pb::eth::v2` (perform a global replace of any references of `substreams-ethereum/pb::eth::v1` to `substreams-ethereum/pb::eth::v2` and don't forget to re-generate ABI bindings also which depends on `substreams-ethereum/pb::eth::v1`).
