@@ -1,6 +1,6 @@
 [package]
 name = "substreams-ethereum-abigen"
-version = "0.2.1"
+version = "0.2.1-rc"
 edition = "2021"
 description = "Substreams development kit for Ethereum chains, contains Firehose Block model and helpers as well as utilities for Ethereum ABI encoding/decoding."
 homepage = "https://github.com/streamingfast/substreams-ethereum"
@@ -20,8 +20,8 @@ syn = { version = "1.0.95", default-features = false, features = ["derive", "par
 quote = "1.0.2"
 proc-macro2 = "1.0.7"
 prettyplease = "0.1"
-substreams-ethereum-core = { version = "0.2.1", path = "../core" }
+substreams-ethereum-core = { version = "0.2.1-rc", path = "../core" }
 
 [dev-dependencies]
 pretty_assertions = "1.2.1"
-substreams = { version = "~0.0.19" }
+substreams = { version = "~0.0.20" }
