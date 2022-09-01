@@ -7,6 +7,10 @@
 
 * Fixed decoding of event where some unindexed fields were fixed bytes (`bytes8` to `bytes32`).
 
+## [0.2.1-rc](https://github.com/streamingfast/substreams-ethereum/releases/tag/v0.2.1-rc)
+
+* Adding ABI function generation first draft
+
 ## [0.2.1](https://github.com/streamingfast/substreams-ethereum/releases/tag/v0.2.1)
 
 * Adding tests for decoding of different value types
