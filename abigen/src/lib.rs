@@ -227,7 +227,11 @@ fn min_data_size(input: &ParamType) -> usize {
 //     }
 // }
 
-fn to_token(name: &proc_macro2::TokenStream, kind: &ParamType) -> proc_macro2::TokenStream {
+fn to_token(
+    name: &proc_macro2::TokenStream,
+    kind: &ParamType,
+    from_array: bool,
+) -> proc_macro2::TokenStream {
     match *kind {
         ParamType::Address => {
             quote! { ethabi::Token::Address(ethabi::Address::from_slice(&#name)) }
@@ -245,12 +249,18 @@ fn to_token(name: &proc_macro2::TokenStream, kind: &ParamType) -> proc_macro2::T
                 }
             }
         }
-        ParamType::Uint(_) => quote! { ethabi::Token::Uint(#name) },
+        ParamType::Uint(_) => {
+            if from_array {
+                quote! { ethabi::Token::Uint(#name.clone()) }
+            } else {
+                quote! { ethabi::Token::Uint(#name) }
+            }
+        }
         ParamType::Bool => quote! { ethabi::Token::Bool(#name) },
         ParamType::String => quote! { ethabi::Token::String(#name.clone()) },
         ParamType::Array(ref kind) => {
             let inner_name = quote! { inner };
-            let inner_loop = to_token(&inner_name, kind);
+            let inner_loop = to_token(&inner_name, kind, true);
             quote! {
                 // note the double {{
                 {
@@ -261,7 +271,7 @@ fn to_token(name: &proc_macro2::TokenStream, kind: &ParamType) -> proc_macro2::T
         }
         ParamType::FixedArray(ref kind, _) => {
             let inner_name = quote! { inner };
-            let inner_loop = to_token(&inner_name, kind);
+            let inner_loop = to_token(&inner_name, kind, true);
             quote! {
                 // note the double {{
                 {

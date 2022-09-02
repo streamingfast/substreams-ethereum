@@ -340,7 +340,36 @@
 				"type": "address[]"
 			}
 		],
-		"name": "fixedArrayAddressArrayUint256ReturnsUint256String",
+		"name": "fixedArrayAddressArrayAddressReturnsUint256String",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			},
+			{
+				"internalType": "string",
+				"name": "",
+				"type": "string"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address[2]",
+				"name": "",
+				"type": "address[2]"
+			},
+			{
+				"internalType": "uint256[]",
+				"name": "",
+				"type": "uint256[]"
+			}
+		],
+		"name": "FixedArrayAddressArrayUint256ReturnsUint256String",
 		"outputs": [
 			{
 				"internalType": "uint256",
