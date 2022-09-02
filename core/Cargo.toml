@@ -1,6 +1,6 @@
 [package]
 name = "substreams-ethereum-core"
-version = "0.2.2-rc.1"
+version = "0.2.2-rc.2"
 edition = "2021"
 description = "Substreams development kit for Ethereum chains, contains Firehose Block model and helpers as well as utilities for Ethereum ABI encoding/decoding."
 homepage = "https://substreams.streamingfast.io/"
