@@ -74,7 +74,7 @@ impl<'a> From<(&'a String, &'a ethabi::Function)> for Function {
                 }
 
                 let mut values = ethabi::decode(&[#(#params),*], maybe_data.unwrap())
-                        .map_err(|e| format!("unable to decode call.input: {}", e))?;
+                        .map_err(|e| format!("unable to decode call.input: {:?}", e))?;
                 values.reverse();
             }
         } else {
@@ -126,7 +126,7 @@ impl<'a> From<(&'a String, &'a ethabi::Function)> for Function {
 
                     pub fn output(data: &[u8]) -> Result<#output_result, String> {
                         let mut values = ethabi::decode(&[#decode_param_type], data.as_ref())
-                        .map_err(|e| format!("unable to decode output data: {}", e))?;
+                        .map_err(|e| format!("unable to decode output data: {:?}", e))?;
 
                         Ok(#decode_input)
                     }
@@ -141,7 +141,7 @@ impl<'a> From<(&'a String, &'a ethabi::Function)> for Function {
 
                 let output_ethabi_decoded_values = quote! {
                     let mut values = ethabi::decode(&[#(#output_tuple_fields),*], data.as_ref())
-                            .map_err(|e| format!("unable to decode output data: {}", e))?;
+                            .map_err(|e| format!("unable to decode output data: {:?}", e))?;
                     values.reverse();
                 };
 

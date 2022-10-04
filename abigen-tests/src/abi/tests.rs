@@ -310,7 +310,7 @@
             pub param1: Vec<u8>,
             pub param2: [u8; 8usize],
             pub param3: [u8; 32usize],
-            pub param4: num_bigint::BigInt,
+            pub param4: BigInt,
             pub param5: ethabi::Uint,
             pub param6: bool,
             pub param7: String,
@@ -389,7 +389,7 @@
                             .into_int()
                             .expect(INTERNAL_ERR)
                             .to_big_endian(v.as_mut_slice());
-                        num_bigint::BigInt::from_signed_bytes_be(&v)
+                        v.into()
                     },
                     param5: values
                         .pop()
@@ -508,7 +508,7 @@
         }
         #[derive(Debug, Clone, PartialEq)]
         pub struct FunInt256 {
-            pub param0: num_bigint::BigInt,
+            pub param0: BigInt,
         }
         impl FunInt256 {
             const METHOD_ID: [u8; 4] = [247u8, 10u8, 247u8, 59u8];
@@ -534,7 +534,7 @@
                             .into_int()
                             .expect(INTERNAL_ERR)
                             .to_big_endian(v.as_mut_slice());
-                        num_bigint::BigInt::from_signed_bytes_be(&v)
+                        v.into()
                     },
                 })
             }
@@ -580,7 +580,7 @@
         }
         #[derive(Debug, Clone, PartialEq)]
         pub struct FunInt32 {
-            pub param0: num_bigint::BigInt,
+            pub param0: BigInt,
         }
         impl FunInt32 {
             const METHOD_ID: [u8; 4] = [215u8, 140u8, 170u8, 179u8];
@@ -606,7 +606,7 @@
                             .into_int()
                             .expect(INTERNAL_ERR)
                             .to_big_endian(v.as_mut_slice());
-                        num_bigint::BigInt::from_signed_bytes_be(&v)
+                        v.into()
                     },
                 })
             }
@@ -652,7 +652,7 @@
         }
         #[derive(Debug, Clone, PartialEq)]
         pub struct FunInt8 {
-            pub param0: num_bigint::BigInt,
+            pub param0: BigInt,
         }
         impl FunInt8 {
             const METHOD_ID: [u8; 4] = [48u8, 54u8, 230u8, 135u8];
@@ -678,7 +678,7 @@
                             .into_int()
                             .expect(INTERNAL_ERR)
                             .to_big_endian(v.as_mut_slice());
-                        num_bigint::BigInt::from_signed_bytes_be(&v)
+                        v.into()
                     },
                 })
             }
@@ -724,10 +724,10 @@
         }
         #[derive(Debug, Clone, PartialEq)]
         pub struct FunInt8Int32Int64Int256 {
-            pub param0: num_bigint::BigInt,
-            pub param1: num_bigint::BigInt,
-            pub param2: num_bigint::BigInt,
-            pub param3: num_bigint::BigInt,
+            pub param0: BigInt,
+            pub param1: BigInt,
+            pub param2: BigInt,
+            pub param3: BigInt,
         }
         impl FunInt8Int32Int64Int256 {
             const METHOD_ID: [u8; 4] = [219u8, 97u8, 126u8, 143u8];
@@ -758,7 +758,7 @@
                             .into_int()
                             .expect(INTERNAL_ERR)
                             .to_big_endian(v.as_mut_slice());
-                        num_bigint::BigInt::from_signed_bytes_be(&v)
+                        v.into()
                     },
                     param1: {
                         let mut v = [0 as u8; 32];
@@ -768,7 +768,7 @@
                             .into_int()
                             .expect(INTERNAL_ERR)
                             .to_big_endian(v.as_mut_slice());
-                        num_bigint::BigInt::from_signed_bytes_be(&v)
+                        v.into()
                     },
                     param2: {
                         let mut v = [0 as u8; 32];
@@ -778,7 +778,7 @@
                             .into_int()
                             .expect(INTERNAL_ERR)
                             .to_big_endian(v.as_mut_slice());
-                        num_bigint::BigInt::from_signed_bytes_be(&v)
+                        v.into()
                     },
                     param3: {
                         let mut v = [0 as u8; 32];
@@ -788,7 +788,7 @@
                             .into_int()
                             .expect(INTERNAL_ERR)
                             .to_big_endian(v.as_mut_slice());
-                        num_bigint::BigInt::from_signed_bytes_be(&v)
+                        v.into()
                     },
                 })
             }
@@ -1775,7 +1775,7 @@
         }
         #[derive(Debug, Clone, PartialEq)]
         pub struct EventInt256 {
-            pub param0: num_bigint::BigInt,
+            pub param0: BigInt,
         }
         impl EventInt256 {
             const TOPIC_ID: [u8; 32] = [
@@ -1840,7 +1840,7 @@
                             .into_int()
                             .expect(INTERNAL_ERR)
                             .to_big_endian(v.as_mut_slice());
-                        num_bigint::BigInt::from_signed_bytes_be(&v)
+                        v.into()
                     },
                 })
             }
@@ -1858,7 +1858,7 @@
         }
         #[derive(Debug, Clone, PartialEq)]
         pub struct EventInt256Idx {
-            pub param0: num_bigint::BigInt,
+            pub param0: BigInt,
         }
         impl EventInt256Idx {
             const TOPIC_ID: [u8; 32] = [
@@ -1909,9 +1909,7 @@
                 log: &substreams_ethereum::pb::eth::v2::Log,
             ) -> Result<Self, String> {
                 Ok(Self {
-                    param0: num_bigint::BigInt::from_signed_bytes_be(
-                        log.topics[1usize].as_ref(),
-                    ),
+                    param0: BigInt::from_signed_bytes_be(log.topics[1usize].as_ref()),
                 })
             }
         }

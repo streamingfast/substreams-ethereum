@@ -97,7 +97,7 @@ impl<'a> From<(&'a String, &'a ethabi::Event)> for Event {
 
             quote! {
                 let mut values = ethabi::decode(&[#(#params),*], log.data.as_ref())
-                        .map_err(|e| format!("unable to decode log.data: {}", e))?;
+                        .map_err(|e| format!("unable to decode log.data: {:?}", e))?;
                 values.reverse();
             }
         } else {
@@ -488,7 +488,7 @@ mod tests {
                                 &[ethabi::ParamType::Uint(256usize)],
                                 log.data.as_ref()
                             )
-                            .map_err(|e| format!("unable to decode log.data: {}", e))?;
+                            .map_err(|e| format!("unable to decode log.data: {:?}", e))?;
                         values.reverse();
                         Ok(Self {
                             from: ethabi::decode(
