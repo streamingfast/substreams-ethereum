@@ -15,7 +15,9 @@ rust-version = "1.60"
 ethabi = "17.0"
 prost = { version = "^0.11.0" }
 prost-types = "^0.11.0"
-substreams = { version = "~0.0.20" }
+substreams = { path = "../../substreams-rs/substreams" }
+num-bigint = "0.4"
+bigdecimal = "0.3"
 
 [build-dependencies]
 prost-build = "^0.11.0"

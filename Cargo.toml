@@ -1,7 +1,7 @@
 [workspace]
 members = [
     "abigen",
-    "abigen-tests",
+#    "abigen-tests",
     "core",
     "derive",
     "substreams-ethereum",
