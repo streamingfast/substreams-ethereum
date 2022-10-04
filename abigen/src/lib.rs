@@ -106,7 +106,7 @@ fn rust_type(input: &ParamType) -> proc_macro2::TokenStream {
         ParamType::Address => quote! { Vec<u8> },
         ParamType::Bytes => quote! { Vec<u8> },
         ParamType::FixedBytes(size) => quote! { [u8; #size] },
-        ParamType::Int(_) => quote! { num_bigint::BigInt },
+        ParamType::Int(_) => quote! { EthBigInt },
         ParamType::Uint(_) => quote! { ethabi::Uint },
         ParamType::Bool => quote! { bool },
         ParamType::String => quote! { String },
@@ -241,7 +241,7 @@ fn to_token(
         ParamType::Int(_) => {
             quote! {
                 {
-                    let non_full_signed_bytes = #name.to_signed_bytes_be();
+                    let non_full_signed_bytes = #name.get_big_int().to_signed_bytes_be();
                     let mut full_signed_bytes = [0xff as u8; 32];
                     non_full_signed_bytes.into_iter().rev().enumerate().for_each(|(i, byte)| full_signed_bytes[31 - i] = byte);
 
@@ -312,8 +312,7 @@ fn from_token(kind: &ParamType, token: &proc_macro2::TokenStream) -> proc_macro2
                 {
                     let mut v = [0 as u8; 32];
                     #token.into_int().expect(INTERNAL_ERR).to_big_endian(v.as_mut_slice());
-
-                    num_bigint::BigInt::from_signed_bytes_be(&v)
+                    EthBigInt::new(v.into())
                 }
             }
         }
@@ -356,14 +355,16 @@ fn decode_topic(
 ) -> proc_macro2::TokenStream {
     let syntax_type = to_syntax_string(kind);
     let error_msg = format!(
-        "unable to decode param '{}' from topic of type '{}': {{}}",
+        "unable to decode param '{}' from topic of type '{}': {{:?}}",
         name, kind
     );
 
     match kind {
         ParamType::Int(_) => {
             quote! {
-                num_bigint::BigInt::from_signed_bytes_be(#data_token)
+                EthBigInt::new(substreams::scalar::BigInt::from_signed_bytes_be(
+                        #data_token,
+                ))
             }
         }
         _ => {
