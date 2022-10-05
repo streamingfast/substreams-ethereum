@@ -6,7 +6,7 @@ use substreams::scalar::{BigDecimal, BigInt};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct EthBigInt {
-    pub i: BigInt,
+    i: BigInt,
 }
 
 impl EthBigInt {

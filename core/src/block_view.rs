@@ -50,6 +50,16 @@ impl pb::Block {
             E::match_and_decode(log).map(|e| (e, log))
         })
     }
+
+    pub fn timestamp_seconds(&self) -> u64 {
+        self.header
+            .as_ref()
+            .unwrap()
+            .timestamp
+            .as_ref()
+            .unwrap()
+            .seconds as u64
+    }
 }
 
 #[derive(Copy, Clone)]
