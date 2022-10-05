@@ -7,6 +7,11 @@
 
 * Fixed decoding of event where some unindexed fields were fixed bytes (`bytes8` to `bytes32`).
 
+## [0.3.0](https://github.com/streamingfast/substreams-ethereum/releases/tag/v0.3.0)
+
+* Breaking change
+  * Replaced `num_bigint` with `EthBigInt` and `BigInt` from `substreams-rs` crate
+
 ## [0.2.2-rc.2](https://github.com/streamingfast/substreams-ethereum/releases/tag/v0.2.2-rc.2)
 
 * Fixed issue when type of field was Vec of Uint and the underlying passed in value wasn't cloned. The clone only occurs when it is a Vec<Uint> and not when the type is only a Uint.

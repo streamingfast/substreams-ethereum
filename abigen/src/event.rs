@@ -376,7 +376,7 @@ mod tests {
                                     log.topics[1usize].as_ref()
                                 )
                                 .map_err(|e| format!(
-                                    "unable to decode param 'foo' from topic of type 'address': {}",
+                                    "unable to decode param 'foo' from topic of type 'address': {:?}",
                                     e
                                 ))?
                                 .pop()
@@ -496,7 +496,7 @@ mod tests {
                                     log.topics[1usize].as_ref()
                                 )
                                 .map_err(|e| format!(
-                                    "unable to decode param 'from' from topic of type 'address': {}",
+                                    "unable to decode param 'from' from topic of type 'address': {:?}",
                                     e
                                 ))?
                                 .pop()
@@ -510,7 +510,7 @@ mod tests {
                                     log.topics[2usize].as_ref()
                                 )
                                 .map_err(|e| format!(
-                                    "unable to decode param 'to' from topic of type 'address': {}", e
+                                    "unable to decode param 'to' from topic of type 'address': {:?}", e
                                 ))?
                                 .pop()
                                 .expect(INTERNAL_ERR)
@@ -628,7 +628,7 @@ mod tests {
                                     log.topics[1usize].as_ref()
                                 )
                                 .map_err(|e| format!(
-                                    "unable to decode param 'from' from topic of type 'address': {}",
+                                    "unable to decode param 'from' from topic of type 'address': {:?}",
                                     e
                                 ))?
                                 .pop()
@@ -642,7 +642,7 @@ mod tests {
                                     log.topics[2usize].as_ref()
                                 )
                                 .map_err(|e| format!(
-                                    "unable to decode param 'to' from topic of type 'address': {}", e
+                                    "unable to decode param 'to' from topic of type 'address': {:?}", e
                                 ))?
                                 .pop()
                                 .expect(INTERNAL_ERR)
@@ -655,7 +655,7 @@ mod tests {
                                     log.topics[3usize].as_ref()
                                 )
                                 .map_err(|e| format!(
-                                    "unable to decode param 'token_id' from topic of type 'uint256': {}",
+                                    "unable to decode param 'token_id' from topic of type 'uint256': {:?}",
                                     e
                                 ))?
                                 .pop()

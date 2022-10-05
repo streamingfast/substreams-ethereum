@@ -11,12 +11,13 @@ ethabi = "17.0"
 num-bigint = "0.4.3"
 prost = { version = "^0.11.0" }
 prost-types = "^0.11.0"
-substreams = { version = "~0.0.20" }
-substreams-ethereum = { version = "0.2.2-rc.2", path = "../substreams-ethereum" }
+substreams = { version = "~0.1.1" }
+substreams-ethereum = { version = "0.3.0", path = "../substreams-ethereum" }
+substreams-ethereum-core = { version = "0.3.0", path = "../core"}
 
 [build-dependencies]
 anyhow = "1"
-substreams-ethereum = { version = "0.2.2-rc.2", path = "../substreams-ethereum" }
+substreams-ethereum = { version = "0.3.0", path = "../substreams-ethereum" }
 
 [dev-dependencies]
 pretty_assertions = "1.2.1"

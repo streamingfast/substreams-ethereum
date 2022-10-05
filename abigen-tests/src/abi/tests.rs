@@ -3,6 +3,7 @@
     #[allow(dead_code)]
     #[allow(unused_variables)]
     pub mod functions {
+        use substreams_ethereum::scalar::EthBigInt;
         use super::INTERNAL_ERR;
         #[derive(Debug, Clone, PartialEq)]
         pub struct FixedArrayAddressArrayUint256ReturnsUint256String {
@@ -30,7 +31,7 @@
                         ],
                         maybe_data.unwrap(),
                     )
-                    .map_err(|e| format!("unable to decode call.input: {}", e))?;
+                    .map_err(|e| format!("unable to decode call.input: {:?}", e))?;
                 values.reverse();
                 Ok(Self {
                     param0: {
@@ -100,7 +101,7 @@
                         &[ethabi::ParamType::Uint(256usize), ethabi::ParamType::String],
                         data.as_ref(),
                     )
-                    .map_err(|e| format!("unable to decode output data: {}", e))?;
+                    .map_err(|e| format!("unable to decode output data: {:?}", e))?;
                 values.reverse();
                 Ok((
                     values.pop().expect(INTERNAL_ERR).into_uint().expect(INTERNAL_ERR),
@@ -178,7 +179,7 @@
                         ],
                         maybe_data.unwrap(),
                     )
-                    .map_err(|e| format!("unable to decode call.input: {}", e))?;
+                    .map_err(|e| format!("unable to decode call.input: {:?}", e))?;
                 values.reverse();
                 Ok(Self {
                     param0: {
@@ -252,7 +253,7 @@
                         &[ethabi::ParamType::Uint(256usize), ethabi::ParamType::String],
                         data.as_ref(),
                     )
-                    .map_err(|e| format!("unable to decode output data: {}", e))?;
+                    .map_err(|e| format!("unable to decode output data: {:?}", e))?;
                 values.reverse();
                 Ok((
                     values.pop().expect(INTERNAL_ERR).into_uint().expect(INTERNAL_ERR),
@@ -310,7 +311,7 @@
             pub param1: Vec<u8>,
             pub param2: [u8; 8usize],
             pub param3: [u8; 32usize],
-            pub param4: BigInt,
+            pub param4: EthBigInt,
             pub param5: ethabi::Uint,
             pub param6: bool,
             pub param7: String,
@@ -346,7 +347,7 @@
                         ],
                         maybe_data.unwrap(),
                     )
-                    .map_err(|e| format!("unable to decode call.input: {}", e))?;
+                    .map_err(|e| format!("unable to decode call.input: {:?}", e))?;
                 values.reverse();
                 Ok(Self {
                     param0: values
@@ -389,7 +390,7 @@
                             .into_int()
                             .expect(INTERNAL_ERR)
                             .to_big_endian(v.as_mut_slice());
-                        v.into()
+                        EthBigInt::new(v.into())
                     },
                     param5: values
                         .pop()
@@ -447,7 +448,10 @@
                         ethabi::Token::FixedBytes(self.param2.as_ref().to_vec()),
                         ethabi::Token::FixedBytes(self.param3.as_ref().to_vec()),
                         {
-                            let non_full_signed_bytes = self.param4.to_signed_bytes_be();
+                            let non_full_signed_bytes = self
+                                .param4
+                                .get_big_int()
+                                .to_signed_bytes_be();
                             let mut full_signed_bytes = [0xff as u8; 32];
                             non_full_signed_bytes
                                 .into_iter()
@@ -508,7 +512,7 @@
         }
         #[derive(Debug, Clone, PartialEq)]
         pub struct FunInt256 {
-            pub param0: BigInt,
+            pub param0: EthBigInt,
         }
         impl FunInt256 {
             const METHOD_ID: [u8; 4] = [247u8, 10u8, 247u8, 59u8];
@@ -523,7 +527,7 @@
                         &[ethabi::ParamType::Int(256usize)],
                         maybe_data.unwrap(),
                     )
-                    .map_err(|e| format!("unable to decode call.input: {}", e))?;
+                    .map_err(|e| format!("unable to decode call.input: {:?}", e))?;
                 values.reverse();
                 Ok(Self {
                     param0: {
@@ -534,7 +538,7 @@
                             .into_int()
                             .expect(INTERNAL_ERR)
                             .to_big_endian(v.as_mut_slice());
-                        v.into()
+                        EthBigInt::new(v.into())
                     },
                 })
             }
@@ -542,7 +546,10 @@
                 let data = ethabi::encode(
                     &[
                         {
-                            let non_full_signed_bytes = self.param0.to_signed_bytes_be();
+                            let non_full_signed_bytes = self
+                                .param0
+                                .get_big_int()
+                                .to_signed_bytes_be();
                             let mut full_signed_bytes = [0xff as u8; 32];
                             non_full_signed_bytes
                                 .into_iter()
@@ -580,7 +587,7 @@
         }
         #[derive(Debug, Clone, PartialEq)]
         pub struct FunInt32 {
-            pub param0: BigInt,
+            pub param0: EthBigInt,
         }
         impl FunInt32 {
             const METHOD_ID: [u8; 4] = [215u8, 140u8, 170u8, 179u8];
@@ -595,7 +602,7 @@
                         &[ethabi::ParamType::Int(32usize)],
                         maybe_data.unwrap(),
                     )
-                    .map_err(|e| format!("unable to decode call.input: {}", e))?;
+                    .map_err(|e| format!("unable to decode call.input: {:?}", e))?;
                 values.reverse();
                 Ok(Self {
                     param0: {
@@ -606,7 +613,7 @@
                             .into_int()
                             .expect(INTERNAL_ERR)
                             .to_big_endian(v.as_mut_slice());
-                        v.into()
+                        EthBigInt::new(v.into())
                     },
                 })
             }
@@ -614,7 +621,10 @@
                 let data = ethabi::encode(
                     &[
                         {
-                            let non_full_signed_bytes = self.param0.to_signed_bytes_be();
+                            let non_full_signed_bytes = self
+                                .param0
+                                .get_big_int()
+                                .to_signed_bytes_be();
                             let mut full_signed_bytes = [0xff as u8; 32];
                             non_full_signed_bytes
                                 .into_iter()
@@ -652,7 +662,7 @@
         }
         #[derive(Debug, Clone, PartialEq)]
         pub struct FunInt8 {
-            pub param0: BigInt,
+            pub param0: EthBigInt,
         }
         impl FunInt8 {
             const METHOD_ID: [u8; 4] = [48u8, 54u8, 230u8, 135u8];
@@ -667,7 +677,7 @@
                         &[ethabi::ParamType::Int(8usize)],
                         maybe_data.unwrap(),
                     )
-                    .map_err(|e| format!("unable to decode call.input: {}", e))?;
+                    .map_err(|e| format!("unable to decode call.input: {:?}", e))?;
                 values.reverse();
                 Ok(Self {
                     param0: {
@@ -678,7 +688,7 @@
                             .into_int()
                             .expect(INTERNAL_ERR)
                             .to_big_endian(v.as_mut_slice());
-                        v.into()
+                        EthBigInt::new(v.into())
                     },
                 })
             }
@@ -686,7 +696,10 @@
                 let data = ethabi::encode(
                     &[
                         {
-                            let non_full_signed_bytes = self.param0.to_signed_bytes_be();
+                            let non_full_signed_bytes = self
+                                .param0
+                                .get_big_int()
+                                .to_signed_bytes_be();
                             let mut full_signed_bytes = [0xff as u8; 32];
                             non_full_signed_bytes
                                 .into_iter()
@@ -724,10 +737,10 @@
         }
         #[derive(Debug, Clone, PartialEq)]
         pub struct FunInt8Int32Int64Int256 {
-            pub param0: BigInt,
-            pub param1: BigInt,
-            pub param2: BigInt,
-            pub param3: BigInt,
+            pub param0: EthBigInt,
+            pub param1: EthBigInt,
+            pub param2: EthBigInt,
+            pub param3: EthBigInt,
         }
         impl FunInt8Int32Int64Int256 {
             const METHOD_ID: [u8; 4] = [219u8, 97u8, 126u8, 143u8];
@@ -747,7 +760,7 @@
                         ],
                         maybe_data.unwrap(),
                     )
-                    .map_err(|e| format!("unable to decode call.input: {}", e))?;
+                    .map_err(|e| format!("unable to decode call.input: {:?}", e))?;
                 values.reverse();
                 Ok(Self {
                     param0: {
@@ -758,7 +771,7 @@
                             .into_int()
                             .expect(INTERNAL_ERR)
                             .to_big_endian(v.as_mut_slice());
-                        v.into()
+                        EthBigInt::new(v.into())
                     },
                     param1: {
                         let mut v = [0 as u8; 32];
@@ -768,7 +781,7 @@
                             .into_int()
                             .expect(INTERNAL_ERR)
                             .to_big_endian(v.as_mut_slice());
-                        v.into()
+                        EthBigInt::new(v.into())
                     },
                     param2: {
                         let mut v = [0 as u8; 32];
@@ -778,7 +791,7 @@
                             .into_int()
                             .expect(INTERNAL_ERR)
                             .to_big_endian(v.as_mut_slice());
-                        v.into()
+                        EthBigInt::new(v.into())
                     },
                     param3: {
                         let mut v = [0 as u8; 32];
@@ -788,7 +801,7 @@
                             .into_int()
                             .expect(INTERNAL_ERR)
                             .to_big_endian(v.as_mut_slice());
-                        v.into()
+                        EthBigInt::new(v.into())
                     },
                 })
             }
@@ -796,7 +809,10 @@
                 let data = ethabi::encode(
                     &[
                         {
-                            let non_full_signed_bytes = self.param0.to_signed_bytes_be();
+                            let non_full_signed_bytes = self
+                                .param0
+                                .get_big_int()
+                                .to_signed_bytes_be();
                             let mut full_signed_bytes = [0xff as u8; 32];
                             non_full_signed_bytes
                                 .into_iter()
@@ -808,7 +824,10 @@
                             )
                         },
                         {
-                            let non_full_signed_bytes = self.param1.to_signed_bytes_be();
+                            let non_full_signed_bytes = self
+                                .param1
+                                .get_big_int()
+                                .to_signed_bytes_be();
                             let mut full_signed_bytes = [0xff as u8; 32];
                             non_full_signed_bytes
                                 .into_iter()
@@ -820,7 +839,10 @@
                             )
                         },
                         {
-                            let non_full_signed_bytes = self.param2.to_signed_bytes_be();
+                            let non_full_signed_bytes = self
+                                .param2
+                                .get_big_int()
+                                .to_signed_bytes_be();
                             let mut full_signed_bytes = [0xff as u8; 32];
                             non_full_signed_bytes
                                 .into_iter()
@@ -832,7 +854,10 @@
                             )
                         },
                         {
-                            let non_full_signed_bytes = self.param3.to_signed_bytes_be();
+                            let non_full_signed_bytes = self
+                                .param3
+                                .get_big_int()
+                                .to_signed_bytes_be();
                             let mut full_signed_bytes = [0xff as u8; 32];
                             non_full_signed_bytes
                                 .into_iter()
@@ -894,7 +919,7 @@
                         &[ethabi::ParamType::String],
                         data.as_ref(),
                     )
-                    .map_err(|e| format!("unable to decode output data: {}", e))?;
+                    .map_err(|e| format!("unable to decode output data: {:?}", e))?;
                 Ok(
                     values
                         .pop()
@@ -973,7 +998,7 @@
                         &[ethabi::ParamType::String],
                         data.as_ref(),
                     )
-                    .map_err(|e| format!("unable to decode output data: {}", e))?;
+                    .map_err(|e| format!("unable to decode output data: {:?}", e))?;
                 Ok(
                     values
                         .pop()
@@ -1052,7 +1077,7 @@
                         &[ethabi::ParamType::String, ethabi::ParamType::String],
                         data.as_ref(),
                     )
-                    .map_err(|e| format!("unable to decode output data: {}", e))?;
+                    .map_err(|e| format!("unable to decode output data: {:?}", e))?;
                 values.reverse();
                 Ok((
                     values.pop().expect(INTERNAL_ERR).into_string().expect(INTERNAL_ERR),
@@ -1120,7 +1145,7 @@
                         &[ethabi::ParamType::String],
                         maybe_data.unwrap(),
                     )
-                    .map_err(|e| format!("unable to decode call.input: {}", e))?;
+                    .map_err(|e| format!("unable to decode call.input: {:?}", e))?;
                 values.reverse();
                 Ok(Self {
                     first: values
@@ -1173,7 +1198,7 @@
                         &[ethabi::ParamType::String, ethabi::ParamType::String],
                         maybe_data.unwrap(),
                     )
-                    .map_err(|e| format!("unable to decode call.input: {}", e))?;
+                    .map_err(|e| format!("unable to decode call.input: {:?}", e))?;
                 values.reverse();
                 Ok(Self {
                     first: values
@@ -1222,6 +1247,7 @@
     /// Contract's events.
     #[allow(dead_code)]
     pub mod events {
+        use substreams_ethereum::scalar::EthBigInt;
         use super::INTERNAL_ERR;
         #[derive(Debug, Clone, PartialEq)]
         pub struct EventAddressIdxString {
@@ -1280,7 +1306,7 @@
                         &[ethabi::ParamType::String],
                         log.data.as_ref(),
                     )
-                    .map_err(|e| format!("unable to decode log.data: {}", e))?;
+                    .map_err(|e| format!("unable to decode log.data: {:?}", e))?;
                 values.reverse();
                 Ok(Self {
                     first: ethabi::decode(
@@ -1289,7 +1315,7 @@
                         )
                         .map_err(|e| {
                             format!(
-                                "unable to decode param 'first' from topic of type 'address': {}",
+                                "unable to decode param 'first' from topic of type 'address': {:?}",
                                 e
                             )
                         })?
@@ -1377,7 +1403,7 @@
                         &[ethabi::ParamType::String, ethabi::ParamType::Bytes],
                         log.data.as_ref(),
                     )
-                    .map_err(|e| format!("unable to decode log.data: {}", e))?;
+                    .map_err(|e| format!("unable to decode log.data: {:?}", e))?;
                 values.reverse();
                 Ok(Self {
                     first: ethabi::decode(
@@ -1386,7 +1412,7 @@
                         )
                         .map_err(|e| {
                             format!(
-                                "unable to decode param 'first' from topic of type 'address': {}",
+                                "unable to decode param 'first' from topic of type 'address': {:?}",
                                 e
                             )
                         })?
@@ -1402,7 +1428,7 @@
                         )
                         .map_err(|e| {
                             format!(
-                                "unable to decode param 'third' from topic of type 'uint256': {}",
+                                "unable to decode param 'third' from topic of type 'uint256': {:?}",
                                 e
                             )
                         })?
@@ -1496,7 +1522,7 @@
                         ],
                         log.data.as_ref(),
                     )
-                    .map_err(|e| format!("unable to decode log.data: {}", e))?;
+                    .map_err(|e| format!("unable to decode log.data: {:?}", e))?;
                 values.reverse();
                 Ok(Self {
                     first: ethabi::decode(
@@ -1505,7 +1531,7 @@
                         )
                         .map_err(|e| {
                             format!(
-                                "unable to decode param 'first' from topic of type 'address': {}",
+                                "unable to decode param 'first' from topic of type 'address': {:?}",
                                 e
                             )
                         })?
@@ -1521,7 +1547,7 @@
                         )
                         .map_err(|e| {
                             format!(
-                                "unable to decode param 'fourth' from topic of type 'address': {}",
+                                "unable to decode param 'fourth' from topic of type 'address': {:?}",
                                 e
                             )
                         })?
@@ -1616,7 +1642,7 @@
                         ],
                         log.data.as_ref(),
                     )
-                    .map_err(|e| format!("unable to decode log.data: {}", e))?;
+                    .map_err(|e| format!("unable to decode log.data: {:?}", e))?;
                 values.reverse();
                 Ok(Self {
                     third: ethabi::decode(
@@ -1625,7 +1651,7 @@
                         )
                         .map_err(|e| {
                             format!(
-                                "unable to decode param 'third' from topic of type 'address': {}",
+                                "unable to decode param 'third' from topic of type 'address': {:?}",
                                 e
                             )
                         })?
@@ -1725,7 +1751,7 @@
                         ],
                         log.data.as_ref(),
                     )
-                    .map_err(|e| format!("unable to decode log.data: {}", e))?;
+                    .map_err(|e| format!("unable to decode log.data: {:?}", e))?;
                 values.reverse();
                 Ok(Self {
                     third: ethabi::decode(
@@ -1734,7 +1760,7 @@
                         )
                         .map_err(|e| {
                             format!(
-                                "unable to decode param 'third' from topic of type 'address': {}",
+                                "unable to decode param 'third' from topic of type 'address': {:?}",
                                 e
                             )
                         })?
@@ -1775,7 +1801,7 @@
         }
         #[derive(Debug, Clone, PartialEq)]
         pub struct EventInt256 {
-            pub param0: BigInt,
+            pub param0: EthBigInt,
         }
         impl EventInt256 {
             const TOPIC_ID: [u8; 32] = [
@@ -1829,7 +1855,7 @@
                         &[ethabi::ParamType::Int(256usize)],
                         log.data.as_ref(),
                     )
-                    .map_err(|e| format!("unable to decode log.data: {}", e))?;
+                    .map_err(|e| format!("unable to decode log.data: {:?}", e))?;
                 values.reverse();
                 Ok(Self {
                     param0: {
@@ -1840,7 +1866,7 @@
                             .into_int()
                             .expect(INTERNAL_ERR)
                             .to_big_endian(v.as_mut_slice());
-                        v.into()
+                        EthBigInt::new(v.into())
                     },
                 })
             }
@@ -1858,7 +1884,7 @@
         }
         #[derive(Debug, Clone, PartialEq)]
         pub struct EventInt256Idx {
-            pub param0: BigInt,
+            pub param0: EthBigInt,
         }
         impl EventInt256Idx {
             const TOPIC_ID: [u8; 32] = [
@@ -1909,7 +1935,11 @@
                 log: &substreams_ethereum::pb::eth::v2::Log,
             ) -> Result<Self, String> {
                 Ok(Self {
-                    param0: BigInt::from_signed_bytes_be(log.topics[1usize].as_ref()),
+                    param0: EthBigInt::new(
+                        substreams::scalar::BigInt::from_signed_bytes_be(
+                            log.topics[1usize].as_ref(),
+                        ),
+                    ),
                 })
             }
         }
@@ -1988,7 +2018,7 @@
                         ],
                         log.data.as_ref(),
                     )
-                    .map_err(|e| format!("unable to decode log.data: {}", e))?;
+                    .map_err(|e| format!("unable to decode log.data: {:?}", e))?;
                 values.reverse();
                 Ok(Self {
                     param0: {
@@ -2106,7 +2136,7 @@
                         ],
                         log.data.as_ref(),
                     )
-                    .map_err(|e| format!("unable to decode log.data: {}", e))?;
+                    .map_err(|e| format!("unable to decode log.data: {:?}", e))?;
                 values.reverse();
                 Ok(Self {
                     param0: {
@@ -2197,7 +2227,7 @@
                         ],
                         log.data.as_ref(),
                     )
-                    .map_err(|e| format!("unable to decode log.data: {}", e))?;
+                    .map_err(|e| format!("unable to decode log.data: {:?}", e))?;
                 values.reverse();
                 Ok(Self {
                     param0: {
@@ -2292,7 +2322,7 @@
                         )
                         .map_err(|e| {
                             format!(
-                                "unable to decode param 'first' from topic of type 'address': {}",
+                                "unable to decode param 'first' from topic of type 'address': {:?}",
                                 e
                             )
                         })?
@@ -2375,7 +2405,7 @@
                         )
                         .map_err(|e| {
                             format!(
-                                "unable to decode param 'second' from topic of type 'string': {}",
+                                "unable to decode param 'second' from topic of type 'string': {:?}",
                                 e
                             )
                         })?
@@ -2456,7 +2486,7 @@
                         )
                         .map_err(|e| {
                             format!(
-                                "unable to decode param 'third' from topic of type 'uint256': {}",
+                                "unable to decode param 'third' from topic of type 'uint256': {:?}",
                                 e
                             )
                         })?
