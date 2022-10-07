@@ -5,6 +5,7 @@ pub trait Function: Sized {
 
     fn match_call(log: &Call) -> bool;
     fn decode(log: &Call) -> Result<Self, String>;
+    fn encode(&self) -> Vec<u8>;
 
     /// Attempts to match and decode the call.
     /// If `Self::match_call(log)` is `false`, returns `None`.

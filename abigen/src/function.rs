@@ -299,6 +299,15 @@ impl Function {
                 fn decode(call: &substreams_ethereum::pb::eth::v2::Call) -> Result<Self, String> {
                     Self::decode(call)
                 }
+                fn encode(&self) -> Vec<u8> {
+                    self.encode()
+                }
+            }
+
+            impl substreams_ethereum::rpc::RPCDecodable<#outputs_result> for #camel_name {
+                fn output(data: &[u8]) -> Result<#outputs_result, String> {
+                    Self::output(data)
+                }
             }
         }
     }

@@ -152,6 +152,15 @@
             ) -> Result<Self, String> {
                 Self::decode(call)
             }
+            fn encode(&self) -> Vec<u8> {
+                self.encode()
+            }
+        }
+        impl substreams_ethereum::rpc::RPCDecodable<(ethabi::Uint, String)>
+        for FixedArrayAddressArrayUint256ReturnsUint256String {
+            fn output(data: &[u8]) -> Result<(ethabi::Uint, String), String> {
+                Self::output(data)
+            }
         }
         #[derive(Debug, Clone, PartialEq)]
         pub struct FixedArrayAddressArrayAddressReturnsUint256String {
@@ -303,6 +312,15 @@
                 call: &substreams_ethereum::pb::eth::v2::Call,
             ) -> Result<Self, String> {
                 Self::decode(call)
+            }
+            fn encode(&self) -> Vec<u8> {
+                self.encode()
+            }
+        }
+        impl substreams_ethereum::rpc::RPCDecodable<(ethabi::Uint, String)>
+        for FixedArrayAddressArrayAddressReturnsUint256String {
+            fn output(data: &[u8]) -> Result<(ethabi::Uint, String), String> {
+                Self::output(data)
             }
         }
         #[derive(Debug, Clone, PartialEq)]
@@ -509,6 +527,14 @@
             ) -> Result<Self, String> {
                 Self::decode(call)
             }
+            fn encode(&self) -> Vec<u8> {
+                self.encode()
+            }
+        }
+        impl substreams_ethereum::rpc::RPCDecodable<()> for FunAll {
+            fn output(data: &[u8]) -> Result<(), String> {
+                Self::output(data)
+            }
         }
         #[derive(Debug, Clone, PartialEq)]
         pub struct FunInt256 {
@@ -583,6 +609,14 @@
                 call: &substreams_ethereum::pb::eth::v2::Call,
             ) -> Result<Self, String> {
                 Self::decode(call)
+            }
+            fn encode(&self) -> Vec<u8> {
+                self.encode()
+            }
+        }
+        impl substreams_ethereum::rpc::RPCDecodable<()> for FunInt256 {
+            fn output(data: &[u8]) -> Result<(), String> {
+                Self::output(data)
             }
         }
         #[derive(Debug, Clone, PartialEq)]
@@ -659,6 +693,14 @@
             ) -> Result<Self, String> {
                 Self::decode(call)
             }
+            fn encode(&self) -> Vec<u8> {
+                self.encode()
+            }
+        }
+        impl substreams_ethereum::rpc::RPCDecodable<()> for FunInt32 {
+            fn output(data: &[u8]) -> Result<(), String> {
+                Self::output(data)
+            }
         }
         #[derive(Debug, Clone, PartialEq)]
         pub struct FunInt8 {
@@ -733,6 +775,14 @@
                 call: &substreams_ethereum::pb::eth::v2::Call,
             ) -> Result<Self, String> {
                 Self::decode(call)
+            }
+            fn encode(&self) -> Vec<u8> {
+                self.encode()
+            }
+        }
+        impl substreams_ethereum::rpc::RPCDecodable<()> for FunInt8 {
+            fn output(data: &[u8]) -> Result<(), String> {
+                Self::output(data)
             }
         }
         #[derive(Debug, Clone, PartialEq)]
@@ -892,6 +942,14 @@
             ) -> Result<Self, String> {
                 Self::decode(call)
             }
+            fn encode(&self) -> Vec<u8> {
+                self.encode()
+            }
+        }
+        impl substreams_ethereum::rpc::RPCDecodable<()> for FunInt8Int32Int64Int256 {
+            fn output(data: &[u8]) -> Result<(), String> {
+                Self::output(data)
+            }
         }
         #[derive(Debug, Clone, PartialEq)]
         pub struct FunReturnsString1 {}
@@ -970,6 +1028,14 @@
                 call: &substreams_ethereum::pb::eth::v2::Call,
             ) -> Result<Self, String> {
                 Self::decode(call)
+            }
+            fn encode(&self) -> Vec<u8> {
+                self.encode()
+            }
+        }
+        impl substreams_ethereum::rpc::RPCDecodable<String> for FunReturnsString1 {
+            fn output(data: &[u8]) -> Result<String, String> {
+                Self::output(data)
             }
         }
         #[derive(Debug, Clone, PartialEq)]
@@ -1050,6 +1116,14 @@
             ) -> Result<Self, String> {
                 Self::decode(call)
             }
+            fn encode(&self) -> Vec<u8> {
+                self.encode()
+            }
+        }
+        impl substreams_ethereum::rpc::RPCDecodable<String> for FunReturnsString2 {
+            fn output(data: &[u8]) -> Result<String, String> {
+                Self::output(data)
+            }
         }
         #[derive(Debug, Clone, PartialEq)]
         pub struct FunReturnsStringString {}
@@ -1127,6 +1201,15 @@
             ) -> Result<Self, String> {
                 Self::decode(call)
             }
+            fn encode(&self) -> Vec<u8> {
+                self.encode()
+            }
+        }
+        impl substreams_ethereum::rpc::RPCDecodable<(String, String)>
+        for FunReturnsStringString {
+            fn output(data: &[u8]) -> Result<(String, String), String> {
+                Self::output(data)
+            }
         }
         #[derive(Debug, Clone, PartialEq)]
         pub struct FunString {
@@ -1178,6 +1261,14 @@
                 call: &substreams_ethereum::pb::eth::v2::Call,
             ) -> Result<Self, String> {
                 Self::decode(call)
+            }
+            fn encode(&self) -> Vec<u8> {
+                self.encode()
+            }
+        }
+        impl substreams_ethereum::rpc::RPCDecodable<()> for FunString {
+            fn output(data: &[u8]) -> Result<(), String> {
+                Self::output(data)
             }
         }
         #[derive(Debug, Clone, PartialEq)]
@@ -1241,6 +1332,14 @@
                 call: &substreams_ethereum::pb::eth::v2::Call,
             ) -> Result<Self, String> {
                 Self::decode(call)
+            }
+            fn encode(&self) -> Vec<u8> {
+                self.encode()
+            }
+        }
+        impl substreams_ethereum::rpc::RPCDecodable<()> for FunStringString {
+            fn output(data: &[u8]) -> Result<(), String> {
+                Self::output(data)
             }
         }
     }
