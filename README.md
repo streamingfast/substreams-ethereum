@@ -40,7 +40,7 @@ This means changes to Protobuf files must be manually re-generated and commit, s
 - Update the [CHANGELOG.md](CHANGELOG.md) to update the `## Unreleased` header to become `## [${version}](https://github.com/streamingfast/substreams-ethereum/releases/tag/v${version})`
 - Ensure that Keybase is running and logged in
 - Ensure that `cargo login` has been done in your terminal
-- Ensure build `cargo build` and tests `cargo test --target aarch64-apple-darwin` still pass (adapt `--target` value to fit your machine's architecture)
+- Ensure build `cargo build --release` and tests `cargo test --target aarch64-apple-darwin` still pass (adapt `--target` value to fit your machine's architecture)
 - Commit everything with message `Preparing release of ${version}`.
 - `./bin/release.sh -f v${version}`
 - If everything goes well, `crates.io` will be update and Git should be in a synced state (the release script does a `git push` of the branch and the tag).

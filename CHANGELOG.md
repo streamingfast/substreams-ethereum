@@ -1,6 +1,12 @@
 
 ## Next
+
+## [0.5.0](https://github.com/streaminfast/substreams-ethereum/releases/tag/v0.54.0)
+
+* Bump substreams
+
 ## [0.4.0](https://github.com/streamingfast/substreams-ethereum/releases/tag/v0.4.0)
+
 * Fixed decoding of event where some indexed fields were `intN` (`int8` to `int256` by increment of 8).
 
 * Fixed decoding of event where some unindexed fields were fixed array with sub element being dynamic types (`bytes[2]`).
