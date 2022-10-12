@@ -531,11 +531,6 @@
                 self.encode()
             }
         }
-        impl substreams_ethereum::rpc::RPCDecodable<()> for FunAll {
-            fn output(data: &[u8]) -> Result<(), String> {
-                Self::output(data)
-            }
-        }
         #[derive(Debug, Clone, PartialEq)]
         pub struct FunInt256 {
             pub param0: EthBigInt,
@@ -612,11 +607,6 @@
             }
             fn encode(&self) -> Vec<u8> {
                 self.encode()
-            }
-        }
-        impl substreams_ethereum::rpc::RPCDecodable<()> for FunInt256 {
-            fn output(data: &[u8]) -> Result<(), String> {
-                Self::output(data)
             }
         }
         #[derive(Debug, Clone, PartialEq)]
@@ -697,11 +687,6 @@
                 self.encode()
             }
         }
-        impl substreams_ethereum::rpc::RPCDecodable<()> for FunInt32 {
-            fn output(data: &[u8]) -> Result<(), String> {
-                Self::output(data)
-            }
-        }
         #[derive(Debug, Clone, PartialEq)]
         pub struct FunInt8 {
             pub param0: EthBigInt,
@@ -778,11 +763,6 @@
             }
             fn encode(&self) -> Vec<u8> {
                 self.encode()
-            }
-        }
-        impl substreams_ethereum::rpc::RPCDecodable<()> for FunInt8 {
-            fn output(data: &[u8]) -> Result<(), String> {
-                Self::output(data)
             }
         }
         #[derive(Debug, Clone, PartialEq)]
@@ -944,11 +924,6 @@
             }
             fn encode(&self) -> Vec<u8> {
                 self.encode()
-            }
-        }
-        impl substreams_ethereum::rpc::RPCDecodable<()> for FunInt8Int32Int64Int256 {
-            fn output(data: &[u8]) -> Result<(), String> {
-                Self::output(data)
             }
         }
         #[derive(Debug, Clone, PartialEq)]
@@ -1266,11 +1241,6 @@
                 self.encode()
             }
         }
-        impl substreams_ethereum::rpc::RPCDecodable<()> for FunString {
-            fn output(data: &[u8]) -> Result<(), String> {
-                Self::output(data)
-            }
-        }
         #[derive(Debug, Clone, PartialEq)]
         pub struct FunStringString {
             pub first: String,
@@ -1335,11 +1305,6 @@
             }
             fn encode(&self) -> Vec<u8> {
                 self.encode()
-            }
-        }
-        impl substreams_ethereum::rpc::RPCDecodable<()> for FunStringString {
-            fn output(data: &[u8]) -> Result<(), String> {
-                Self::output(data)
             }
         }
     }

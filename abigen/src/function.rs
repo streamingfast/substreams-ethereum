@@ -252,6 +252,17 @@ impl Function {
             },
         };
 
+        let rpc_decodable_implementation = match self.outputs.count {
+            0 => quote! {},
+            _ => quote! {
+                impl substreams_ethereum::rpc::RPCDecodable<#outputs_result> for #camel_name {
+                    fn output(data: &[u8]) -> Result<#outputs_result, String> {
+                    Self::output(data)
+                    }
+                }
+            },
+        };
+
         quote! {
             #[derive(Debug, Clone, PartialEq)]
             pub struct #camel_name {
@@ -304,11 +315,7 @@ impl Function {
                 }
             }
 
-            impl substreams_ethereum::rpc::RPCDecodable<#outputs_result> for #camel_name {
-                fn output(data: &[u8]) -> Result<#outputs_result, String> {
-                    Self::output(data)
-                }
-            }
+            #rpc_decodable_implementation
         }
     }
 }
