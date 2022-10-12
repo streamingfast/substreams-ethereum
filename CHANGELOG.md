@@ -1,11 +1,13 @@
 
 ## Next
-
+## [0.4.0](https://github.com/streamingfast/substreams-ethereum/releases/tag/v0.4.0)
 * Fixed decoding of event where some indexed fields were `intN` (`int8` to `int256` by increment of 8).
 
 * Fixed decoding of event where some unindexed fields were fixed array with sub element being dynamic types (`bytes[2]`).
 
 * Fixed decoding of event where some unindexed fields were fixed bytes (`bytes8` to `bytes32`).
+
+* Added RPC batching functionality and the RPCDecodable trait to allow decoding of RPC responses.
 
 ## [0.3.0](https://github.com/streamingfast/substreams-ethereum/releases/tag/v0.3.0)
 
