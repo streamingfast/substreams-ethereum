@@ -1,6 +1,11 @@
 
 ## Next
 
+## [0.6.0](https://github.com/streaminfast/substreams-ethereum/releases/tag/v0.6.0)
+
+* Bump substreams to 0.3.0 
+* Adding cargo flags to remove warnings for code generation
+
 ## [0.5.0](https://github.com/streaminfast/substreams-ethereum/releases/tag/v0.5.0)
 
 * Bump substreams
