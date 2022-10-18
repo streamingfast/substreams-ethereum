@@ -12,7 +12,7 @@ categories = ["api-bindings", "external-ffi-bindings", "wasm"]
 rust-version = "1.60"
 
 [dependencies]
-substreams = "0.2.0"
+substreams = "0.3.0"
 substreams-ethereum-abigen = { version = "0.5.0", path = "../abigen" }
 substreams-ethereum-derive = { version = "0.5.0", path = "../derive" }
 substreams-ethereum-core = { version = "0.5.0", path = "../core" }
