@@ -1,7 +1,7 @@
 
 ## Next
 
-## [0.5.0](https://github.com/streaminfast/substreams-ethereum/releases/tag/v0.54.0)
+## [0.5.0](https://github.com/streaminfast/substreams-ethereum/releases/tag/v0.5.0)
 
 * Bump substreams
 
