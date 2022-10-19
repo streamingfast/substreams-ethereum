@@ -1,6 +1,6 @@
 [package]
 name = "substreams-ethereum-abigen-tests"
-version = "0.1.0"
+version = "0.6.1"
 edition = "2021"
 description = "Tests package meant to test the generated code of the abigen"
 publish = false
@@ -12,12 +12,12 @@ num-bigint = "0.4.3"
 prost = { version = "^0.11.0" }
 prost-types = "^0.11.0"
 substreams = { version = "0.3.0" }
-substreams-ethereum = { version = "0.6.0", path = "../substreams-ethereum" }
-substreams-ethereum-core = { version = "0.6.0", path = "../core"}
+substreams-ethereum = { version = "0.6.1", path = "../substreams-ethereum" }
+substreams-ethereum-core = { version = "0.6.1", path = "../core"}
 
 [build-dependencies]
 anyhow = "1"
-substreams-ethereum = { version = "0.6.0", path = "../substreams-ethereum" }
+substreams-ethereum = { version = "0.6.1", path = "../substreams-ethereum" }
 
 [dev-dependencies]
 pretty_assertions = "1.2.1"
