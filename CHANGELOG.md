@@ -1,4 +1,6 @@
 
+## Next
+
 ## [0.6.1](https://github.com/streaminfast/substreams-ethereum/releases/tag/v0.6.1)
 
 * Made Windows target(s) able to run tests when depending on `substreams-ethereum` crate.
