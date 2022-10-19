@@ -84,9 +84,7 @@ impl Contract {
             // #constructor
 
             /// Contract's functions.
-            #[allow(dead_code)]
-            #[allow(unused_variables)]
-            #[allow(unused_imports)]
+            #[allow(dead_code, unused_imports, unused_variables)]
             pub mod functions {
                 use substreams_ethereum::scalar::EthBigInt;
                 use super::INTERNAL_ERR;
@@ -94,7 +92,7 @@ impl Contract {
             }
 
             /// Contract's events.
-            #[allow(dead_code)]
+            #[allow(dead_code, unused_imports, unused_variables)]
             pub mod events {
                 use substreams_ethereum::scalar::EthBigInt;
                 use super::INTERNAL_ERR;
@@ -131,16 +129,14 @@ mod test {
                 const INTERNAL_ERR: &'static str = "`ethabi_derive` internal error";
 
                 /// Contract's functions.
-                #[allow(dead_code)]
-                #[allow(unused_variables)]
-                #[allow(unused_imports)]
+                #[allow(dead_code, unused_imports, unused_variables)]
                 pub mod functions {
                     use substreams_ethereum::scalar::EthBigInt ;
                     use super::INTERNAL_ERR;
                 }
 
                 /// Contract's events.
-                #[allow(dead_code)]
+                #[allow(dead_code, unused_imports, unused_variables)]
                 pub mod events {
                     use substreams_ethereum::scalar::EthBigInt ;
                     use super::INTERNAL_ERR;

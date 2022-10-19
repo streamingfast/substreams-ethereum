@@ -1,6 +1,5 @@
 use crate::pb::eth::rpc::{RpcCall, RpcCalls, RpcResponse, RpcResponses};
-use crate::{externs, Function};
-use substreams::memory;
+use crate::Function;
 use substreams::proto;
 
 pub trait RPCDecodable<R> {
@@ -57,12 +56,17 @@ impl RpcBatch {
     }
 }
 
+#[cfg_attr(not(target_arch = "wasm32"), allow(unused_variables))]
 fn eth_call_internal(input: Vec<u8>) -> Vec<u8> {
+    #[cfg(target_arch = "wasm32")]
     unsafe {
-        let rpc_response_ptr = memory::alloc(8);
-        externs::rpc::eth_call(input.as_ptr(), input.len() as u32, rpc_response_ptr);
+        let rpc_response_ptr = substreams::memory::alloc(8);
+        crate::externs::rpc::eth_call(input.as_ptr(), input.len() as u32, rpc_response_ptr);
         return memory::get_output_data(rpc_response_ptr);
     }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    unimplemented!("this method is not implemented outside of 'wasm32' target compilation")
 }
 
 pub fn eth_call(input: &RpcCalls) -> RpcResponses {
