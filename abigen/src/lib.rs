@@ -106,8 +106,8 @@ fn rust_type(input: &ParamType) -> proc_macro2::TokenStream {
         ParamType::Address => quote! { Vec<u8> },
         ParamType::Bytes => quote! { Vec<u8> },
         ParamType::FixedBytes(size) => quote! { [u8; #size] },
-        ParamType::Int(_) => quote! { EthBigInt },
-        ParamType::Uint(_) => quote! { ethabi::Uint },
+        ParamType::Int(_) => quote! { substreams::scalar::BigInt },
+        ParamType::Uint(_) => quote! { substreams::scalar::BigInt },
         ParamType::Bool => quote! { bool },
         ParamType::String => quote! { String },
         ParamType::Array(ref kind) => {
@@ -251,9 +251,15 @@ fn to_token(
         }
         ParamType::Uint(_) => {
             if from_array {
-                quote! { ethabi::Token::Uint(#name.clone()) }
+                // quote! { ethabi::Token::Uint(#name.clone()) }
+                quote! {
+                    ethabi::Token::Uint(ethabi::Uint::from_big_endian(&*EthBigInt::from(#name.clone()).get_big_int().to_signed_bytes_be()))
+                }
             } else {
-                quote! { ethabi::Token::Uint(#name) }
+                // quote! { ethabi::Token::Uint(#name) }
+                quote! {
+                    ethabi::Token::Uint(ethabi::Uint::from_big_endian(&*EthBigInt::from(#name.clone()).get_big_int().to_signed_bytes_be()))
+                }
             }
         }
         ParamType::Bool => quote! { ethabi::Token::Bool(#name) },
@@ -312,11 +318,23 @@ fn from_token(kind: &ParamType, token: &proc_macro2::TokenStream) -> proc_macro2
                 {
                     let mut v = [0 as u8; 32];
                     #token.into_int().expect(INTERNAL_ERR).to_big_endian(v.as_mut_slice());
-                    EthBigInt::new(v.into())
+                    // EthBigInt::new(v.into());
+                    substreams::scalar::BigInt::from(EthBigInt::new(v.into()))
                 }
             }
         }
-        ParamType::Uint(_) => quote! { #token.into_uint().expect(INTERNAL_ERR) },
+        ParamType::Uint(_) => quote! {
+            // #token.into_uint().expect(INTERNAL_ERR)
+            quote! {
+                {
+                    let mut v = [0 as u8; 32];
+                    #token.into_int().expect(INTERNAL_ERR).to_big_endian(v.as_mut_slice());
+                    // EthBigInt::new(v.into());
+                    substreams::scalar::BigInt::from(EthBigInt::new(v.into()))
+                }
+            }
+
+        },
         ParamType::Bool => quote! { #token.into_bool().expect(INTERNAL_ERR) },
         ParamType::String => quote! { #token.into_string().expect(INTERNAL_ERR) },
         ParamType::Array(ref kind) => {
@@ -362,9 +380,7 @@ fn decode_topic(
     match kind {
         ParamType::Int(_) => {
             quote! {
-                EthBigInt::new(substreams::scalar::BigInt::from_signed_bytes_be(
-                        #data_token,
-                ))
+                substreams::scalar::BigInt::from_signed_bytes_be(#data_token)
             }
         }
         _ => {
