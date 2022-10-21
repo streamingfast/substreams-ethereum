@@ -3,15 +3,14 @@ mod abi;
 #[cfg(test)]
 mod tests {
     use crate::abi::tests;
-    use ethabi::ethereum_types::U256;
     use pretty_assertions::assert_eq;
+    use substreams::scalar::BigInt;
     use substreams::{hex, Hex};
     use substreams_ethereum::pb;
 
     #[test]
     fn it_decode_event_int256_idx() {
         use substreams::scalar::BigInt;
-        use substreams_ethereum::scalar::EthBigInt;
         use tests::events::EventInt256Idx as Event;
 
         let log = pb::eth::v2::Log {
@@ -29,9 +28,7 @@ mod tests {
         assert_eq!(
             event,
             Ok(Event {
-                param0: EthBigInt::new(BigInt::from(
-                    num_bigint::ToBigInt::to_bigint(&-9809887317731i64).unwrap()
-                )),
+                param0: BigInt::from(num_bigint::ToBigInt::to_bigint(&-9809887317731i64).unwrap()),
             }),
         );
     }
@@ -39,7 +36,6 @@ mod tests {
     #[test]
     fn it_decode_event_int256() {
         use substreams::scalar::BigInt;
-        use substreams_ethereum::scalar::EthBigInt;
         use tests::events::EventInt256 as Event;
 
         let log = pb::eth::v2::Log {
@@ -57,9 +53,7 @@ mod tests {
         assert_eq!(
             event,
             Ok(Event {
-                param0: EthBigInt::new(BigInt::from(
-                    num_bigint::ToBigInt::to_bigint(&-9809887317731i64).unwrap(),
-                )),
+                param0: BigInt::from(num_bigint::ToBigInt::to_bigint(&-9809887317731i64).unwrap(),),
             }),
         );
     }
@@ -171,6 +165,7 @@ mod tests {
 
     #[test]
     fn it_decode_event_bytes_32_uint_address_idx() {
+        use num_traits::Num;
         use tests::events::EventBytes32UintAddressIdx as Event;
 
         // ethc tools encode --abi ./abigen-tests/abi/tests.json event 'EventBytes32UintAddressIdx' "0x245414afb5b0fd4cd1285d0ff67e7d40218df67e1426c7e37c835cf2b5090cd2" "0x1000000000" "0xab07a50AD459B41Fe065f7BBAb866D5390e9f705"
@@ -192,7 +187,7 @@ mod tests {
             event,
             Ok(Event {
                 first: hex!("245414afb5b0fd4cd1285d0ff67e7d40218df67e1426c7e37c835cf2b5090cd2"),
-                second: U256::from_str_radix("0x1000000000", 16).unwrap(),
+                second: BigInt::from(num_bigint::BigInt::from_str_radix("1000000000", 16).unwrap()),
                 third: hex!("ab07a50ad459b41fe065f7bbab866d5390e9f705").to_vec()
             }),
         );
@@ -200,6 +195,7 @@ mod tests {
 
     #[test]
     fn it_decode_event_bytes_20_uint_address_idx() {
+        use num_traits::Num;
         use tests::events::EventBytes20UintAddressIdx as Event;
 
         // ethc tools encode --abi ./abigen-tests/abi/tests.json event 'EventBytes20UintAddressIdx' "0xab07a50ad459b41fe065f7bbab866d5390e9f705" "0x1000000000" "0xab07a50AD459B41Fe065f7BBAb866D5390e9f705"
@@ -221,7 +217,7 @@ mod tests {
             event,
             Ok(Event {
                 first: hex!("ab07a50ad459b41fe065f7bbab866d5390e9f705"),
-                second: U256::from_str_radix("0x1000000000", 16).unwrap(),
+                second: BigInt::from(num_bigint::BigInt::from_str_radix("1000000000", 16).unwrap()),
                 third: hex!("ab07a50ad459b41fe065f7bbab866d5390e9f705").to_vec()
             }),
         );
@@ -229,6 +225,7 @@ mod tests {
 
     #[test]
     fn it_decode_event_address_idx_string_uint256_idx_bytes() {
+        use num_traits::Num;
         use tests::events::EventAddressIdxStringUint256IdxBytes as Event;
 
         // ethc tools encode --abi ./abigen-tests/abi/tests.json event 'EventAddressIdxStringUint256IdxBytes' "0xab07a50AD459B41Fe065f7BBAb866D5390e9f705" "second string" "0x1000000000" "0xabdeff90"
@@ -252,7 +249,7 @@ mod tests {
             Ok(Event {
                 first: hex!("ab07a50ad459b41fe065f7bbab866d5390e9f705").to_vec(),
                 second: "second string".to_string(),
-                third: U256::from_str_radix("0x1000000000", 16).unwrap(),
+                third: BigInt::from(num_bigint::BigInt::from_str_radix("1000000000", 16).unwrap()),
                 fourth: hex!("abdeff90").to_vec(),
             }),
         );
@@ -260,6 +257,7 @@ mod tests {
 
     #[test]
     fn it_decode_event_address_uint256_uint256_address_idx_bytes() {
+        use num_traits::Num;
         use tests::events::EventAddressIdxUint256Uint256AddressIdx as Event;
 
         // ethc tools encode --abi ./abigen-tests/abi/tests.json event 'EventAddressIdxUint256Uint256AddressIdx' "0xab07a50AD459B41Fe065f7BBAb866D5390e9f705"  "0x1000000000000000" "0x2000000000000000000" "0xcd91a50AD459B41Fe065f7BBAb866D5390e945fa"
@@ -282,8 +280,12 @@ mod tests {
             event,
             Ok(Event {
                 first: hex!("ab07a50ad459b41fe065f7bbab866d5390e9f705").to_vec(),
-                second: U256::from_str_radix("0x1000000000000000", 16).unwrap(),
-                third: U256::from_str_radix("0x2000000000000000000", 16).unwrap(),
+                second: BigInt::from(
+                    num_bigint::BigInt::from_str_radix("1000000000000000", 16).unwrap()
+                ),
+                third: BigInt::from(
+                    num_bigint::BigInt::from_str_radix("2000000000000000000", 16).unwrap()
+                ),
                 fourth: hex!("cd91a50ad459b41fe065f7bbab866d5390e945fa").to_vec(),
             }),
         );
@@ -453,13 +455,10 @@ mod tests {
     #[test]
     fn it_encode_fun_input_int8() {
         use substreams::scalar::BigInt;
-        use substreams_ethereum::scalar::EthBigInt;
         use tests::functions::FunInt8 as Function;
 
         let fun = Function {
-            param0: EthBigInt::new(BigInt::from(
-                num_bigint::ToBigInt::to_bigint(&-127).unwrap(),
-            )),
+            param0: BigInt::from(num_bigint::ToBigInt::to_bigint(&-127).unwrap()),
         };
 
         assert_eq!(
@@ -472,13 +471,10 @@ mod tests {
     #[test]
     fn it_encode_fun_input_int32() {
         use substreams::scalar::BigInt;
-        use substreams_ethereum::scalar::EthBigInt;
         use tests::functions::FunInt32 as Function;
 
         let fun = Function {
-            param0: EthBigInt::new(BigInt::from(
-                num_bigint::ToBigInt::to_bigint(&-898877731).unwrap(),
-            )),
+            param0: BigInt::from(num_bigint::ToBigInt::to_bigint(&-898877731).unwrap()),
         };
 
         assert_eq!(
@@ -491,13 +487,10 @@ mod tests {
     #[test]
     fn it_encode_fun_input_int256() {
         use substreams::scalar::BigInt;
-        use substreams_ethereum::scalar::EthBigInt;
         use tests::functions::FunInt256 as Function;
 
         let fun = Function {
-            param0: EthBigInt::new(BigInt::from(
-                num_bigint::ToBigInt::to_bigint(&-9809887317731i64).unwrap(),
-            )),
+            param0: BigInt::from(num_bigint::ToBigInt::to_bigint(&-9809887317731i64).unwrap()),
         };
 
         assert_eq!(
@@ -510,22 +503,17 @@ mod tests {
     #[test]
     fn it_encode_fun_input_int8_int32_int64_int256() {
         use substreams::scalar::BigInt;
-        use substreams_ethereum::scalar::EthBigInt;
         use tests::functions::FunInt8Int32Int64Int256 as Function;
 
         let fun = Function {
-            param0: EthBigInt::new(BigInt::from(
-                num_bigint::ToBigInt::to_bigint(&-127).unwrap(),
-            )),
-            param1: EthBigInt::new(BigInt::from(
-                num_bigint::ToBigInt::to_bigint(&-898877731).unwrap(),
-            )),
-            param2: EthBigInt::new(BigInt::from(
+            param0: BigInt::from(num_bigint::ToBigInt::to_bigint(&-127).unwrap()),
+            param1: BigInt::from(num_bigint::ToBigInt::to_bigint(&-898877731).unwrap()),
+            param2: BigInt::from(
                 num_bigint::ToBigInt::to_bigint(&(-9809887317731 as i64)).unwrap(),
-            )),
-            param3: EthBigInt::new(BigInt::from(
+            ),
+            param3: BigInt::from(
                 num_bigint::ToBigInt::to_bigint(&(-223372036854775808 as i64)).unwrap(),
-            )),
+            ),
         };
 
         assert_eq!(
@@ -538,7 +526,6 @@ mod tests {
     #[test]
     fn it_decode_fun_input_int8_int32_int64_int256() {
         use substreams::scalar::BigInt;
-        use substreams_ethereum::scalar::EthBigInt;
         use tests::functions::FunInt8Int32Int64Int256 as Function;
 
         let call = pb::eth::v2::Call {
@@ -552,18 +539,14 @@ mod tests {
         assert_eq!(
             fun,
             Ok(Function {
-                param0: EthBigInt::new(BigInt::from(
-                    num_bigint::ToBigInt::to_bigint(&-127).unwrap(),
-                )),
-                param1: EthBigInt::new(BigInt::from(
-                    num_bigint::ToBigInt::to_bigint(&-898877731).unwrap(),
-                )),
-                param2: EthBigInt::new(BigInt::from(
+                param0: BigInt::from(num_bigint::ToBigInt::to_bigint(&-127).unwrap(),),
+                param1: BigInt::from(num_bigint::ToBigInt::to_bigint(&-898877731).unwrap(),),
+                param2: BigInt::from(
                     num_bigint::ToBigInt::to_bigint(&(-9809887317731 as i64)).unwrap(),
-                )),
-                param3: EthBigInt::new(BigInt::from(
+                ),
+                param3: BigInt::from(
                     num_bigint::ToBigInt::to_bigint(&(-223372036854775808 as i64)).unwrap(),
-                )),
+                ),
             }),
         );
     }
@@ -571,12 +554,9 @@ mod tests {
     #[test]
     fn it_manual_encode_num_bigint_signed_bytes() {
         use substreams::scalar::BigInt;
-        use substreams_ethereum::scalar::EthBigInt;
 
-        let num = EthBigInt::new(BigInt::from(
-            num_bigint::ToBigInt::to_bigint(&-9809887317731i64).unwrap(),
-        ));
-        let as_hex = num.get_big_int().to_signed_bytes_be();
+        let num = BigInt::from(num_bigint::ToBigInt::to_bigint(&-9809887317731i64).unwrap());
+        let as_hex = num.to_signed_bytes_be();
 
         let mut final_hex = [0xff as u8; 32];
         as_hex
@@ -594,7 +574,6 @@ mod tests {
     #[test]
     fn it_encode_fun_input_all() {
         use substreams::scalar::BigInt;
-        use substreams_ethereum::scalar::EthBigInt;
         use tests::functions::FunAll as Function;
 
         let fun = Function {
@@ -602,9 +581,7 @@ mod tests {
             param1: hex!("b2").to_vec(),
             param2: hex!("cf36ac4f97dc10d9"),
             param3: hex!("cf36ac4f97dc10d91fc2cbb20d718e94a8cbfe0f82eaedc6a4aa38946fb797cd"),
-            param4: EthBigInt::new(BigInt::from(
-                num_bigint::ToBigInt::to_bigint(&-9809887317731i64).unwrap(),
-            )),
+            param4: BigInt::from(num_bigint::ToBigInt::to_bigint(&-9809887317731i64).unwrap()),
             param5: 1827641804u64.into(),
             param6: true,
             param7: "test".to_string(),
@@ -621,7 +598,6 @@ mod tests {
     #[test]
     fn it_decode_fun_input_all() {
         use substreams::scalar::BigInt;
-        use substreams_ethereum::scalar::EthBigInt;
         use tests::functions::FunAll as Function;
 
         let call = pb::eth::v2::Call {
@@ -639,10 +615,8 @@ mod tests {
                 param1: hex!("b2").to_vec(),
                 param2: hex!("cf36ac4f97dc10d9"),
                 param3: hex!("cf36ac4f97dc10d91fc2cbb20d718e94a8cbfe0f82eaedc6a4aa38946fb797cd"),
-                param4: EthBigInt::new(BigInt::from(
-                    num_bigint::ToBigInt::to_bigint(&-9809887317731i64).unwrap(),
-                )),
-                param5: 1827641804u64.into(),
+                param4: BigInt::from(num_bigint::ToBigInt::to_bigint(&-9809887317731i64).unwrap()),
+                param5: BigInt::from(1827641804u64),
                 param6: true,
                 param7: "test".to_string(),
                 param8: [

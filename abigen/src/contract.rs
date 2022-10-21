@@ -86,7 +86,6 @@ impl Contract {
             /// Contract's functions.
             #[allow(dead_code, unused_imports, unused_variables)]
             pub mod functions {
-                use substreams_ethereum::scalar::EthBigInt;
                 use super::INTERNAL_ERR;
                 #(#functions)*
             }
@@ -94,7 +93,6 @@ impl Contract {
             /// Contract's events.
             #[allow(dead_code, unused_imports, unused_variables)]
             pub mod events {
-                use substreams_ethereum::scalar::EthBigInt;
                 use super::INTERNAL_ERR;
                 #(#events)*
             }
@@ -131,14 +129,12 @@ mod test {
                 /// Contract's functions.
                 #[allow(dead_code, unused_imports, unused_variables)]
                 pub mod functions {
-                    use substreams_ethereum::scalar::EthBigInt ;
                     use super::INTERNAL_ERR;
                 }
 
                 /// Contract's events.
                 #[allow(dead_code, unused_imports, unused_variables)]
                 pub mod events {
-                    use substreams_ethereum::scalar::EthBigInt ;
                     use super::INTERNAL_ERR;
                 }
             },

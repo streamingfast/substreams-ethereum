@@ -9,6 +9,7 @@ rust-version = "1.60"
 [dependencies]
 ethabi = "17.0"
 num-bigint = "0.4.3"
+num-traits = "0.2.15"
 prost = { version = "^0.11.0" }
 prost-types = "^0.11.0"
 substreams = { version = "0.3.0" }

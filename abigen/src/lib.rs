@@ -227,11 +227,7 @@ fn min_data_size(input: &ParamType) -> usize {
 //     }
 // }
 
-fn to_token(
-    name: &proc_macro2::TokenStream,
-    kind: &ParamType,
-    from_array: bool,
-) -> proc_macro2::TokenStream {
+fn to_token(name: &proc_macro2::TokenStream, kind: &ParamType) -> proc_macro2::TokenStream {
     match *kind {
         ParamType::Address => {
             quote! { ethabi::Token::Address(ethabi::Address::from_slice(&#name)) }
@@ -241,7 +237,7 @@ fn to_token(
         ParamType::Int(_) => {
             quote! {
                 {
-                    let non_full_signed_bytes = #name.get_big_int().to_signed_bytes_be();
+                    let non_full_signed_bytes = #name.to_signed_bytes_be();
                     let mut full_signed_bytes = [0xff as u8; 32];
                     non_full_signed_bytes.into_iter().rev().enumerate().for_each(|(i, byte)| full_signed_bytes[31 - i] = byte);
 
@@ -250,23 +246,15 @@ fn to_token(
             }
         }
         ParamType::Uint(_) => {
-            if from_array {
-                // quote! { ethabi::Token::Uint(#name.clone()) }
-                quote! {
-                    ethabi::Token::Uint(ethabi::Uint::from_big_endian(&*EthBigInt::from(#name.clone()).get_big_int().to_signed_bytes_be()))
-                }
-            } else {
-                // quote! { ethabi::Token::Uint(#name) }
-                quote! {
-                    ethabi::Token::Uint(ethabi::Uint::from_big_endian(&*EthBigInt::from(#name.clone()).get_big_int().to_signed_bytes_be()))
-                }
+            quote! {
+                ethabi::Token::Uint(ethabi::Uint::from_big_endian(#name.clone().to_signed_bytes_be().as_slice()))
             }
         }
         ParamType::Bool => quote! { ethabi::Token::Bool(#name) },
         ParamType::String => quote! { ethabi::Token::String(#name.clone()) },
         ParamType::Array(ref kind) => {
             let inner_name = quote! { inner };
-            let inner_loop = to_token(&inner_name, kind, true);
+            let inner_loop = to_token(&inner_name, kind);
             quote! {
                 // note the double {{
                 {
@@ -277,7 +265,7 @@ fn to_token(
         }
         ParamType::FixedArray(ref kind, _) => {
             let inner_name = quote! { inner };
-            let inner_loop = to_token(&inner_name, kind, true);
+            let inner_loop = to_token(&inner_name, kind);
             quote! {
                 // note the double {{
                 {
@@ -313,27 +301,19 @@ fn from_token(kind: &ParamType, token: &proc_macro2::TokenStream) -> proc_macro2
                 }
             }
         }
-        ParamType::Int(_) => {
-            quote! {
-                {
-                    let mut v = [0 as u8; 32];
-                    #token.into_int().expect(INTERNAL_ERR).to_big_endian(v.as_mut_slice());
-                    // EthBigInt::new(v.into());
-                    substreams::scalar::BigInt::from(EthBigInt::new(v.into()))
-                }
+        ParamType::Int(_) => quote! {
+            {
+                let mut v = [0 as u8; 32];
+                #token.into_int().expect(INTERNAL_ERR).to_big_endian(v.as_mut_slice());
+                v.into()
             }
-        }
+        },
         ParamType::Uint(_) => quote! {
-            // #token.into_uint().expect(INTERNAL_ERR)
-            quote! {
                 {
                     let mut v = [0 as u8; 32];
-                    #token.into_int().expect(INTERNAL_ERR).to_big_endian(v.as_mut_slice());
-                    // EthBigInt::new(v.into());
-                    substreams::scalar::BigInt::from(EthBigInt::new(v.into()))
+                    #token.into_uint().expect(INTERNAL_ERR).to_big_endian(v.as_mut_slice());
+                    v.into()
                 }
-            }
-
         },
         ParamType::Bool => quote! { #token.into_bool().expect(INTERNAL_ERR) },
         ParamType::String => quote! { #token.into_string().expect(INTERNAL_ERR) },

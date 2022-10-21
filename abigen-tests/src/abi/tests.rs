@@ -2,7 +2,6 @@
     /// Contract's functions.
     #[allow(dead_code, unused_imports, unused_variables)]
     pub mod functions {
-        use substreams_ethereum::scalar::EthBigInt;
         use super::INTERNAL_ERR;
         #[derive(Debug, Clone, PartialEq)]
         pub struct FixedArrayAddressArrayUint256ReturnsUint256String {
@@ -59,11 +58,12 @@
                         .expect(INTERNAL_ERR)
                         .into_iter()
                         .map(|inner| {
-                            quote! {
-                                { let mut v = [0 as u8; 32]; inner.into_int()
-                                .expect(INTERNAL_ERR).to_big_endian(v.as_mut_slice());
-                                substreams::scalar::BigInt::from(EthBigInt::new(v.into())) }
-                            }
+                            let mut v = [0 as u8; 32];
+                            inner
+                                .into_uint()
+                                .expect(INTERNAL_ERR)
+                                .to_big_endian(v.as_mut_slice());
+                            v.into()
                         })
                         .collect(),
                 })
@@ -87,9 +87,7 @@
                                 .iter()
                                 .map(|inner| ethabi::Token::Uint(
                                     ethabi::Uint::from_big_endian(
-                                        &*EthBigInt::from(inner.clone())
-                                            .get_big_int()
-                                            .to_signed_bytes_be(),
+                                        inner.clone().to_signed_bytes_be().as_slice(),
                                     ),
                                 ))
                                 .collect();
@@ -117,10 +115,15 @@
                     .map_err(|e| format!("unable to decode output data: {:?}", e))?;
                 values.reverse();
                 Ok((
-                    quote! {
-                        { let mut v = [0 as u8; 32]; values.pop().expect(INTERNAL_ERR)
-                        .into_int().expect(INTERNAL_ERR).to_big_endian(v.as_mut_slice());
-                        substreams::scalar::BigInt::from(EthBigInt::new(v.into())) }
+                    {
+                        let mut v = [0 as u8; 32];
+                        values
+                            .pop()
+                            .expect(INTERNAL_ERR)
+                            .into_uint()
+                            .expect(INTERNAL_ERR)
+                            .to_big_endian(v.as_mut_slice());
+                        v.into()
                     },
                     values.pop().expect(INTERNAL_ERR).into_string().expect(INTERNAL_ERR),
                 ))
@@ -289,10 +292,15 @@
                     .map_err(|e| format!("unable to decode output data: {:?}", e))?;
                 values.reverse();
                 Ok((
-                    quote! {
-                        { let mut v = [0 as u8; 32]; values.pop().expect(INTERNAL_ERR)
-                        .into_int().expect(INTERNAL_ERR).to_big_endian(v.as_mut_slice());
-                        substreams::scalar::BigInt::from(EthBigInt::new(v.into())) }
+                    {
+                        let mut v = [0 as u8; 32];
+                        values
+                            .pop()
+                            .expect(INTERNAL_ERR)
+                            .into_uint()
+                            .expect(INTERNAL_ERR)
+                            .to_big_endian(v.as_mut_slice());
+                        v.into()
                     },
                     values.pop().expect(INTERNAL_ERR).into_string().expect(INTERNAL_ERR),
                 ))
@@ -441,12 +449,17 @@
                             .into_int()
                             .expect(INTERNAL_ERR)
                             .to_big_endian(v.as_mut_slice());
-                        substreams::scalar::BigInt::from(EthBigInt::new(v.into()))
+                        v.into()
                     },
-                    param5: quote! {
-                        { let mut v = [0 as u8; 32]; values.pop().expect(INTERNAL_ERR)
-                        .into_int().expect(INTERNAL_ERR).to_big_endian(v.as_mut_slice());
-                        substreams::scalar::BigInt::from(EthBigInt::new(v.into())) }
+                    param5: {
+                        let mut v = [0 as u8; 32];
+                        values
+                            .pop()
+                            .expect(INTERNAL_ERR)
+                            .into_uint()
+                            .expect(INTERNAL_ERR)
+                            .to_big_endian(v.as_mut_slice());
+                        v.into()
                     },
                     param6: values
                         .pop()
@@ -499,10 +512,7 @@
                         ethabi::Token::FixedBytes(self.param2.as_ref().to_vec()),
                         ethabi::Token::FixedBytes(self.param3.as_ref().to_vec()),
                         {
-                            let non_full_signed_bytes = self
-                                .param4
-                                .get_big_int()
-                                .to_signed_bytes_be();
+                            let non_full_signed_bytes = self.param4.to_signed_bytes_be();
                             let mut full_signed_bytes = [0xff as u8; 32];
                             non_full_signed_bytes
                                 .into_iter()
@@ -515,9 +525,7 @@
                         },
                         ethabi::Token::Uint(
                             ethabi::Uint::from_big_endian(
-                                &*EthBigInt::from(self.param5.clone())
-                                    .get_big_int()
-                                    .to_signed_bytes_be(),
+                                self.param5.clone().to_signed_bytes_be().as_slice(),
                             ),
                         ),
                         ethabi::Token::Bool(self.param6),
@@ -598,7 +606,7 @@
                             .into_int()
                             .expect(INTERNAL_ERR)
                             .to_big_endian(v.as_mut_slice());
-                        substreams::scalar::BigInt::from(EthBigInt::new(v.into()))
+                        v.into()
                     },
                 })
             }
@@ -606,10 +614,7 @@
                 let data = ethabi::encode(
                     &[
                         {
-                            let non_full_signed_bytes = self
-                                .param0
-                                .get_big_int()
-                                .to_signed_bytes_be();
+                            let non_full_signed_bytes = self.param0.to_signed_bytes_be();
                             let mut full_signed_bytes = [0xff as u8; 32];
                             non_full_signed_bytes
                                 .into_iter()
@@ -676,7 +681,7 @@
                             .into_int()
                             .expect(INTERNAL_ERR)
                             .to_big_endian(v.as_mut_slice());
-                        substreams::scalar::BigInt::from(EthBigInt::new(v.into()))
+                        v.into()
                     },
                 })
             }
@@ -684,10 +689,7 @@
                 let data = ethabi::encode(
                     &[
                         {
-                            let non_full_signed_bytes = self
-                                .param0
-                                .get_big_int()
-                                .to_signed_bytes_be();
+                            let non_full_signed_bytes = self.param0.to_signed_bytes_be();
                             let mut full_signed_bytes = [0xff as u8; 32];
                             non_full_signed_bytes
                                 .into_iter()
@@ -754,7 +756,7 @@
                             .into_int()
                             .expect(INTERNAL_ERR)
                             .to_big_endian(v.as_mut_slice());
-                        substreams::scalar::BigInt::from(EthBigInt::new(v.into()))
+                        v.into()
                     },
                 })
             }
@@ -762,10 +764,7 @@
                 let data = ethabi::encode(
                     &[
                         {
-                            let non_full_signed_bytes = self
-                                .param0
-                                .get_big_int()
-                                .to_signed_bytes_be();
+                            let non_full_signed_bytes = self.param0.to_signed_bytes_be();
                             let mut full_signed_bytes = [0xff as u8; 32];
                             non_full_signed_bytes
                                 .into_iter()
@@ -840,7 +839,7 @@
                             .into_int()
                             .expect(INTERNAL_ERR)
                             .to_big_endian(v.as_mut_slice());
-                        substreams::scalar::BigInt::from(EthBigInt::new(v.into()))
+                        v.into()
                     },
                     param1: {
                         let mut v = [0 as u8; 32];
@@ -850,7 +849,7 @@
                             .into_int()
                             .expect(INTERNAL_ERR)
                             .to_big_endian(v.as_mut_slice());
-                        substreams::scalar::BigInt::from(EthBigInt::new(v.into()))
+                        v.into()
                     },
                     param2: {
                         let mut v = [0 as u8; 32];
@@ -860,7 +859,7 @@
                             .into_int()
                             .expect(INTERNAL_ERR)
                             .to_big_endian(v.as_mut_slice());
-                        substreams::scalar::BigInt::from(EthBigInt::new(v.into()))
+                        v.into()
                     },
                     param3: {
                         let mut v = [0 as u8; 32];
@@ -870,7 +869,7 @@
                             .into_int()
                             .expect(INTERNAL_ERR)
                             .to_big_endian(v.as_mut_slice());
-                        substreams::scalar::BigInt::from(EthBigInt::new(v.into()))
+                        v.into()
                     },
                 })
             }
@@ -878,10 +877,7 @@
                 let data = ethabi::encode(
                     &[
                         {
-                            let non_full_signed_bytes = self
-                                .param0
-                                .get_big_int()
-                                .to_signed_bytes_be();
+                            let non_full_signed_bytes = self.param0.to_signed_bytes_be();
                             let mut full_signed_bytes = [0xff as u8; 32];
                             non_full_signed_bytes
                                 .into_iter()
@@ -893,10 +889,7 @@
                             )
                         },
                         {
-                            let non_full_signed_bytes = self
-                                .param1
-                                .get_big_int()
-                                .to_signed_bytes_be();
+                            let non_full_signed_bytes = self.param1.to_signed_bytes_be();
                             let mut full_signed_bytes = [0xff as u8; 32];
                             non_full_signed_bytes
                                 .into_iter()
@@ -908,10 +901,7 @@
                             )
                         },
                         {
-                            let non_full_signed_bytes = self
-                                .param2
-                                .get_big_int()
-                                .to_signed_bytes_be();
+                            let non_full_signed_bytes = self.param2.to_signed_bytes_be();
                             let mut full_signed_bytes = [0xff as u8; 32];
                             non_full_signed_bytes
                                 .into_iter()
@@ -923,10 +913,7 @@
                             )
                         },
                         {
-                            let non_full_signed_bytes = self
-                                .param3
-                                .get_big_int()
-                                .to_signed_bytes_be();
+                            let non_full_signed_bytes = self.param3.to_signed_bytes_be();
                             let mut full_signed_bytes = [0xff as u8; 32];
                             non_full_signed_bytes
                                 .into_iter()
@@ -1350,7 +1337,6 @@
     /// Contract's events.
     #[allow(dead_code, unused_imports, unused_variables)]
     pub mod events {
-        use substreams_ethereum::scalar::EthBigInt;
         use super::INTERNAL_ERR;
         #[derive(Debug, Clone, PartialEq)]
         pub struct EventAddressIdxString {
@@ -1525,14 +1511,24 @@
                         .expect(INTERNAL_ERR)
                         .as_bytes()
                         .to_vec(),
-                    third: quote! {
-                        { let mut v = [0 as u8; 32]; ethabi::decode(&
-                        [ethabi::ParamType::Uint(256usize)], log.topics[2usize].as_ref())
-                        .map_err(| e |
-                        format!("unable to decode param 'third' from topic of type 'uint256': {:?}",
-                        e)) ? .pop().expect(INTERNAL_ERR).into_int().expect(INTERNAL_ERR)
-                        .to_big_endian(v.as_mut_slice());
-                        substreams::scalar::BigInt::from(EthBigInt::new(v.into())) }
+                    third: {
+                        let mut v = [0 as u8; 32];
+                        ethabi::decode(
+                                &[ethabi::ParamType::Uint(256usize)],
+                                log.topics[2usize].as_ref(),
+                            )
+                            .map_err(|e| {
+                                format!(
+                                    "unable to decode param 'third' from topic of type 'uint256': {:?}",
+                                    e
+                                )
+                            })?
+                            .pop()
+                            .expect(INTERNAL_ERR)
+                            .into_uint()
+                            .expect(INTERNAL_ERR)
+                            .to_big_endian(v.as_mut_slice());
+                        v.into()
                     },
                     second: values
                         .pop()
@@ -1655,15 +1651,25 @@
                         .expect(INTERNAL_ERR)
                         .as_bytes()
                         .to_vec(),
-                    second: quote! {
-                        { let mut v = [0 as u8; 32]; values.pop().expect(INTERNAL_ERR)
-                        .into_int().expect(INTERNAL_ERR).to_big_endian(v.as_mut_slice());
-                        substreams::scalar::BigInt::from(EthBigInt::new(v.into())) }
+                    second: {
+                        let mut v = [0 as u8; 32];
+                        values
+                            .pop()
+                            .expect(INTERNAL_ERR)
+                            .into_uint()
+                            .expect(INTERNAL_ERR)
+                            .to_big_endian(v.as_mut_slice());
+                        v.into()
                     },
-                    third: quote! {
-                        { let mut v = [0 as u8; 32]; values.pop().expect(INTERNAL_ERR)
-                        .into_int().expect(INTERNAL_ERR).to_big_endian(v.as_mut_slice());
-                        substreams::scalar::BigInt::from(EthBigInt::new(v.into())) }
+                    third: {
+                        let mut v = [0 as u8; 32];
+                        values
+                            .pop()
+                            .expect(INTERNAL_ERR)
+                            .into_uint()
+                            .expect(INTERNAL_ERR)
+                            .to_big_endian(v.as_mut_slice());
+                        v.into()
                     },
                 })
             }
@@ -1769,10 +1775,15 @@
                         result.copy_from_slice(&v);
                         result
                     },
-                    second: quote! {
-                        { let mut v = [0 as u8; 32]; values.pop().expect(INTERNAL_ERR)
-                        .into_int().expect(INTERNAL_ERR).to_big_endian(v.as_mut_slice());
-                        substreams::scalar::BigInt::from(EthBigInt::new(v.into())) }
+                    second: {
+                        let mut v = [0 as u8; 32];
+                        values
+                            .pop()
+                            .expect(INTERNAL_ERR)
+                            .into_uint()
+                            .expect(INTERNAL_ERR)
+                            .to_big_endian(v.as_mut_slice());
+                        v.into()
                     },
                 })
             }
@@ -1878,10 +1889,15 @@
                         result.copy_from_slice(&v);
                         result
                     },
-                    second: quote! {
-                        { let mut v = [0 as u8; 32]; values.pop().expect(INTERNAL_ERR)
-                        .into_int().expect(INTERNAL_ERR).to_big_endian(v.as_mut_slice());
-                        substreams::scalar::BigInt::from(EthBigInt::new(v.into())) }
+                    second: {
+                        let mut v = [0 as u8; 32];
+                        values
+                            .pop()
+                            .expect(INTERNAL_ERR)
+                            .into_uint()
+                            .expect(INTERNAL_ERR)
+                            .to_big_endian(v.as_mut_slice());
+                        v.into()
                     },
                 })
             }
@@ -1964,7 +1980,7 @@
                             .into_int()
                             .expect(INTERNAL_ERR)
                             .to_big_endian(v.as_mut_slice());
-                        substreams::scalar::BigInt::from(EthBigInt::new(v.into()))
+                        v.into()
                     },
                 })
             }
@@ -2576,14 +2592,24 @@
                 log: &substreams_ethereum::pb::eth::v2::Log,
             ) -> Result<Self, String> {
                 Ok(Self {
-                    third: quote! {
-                        { let mut v = [0 as u8; 32]; ethabi::decode(&
-                        [ethabi::ParamType::Uint(256usize)], log.topics[1usize].as_ref())
-                        .map_err(| e |
-                        format!("unable to decode param 'third' from topic of type 'uint256': {:?}",
-                        e)) ? .pop().expect(INTERNAL_ERR).into_int().expect(INTERNAL_ERR)
-                        .to_big_endian(v.as_mut_slice());
-                        substreams::scalar::BigInt::from(EthBigInt::new(v.into())) }
+                    third: {
+                        let mut v = [0 as u8; 32];
+                        ethabi::decode(
+                                &[ethabi::ParamType::Uint(256usize)],
+                                log.topics[1usize].as_ref(),
+                            )
+                            .map_err(|e| {
+                                format!(
+                                    "unable to decode param 'third' from topic of type 'uint256': {:?}",
+                                    e
+                                )
+                            })?
+                            .pop()
+                            .expect(INTERNAL_ERR)
+                            .into_uint()
+                            .expect(INTERNAL_ERR)
+                            .to_big_endian(v.as_mut_slice());
+                        v.into()
                     },
                 })
             }

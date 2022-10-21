@@ -434,7 +434,7 @@ mod tests {
                 pub struct Transfer {
                     pub from: Vec<u8>,
                     pub to: Vec<u8>,
-                    pub quantity: ethabi::Uint
+                    pub quantity: substreams::scalar::BigInt
                 }
                 impl Transfer {
                     const TOPIC_ID: [u8; 32] = [
@@ -518,11 +518,16 @@ mod tests {
                                 .expect(INTERNAL_ERR)
                                 .as_bytes()
                                 .to_vec(),
-                            quantity: values
-                                .pop()
-                                .expect(INTERNAL_ERR)
-                                .into_uint()
-                                .expect(INTERNAL_ERR)
+                            quantity: {
+                                let mut v = [0 as u8; 32];
+                                values
+                                    .pop()
+                                    .expect(INTERNAL_ERR)
+                                    .into_uint()
+                                    .expect(INTERNAL_ERR)
+                                    .to_big_endian(v.as_mut_slice());
+                                v.into()
+                            }
                         })
                     }
                 }
@@ -572,7 +577,7 @@ mod tests {
                 pub struct Transfer {
                     pub from: Vec<u8>,
                     pub to: Vec<u8>,
-                    pub token_id: ethabi::Uint
+                    pub token_id: substreams::scalar::BigInt
                 }
                 impl Transfer {
                     const TOPIC_ID: [u8; 32] = [
@@ -650,18 +655,23 @@ mod tests {
                                 .expect(INTERNAL_ERR)
                                 .as_bytes()
                                 .to_vec(),
-                            token_id: ethabi::decode(
+                            token_id: {
+                                let mut v = [0 as u8; 32];
+                                ethabi::decode(
                                     &[ethabi::ParamType::Uint(256usize)],
                                     log.topics[3usize].as_ref()
                                 )
-                                .map_err(|e| format!(
-                                    "unable to decode param 'token_id' from topic of type 'uint256': {:?}",
-                                    e
-                                ))?
-                                .pop()
-                                .expect(INTERNAL_ERR)
-                                .into_uint()
-                                .expect(INTERNAL_ERR)
+                                    .map_err(|e| format!(
+                                        "unable to decode param 'token_id' from topic of type 'uint256': {:?}",
+                                        e
+                                    ))?
+                                    .pop()
+                                    .expect(INTERNAL_ERR)
+                                    .into_uint()
+                                    .expect(INTERNAL_ERR)
+                                    .to_big_endian(v.as_mut_slice());
+                                v.into()
+                            }
                         })
                     }
                 }

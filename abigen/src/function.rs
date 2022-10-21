@@ -100,7 +100,7 @@ impl<'a> From<(&'a String, &'a ethabi::Function)> for Function {
         let tokenize: Vec<_> = input_names
             .iter()
             .zip(f.inputs.iter())
-            .map(|(param_name, param)| to_token(&quote! { self.#param_name }, &param.kind, false))
+            .map(|(param_name, param)| to_token(&quote! { self.#param_name }, &param.kind))
             .collect();
 
         let output_result = get_output_kinds(&f.outputs);
