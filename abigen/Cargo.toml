@@ -24,4 +24,4 @@ substreams-ethereum-core = { version = "0.6.1", path = "../core" }
 
 [dev-dependencies]
 pretty_assertions = "1.2.1"
-substreams = { version = "0.3.0" }
+substreams = { git = "https://github.com/streamingfast/substreams-rs", branch = "develop" }

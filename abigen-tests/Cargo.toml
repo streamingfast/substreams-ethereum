@@ -12,7 +12,7 @@ num-bigint = "0.4.3"
 num-traits = "0.2.15"
 prost = { version = "^0.11.0" }
 prost-types = "^0.11.0"
-substreams = { version = "0.3.0" }
+substreams = { git = "https://github.com/streamingfast/substreams-rs", branch = "develop" }
 substreams-ethereum = { version = "0.6.1", path = "../substreams-ethereum" }
 substreams-ethereum-core = { version = "0.6.1", path = "../core"}
 
