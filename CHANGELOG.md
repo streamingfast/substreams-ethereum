@@ -1,6 +1,16 @@
 
 ## Next
 
+## [0.8.0](https://github.com/streaminfast/substreams-ethereum/releases/tag/v0.8.0)
+
+* Bump `substreams` crate
+* Changing `into()` call when converting to `BigInt` in abi to call the proper `signed` or `unsiged` encoding
+* Adding `into()` method from `BigInt` to use `unsigned_bytes_be`
+
+## [0.7.0](https://github.com/streaminfast/substreams-ethereum/releases/tag/v0.7.0)
+
+* Bump `substreams` crate
+
 ## [0.6.2](https://github.com/streaminfast/substreams-ethereum/releases/tag/v0.6.2)
 
 * Replacing `EthBigInt` and `ethabi::Uint` to only use `substreams-rs` scalar `BigInt` struct.
