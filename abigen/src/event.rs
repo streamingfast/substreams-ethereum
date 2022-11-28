@@ -526,7 +526,7 @@ mod tests {
                                     .into_uint()
                                     .expect(INTERNAL_ERR)
                                     .to_big_endian(v.as_mut_slice());
-                                v.into()
+                                substreams::scalar::BigInt::from_unsigned_bytes_be(&v)
                             }
                         })
                     }
@@ -670,7 +670,7 @@ mod tests {
                                     .into_uint()
                                     .expect(INTERNAL_ERR)
                                     .to_big_endian(v.as_mut_slice());
-                                v.into()
+                                substreams::scalar::BigInt::from_unsigned_bytes_be(&v)
                             }
                         })
                     }

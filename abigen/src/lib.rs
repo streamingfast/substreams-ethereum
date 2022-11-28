@@ -305,14 +305,14 @@ fn from_token(kind: &ParamType, token: &proc_macro2::TokenStream) -> proc_macro2
             {
                 let mut v = [0 as u8; 32];
                 #token.into_int().expect(INTERNAL_ERR).to_big_endian(v.as_mut_slice());
-                v.into()
+                substreams::scalar::BigInt::from_signed_bytes_be(&v)
             }
         },
         ParamType::Uint(_) => quote! {
                 {
                     let mut v = [0 as u8; 32];
                     #token.into_uint().expect(INTERNAL_ERR).to_big_endian(v.as_mut_slice());
-                    v.into()
+                    substreams::scalar::BigInt::from_unsigned_bytes_be(&v)
                 }
         },
         ParamType::Bool => quote! { #token.into_bool().expect(INTERNAL_ERR) },

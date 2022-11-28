@@ -63,7 +63,7 @@
                                 .into_uint()
                                 .expect(INTERNAL_ERR)
                                 .to_big_endian(v.as_mut_slice());
-                            v.into()
+                            substreams::scalar::BigInt::from_unsigned_bytes_be(&v)
                         })
                         .collect(),
                 })
@@ -123,7 +123,7 @@
                             .into_uint()
                             .expect(INTERNAL_ERR)
                             .to_big_endian(v.as_mut_slice());
-                        v.into()
+                        substreams::scalar::BigInt::from_unsigned_bytes_be(&v)
                     },
                     values.pop().expect(INTERNAL_ERR).into_string().expect(INTERNAL_ERR),
                 ))
@@ -300,7 +300,7 @@
                             .into_uint()
                             .expect(INTERNAL_ERR)
                             .to_big_endian(v.as_mut_slice());
-                        v.into()
+                        substreams::scalar::BigInt::from_unsigned_bytes_be(&v)
                     },
                     values.pop().expect(INTERNAL_ERR).into_string().expect(INTERNAL_ERR),
                 ))
@@ -449,7 +449,7 @@
                             .into_int()
                             .expect(INTERNAL_ERR)
                             .to_big_endian(v.as_mut_slice());
-                        v.into()
+                        substreams::scalar::BigInt::from_signed_bytes_be(&v)
                     },
                     param5: {
                         let mut v = [0 as u8; 32];
@@ -459,7 +459,7 @@
                             .into_uint()
                             .expect(INTERNAL_ERR)
                             .to_big_endian(v.as_mut_slice());
-                        v.into()
+                        substreams::scalar::BigInt::from_unsigned_bytes_be(&v)
                     },
                     param6: values
                         .pop()
@@ -606,7 +606,7 @@
                             .into_int()
                             .expect(INTERNAL_ERR)
                             .to_big_endian(v.as_mut_slice());
-                        v.into()
+                        substreams::scalar::BigInt::from_signed_bytes_be(&v)
                     },
                 })
             }
@@ -681,7 +681,7 @@
                             .into_int()
                             .expect(INTERNAL_ERR)
                             .to_big_endian(v.as_mut_slice());
-                        v.into()
+                        substreams::scalar::BigInt::from_signed_bytes_be(&v)
                     },
                 })
             }
@@ -756,7 +756,7 @@
                             .into_int()
                             .expect(INTERNAL_ERR)
                             .to_big_endian(v.as_mut_slice());
-                        v.into()
+                        substreams::scalar::BigInt::from_signed_bytes_be(&v)
                     },
                 })
             }
@@ -839,7 +839,7 @@
                             .into_int()
                             .expect(INTERNAL_ERR)
                             .to_big_endian(v.as_mut_slice());
-                        v.into()
+                        substreams::scalar::BigInt::from_signed_bytes_be(&v)
                     },
                     param1: {
                         let mut v = [0 as u8; 32];
@@ -849,7 +849,7 @@
                             .into_int()
                             .expect(INTERNAL_ERR)
                             .to_big_endian(v.as_mut_slice());
-                        v.into()
+                        substreams::scalar::BigInt::from_signed_bytes_be(&v)
                     },
                     param2: {
                         let mut v = [0 as u8; 32];
@@ -859,7 +859,7 @@
                             .into_int()
                             .expect(INTERNAL_ERR)
                             .to_big_endian(v.as_mut_slice());
-                        v.into()
+                        substreams::scalar::BigInt::from_signed_bytes_be(&v)
                     },
                     param3: {
                         let mut v = [0 as u8; 32];
@@ -869,7 +869,7 @@
                             .into_int()
                             .expect(INTERNAL_ERR)
                             .to_big_endian(v.as_mut_slice());
-                        v.into()
+                        substreams::scalar::BigInt::from_signed_bytes_be(&v)
                     },
                 })
             }
@@ -1528,7 +1528,7 @@
                             .into_uint()
                             .expect(INTERNAL_ERR)
                             .to_big_endian(v.as_mut_slice());
-                        v.into()
+                        substreams::scalar::BigInt::from_unsigned_bytes_be(&v)
                     },
                     second: values
                         .pop()
@@ -1659,7 +1659,7 @@
                             .into_uint()
                             .expect(INTERNAL_ERR)
                             .to_big_endian(v.as_mut_slice());
-                        v.into()
+                        substreams::scalar::BigInt::from_unsigned_bytes_be(&v)
                     },
                     third: {
                         let mut v = [0 as u8; 32];
@@ -1669,7 +1669,7 @@
                             .into_uint()
                             .expect(INTERNAL_ERR)
                             .to_big_endian(v.as_mut_slice());
-                        v.into()
+                        substreams::scalar::BigInt::from_unsigned_bytes_be(&v)
                     },
                 })
             }
@@ -1783,7 +1783,7 @@
                             .into_uint()
                             .expect(INTERNAL_ERR)
                             .to_big_endian(v.as_mut_slice());
-                        v.into()
+                        substreams::scalar::BigInt::from_unsigned_bytes_be(&v)
                     },
                 })
             }
@@ -1897,7 +1897,7 @@
                             .into_uint()
                             .expect(INTERNAL_ERR)
                             .to_big_endian(v.as_mut_slice());
-                        v.into()
+                        substreams::scalar::BigInt::from_unsigned_bytes_be(&v)
                     },
                 })
             }
@@ -1980,7 +1980,7 @@
                             .into_int()
                             .expect(INTERNAL_ERR)
                             .to_big_endian(v.as_mut_slice());
-                        v.into()
+                        substreams::scalar::BigInt::from_signed_bytes_be(&v)
                     },
                 })
             }
@@ -2609,7 +2609,7 @@
                             .into_uint()
                             .expect(INTERNAL_ERR)
                             .to_big_endian(v.as_mut_slice());
-                        v.into()
+                        substreams::scalar::BigInt::from_unsigned_bytes_be(&v)
                     },
                 })
             }

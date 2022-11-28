@@ -81,3 +81,9 @@ impl Into<BigInt> for EthBigInt {
         self.get_big_int()
     }
 }
+
+impl Into<BigInt> for crate::pb::eth::v2::BigInt {
+    fn into(self) -> BigInt {
+        BigInt::from_unsigned_bytes_be(self.bytes.as_ref())
+    }
+}
