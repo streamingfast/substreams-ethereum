@@ -1,6 +1,8 @@
 
 ## Next
 
+* Re-exporting `block_view` from `substreams-ethereum-core`
+
 ## [0.8.0](https://github.com/streaminfast/substreams-ethereum/releases/tag/v0.8.0)
 
 * Bump `substreams` crate
