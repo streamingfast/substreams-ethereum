@@ -87,7 +87,14 @@
                                 .iter()
                                 .map(|inner| ethabi::Token::Uint(
                                     ethabi::Uint::from_big_endian(
-                                        inner.clone().to_signed_bytes_be().as_slice(),
+                                        match inner.clone().to_bytes_be() {
+                                            (num_bigint::Sign::Plus, bytes) => bytes,
+                                            (num_bigint::Sign::NoSign, bytes) => bytes,
+                                            (num_bigint::Sign::Minus, _) => {
+                                                panic!("negative numbers are not supported")
+                                            }
+                                        }
+                                            .as_slice(),
                                     ),
                                 ))
                                 .collect();
@@ -525,7 +532,14 @@
                         },
                         ethabi::Token::Uint(
                             ethabi::Uint::from_big_endian(
-                                self.param5.clone().to_signed_bytes_be().as_slice(),
+                                match self.param5.clone().to_bytes_be() {
+                                    (num_bigint::Sign::Plus, bytes) => bytes,
+                                    (num_bigint::Sign::NoSign, bytes) => bytes,
+                                    (num_bigint::Sign::Minus, _) => {
+                                        panic!("negative numbers are not supported")
+                                    }
+                                }
+                                    .as_slice(),
                             ),
                         ),
                         ethabi::Token::Bool(self.param6),
@@ -1321,6 +1335,81 @@
         }
         impl substreams_ethereum::Function for FunStringString {
             const NAME: &'static str = "funStringString";
+            fn match_call(call: &substreams_ethereum::pb::eth::v2::Call) -> bool {
+                Self::match_call(call)
+            }
+            fn decode(
+                call: &substreams_ethereum::pb::eth::v2::Call,
+            ) -> Result<Self, String> {
+                Self::decode(call)
+            }
+            fn encode(&self) -> Vec<u8> {
+                self.encode()
+            }
+        }
+        #[derive(Debug, Clone, PartialEq)]
+        pub struct FunUint256 {
+            pub param0: substreams::scalar::BigInt,
+        }
+        impl FunUint256 {
+            const METHOD_ID: [u8; 4] = [43u8, 21u8, 33u8, 111u8];
+            pub fn decode(
+                call: &substreams_ethereum::pb::eth::v2::Call,
+            ) -> Result<Self, String> {
+                let maybe_data = call.input.get(4..);
+                if maybe_data.is_none() {
+                    return Err("no data to decode".to_string());
+                }
+                let mut values = ethabi::decode(
+                        &[ethabi::ParamType::Uint(256usize)],
+                        maybe_data.unwrap(),
+                    )
+                    .map_err(|e| format!("unable to decode call.input: {:?}", e))?;
+                values.reverse();
+                Ok(Self {
+                    param0: {
+                        let mut v = [0 as u8; 32];
+                        values
+                            .pop()
+                            .expect(INTERNAL_ERR)
+                            .into_uint()
+                            .expect(INTERNAL_ERR)
+                            .to_big_endian(v.as_mut_slice());
+                        substreams::scalar::BigInt::from_unsigned_bytes_be(&v)
+                    },
+                })
+            }
+            pub fn encode(&self) -> Vec<u8> {
+                let data = ethabi::encode(
+                    &[
+                        ethabi::Token::Uint(
+                            ethabi::Uint::from_big_endian(
+                                match self.param0.clone().to_bytes_be() {
+                                    (num_bigint::Sign::Plus, bytes) => bytes,
+                                    (num_bigint::Sign::NoSign, bytes) => bytes,
+                                    (num_bigint::Sign::Minus, _) => {
+                                        panic!("negative numbers are not supported")
+                                    }
+                                }
+                                    .as_slice(),
+                            ),
+                        ),
+                    ],
+                );
+                let mut encoded = Vec::with_capacity(4 + data.len());
+                encoded.extend(Self::METHOD_ID);
+                encoded.extend(data);
+                encoded
+            }
+            pub fn match_call(call: &substreams_ethereum::pb::eth::v2::Call) -> bool {
+                match call.input.get(0..4) {
+                    Some(signature) => Self::METHOD_ID == signature,
+                    None => false,
+                }
+            }
+        }
+        impl substreams_ethereum::Function for FunUint256 {
+            const NAME: &'static str = "funUint256";
             fn match_call(call: &substreams_ethereum::pb::eth::v2::Call) -> bool {
                 Self::match_call(call)
             }

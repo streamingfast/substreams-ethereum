@@ -247,7 +247,17 @@ fn to_token(name: &proc_macro2::TokenStream, kind: &ParamType) -> proc_macro2::T
         }
         ParamType::Uint(_) => {
             quote! {
-                ethabi::Token::Uint(ethabi::Uint::from_big_endian(#name.clone().to_signed_bytes_be().as_slice()))
+                ethabi::Token::Uint(
+                            ethabi::Uint::from_big_endian(
+                                match #name.clone().to_bytes_be() {
+                                    (num_bigint::Sign::Plus, bytes) => bytes,
+                                    (num_bigint::Sign::NoSign, bytes) => bytes,
+                                    (num_bigint::Sign::Minus, _) => {
+                                        panic!("negative numbers are not supported")
+                                    },
+                                }.as_slice(),
+                            ),
+                        )
             }
         }
         ParamType::Bool => quote! { ethabi::Token::Bool(#name) },
