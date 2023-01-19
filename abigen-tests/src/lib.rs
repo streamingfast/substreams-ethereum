@@ -2,6 +2,8 @@ mod abi;
 
 #[cfg(test)]
 mod tests {
+    use std::str::FromStr;
+
     use crate::abi::tests;
     use pretty_assertions::assert_eq;
     use substreams::scalar::BigInt;
@@ -390,6 +392,38 @@ mod tests {
         };
 
         assert_eq!(fun.encode(), hex!("dec4311a000000000000000000000000fffdb7377345371817f2b4dd490319755f5899ec000000000000000000000000fffdb7377345371817f2b4dd490319755f5899eb00000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000003000000000000000000000000affdb7377345371817f2b4dd490319755f5899ec000000000000000000000000bffdb7377345371817f2b4dd490319755f5899ec000000000000000000000000cffdb7377345371817f2b4dd490319755f5899ec").to_vec());
+    }
+
+    #[test]
+    fn it_encode_fun_uint256() {
+        use tests::functions::FunUint256 as Function;
+
+        // Under Int256
+        let fun = Function {
+            param0: BigInt::from_str(
+                "10",
+            ).unwrap(),
+        };
+
+        assert_eq!(
+            fun.encode(),
+            hex!("2b15216f000000000000000000000000000000000000000000000000000000000000000a")
+                .to_vec()
+        );
+
+        // Over Int256
+        let fun = Function {
+            param0: BigInt::from_str(
+                "115792089237316195423570985008687907837957278154198333183605726673483560124417",
+            )
+            .unwrap(),
+        };
+
+        assert_eq!(
+            fun.encode(),
+            hex!("2b15216fffffffffffffffffffffffffffffffd300000000000000000000000000000001")
+                .to_vec()
+        );
     }
 
     #[test]
