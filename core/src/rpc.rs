@@ -44,14 +44,11 @@ impl RpcBatch {
 
         match T::output(response.raw.as_ref()) {
             Ok(data) => Some(data),
-            Err(err) => {
-                substreams::log::info!(
-                    "Call output for function `{}` failed to decode with error: {}",
-                    T::NAME,
-                    err
-                );
-                None
-            }
+            Err(err) => panic!(
+                "Call output for function `{}` failed to decode with error: {}",
+                T::NAME,
+                err
+            ),
         }
     }
 }
