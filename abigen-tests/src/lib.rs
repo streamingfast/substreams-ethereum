@@ -400,9 +400,7 @@ mod tests {
 
         // Under Int256
         let fun = Function {
-            param0: BigInt::from_str(
-                "10",
-            ).unwrap(),
+            param0: BigInt::from_str("10").unwrap(),
         };
 
         assert_eq!(
