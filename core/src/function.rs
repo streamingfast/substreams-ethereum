@@ -18,15 +18,12 @@ pub trait Function: Sized {
 
         match Self::decode(&call) {
             Ok(function) => Some(function),
-            Err(err) => {
-                substreams::log::info!(
-                    "Call for function `{}` at index {} matched but failed to decode with error: {}",
-                    Self::NAME,
-                    call.index,
-                    err
-                );
-                None
-            }
+            Err(err) => panic!(
+                "Call for function `{}` at index {} matched but failed to decode with error: {}",
+                Self::NAME,
+                call.index,
+                err
+            ),
         }
     }
 }

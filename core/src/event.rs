@@ -17,15 +17,12 @@ pub trait Event: Sized {
 
         match Self::decode(&log) {
             Ok(event) => Some(event),
-            Err(err) => {
-                substreams::log::info!(
-                    "Log for event `{}` at index {} matched but failed to decode with error: {}",
-                    Self::NAME,
-                    log.block_index,
-                    err
-                );
-                None
-            }
+            Err(err) => panic!(
+                "Log for event `{}` at index {} matched but failed to decode with error: {}",
+                Self::NAME,
+                log.block_index,
+                err
+            ),
         }
     }
 }
