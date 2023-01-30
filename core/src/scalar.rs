@@ -1,89 +1,159 @@
-use ethabi::ethereum_types::{U128, U256, U64};
-use num_bigint::ParseBigIntError;
-pub use num_bigint::Sign as BigIntSign;
-use std::str::FromStr;
-use substreams::scalar::{BigDecimal, BigInt};
+use std::ops::Mul;
+use crate::{pb::eth::v2 as pb};
+use substreams::scalar::{BigInt, BigDecimal};
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct EthBigInt {
-    i: BigInt,
-}
-
-impl EthBigInt {
-    pub fn new(i: BigInt) -> EthBigInt {
-        EthBigInt { i }
-    }
-
-    pub fn get_big_int(&self) -> BigInt {
-        return self.i.clone();
-    }
-
-    pub fn to_decimal(&self, decimals: u64) -> BigDecimal {
-        self.get_big_int().to_decimal(decimals)
-    }
-}
-
-impl ToString for EthBigInt {
-    fn to_string(&self) -> String {
-        self.get_big_int().to_string()
-    }
-}
-
-impl AsRef<BigInt> for EthBigInt {
-    fn as_ref(&self) -> &BigInt {
-        &self.i
-    }
-}
-
-impl TryFrom<U256> for EthBigInt {
-    type Error = ParseBigIntError;
-
-    fn try_from(value: U256) -> Result<Self, Self::Error> {
-        let big_int: Result<BigInt, <num_bigint::BigInt as FromStr>::Err> =
-            BigInt::from_str(value.to_string().as_str());
-        match big_int {
-            Ok(i) => Ok(EthBigInt { i }),
-            Err(err) => Err(err),
-        }
-    }
-}
-
-impl From<U64> for EthBigInt {
-    /// This implementation assumes that U64 represents an unsigned U64,
-    /// and not a signed U64 (aka int64 in Solidity). Right now, this is
-    /// all we need (for block numbers). If it ever becomes necessary to
-    /// handle signed U64s, we should add the same
-    /// `{to,from}_{signed,unsigned}_u64` methods that we have for U64.
-    fn from(value: U64) -> EthBigInt {
-        EthBigInt {
-            i: BigInt::from(value.as_u64()),
-        }
-    }
-}
-
-impl From<U128> for EthBigInt {
-    /// This implementation assumes that U128 represents an unsigned U128,
-    /// and not a signed U128 (aka int128 in Solidity). Right now, this is
-    /// all we need (for block numbers). If it ever becomes necessary to
-    /// handle signed U128s, we should add the same
-    /// `{to,from}_{signed,unsigned}_u128` methods that we have for U256.
-    fn from(value: U128) -> EthBigInt {
-        let mut bytes: [u8; 16] = [0; 16];
-        value.to_little_endian(&mut bytes);
-        EthBigInt {
-            i: BigInt::from_bytes_le(num_bigint::Sign::Plus, &bytes),
-        }
-    }
-}
-
-impl Into<BigInt> for EthBigInt {
-    fn into(self) -> BigInt {
-        self.get_big_int()
-    }
-}
-
-impl Into<BigInt> for crate::pb::eth::v2::BigInt {
+impl Into<BigInt> for pb::BigInt {
     fn into(self) -> BigInt {
         BigInt::from_unsigned_bytes_be(self.bytes.as_ref())
     }
 }
+
+impl Into<BigDecimal> for pb::BigInt {
+    fn into(self) -> BigDecimal {
+        let v = BigInt::from_unsigned_bytes_be(self.bytes.as_ref());
+        BigDecimal::new(v, 0)
+    }
+}
+
+pub fn to_option_decimal(v: Option<pb::BigInt>) ->  Option<BigDecimal> {
+    match  v {
+        Some(v) => {
+            let out : BigDecimal = v.into();
+            Some(out)
+        },
+        None => None
+    }
+}
+
+pub fn to_option_bigint(v: Option<pb::BigInt>) ->  Option<BigInt> {
+    match  v {
+        Some(v) => Some(v.into()),
+        None => None
+    }
+}
+
+pub fn to_option_decimal_with_decimal(v: Option<pb::BigInt>, decimal: u32) ->  Option<BigDecimal> {
+    match  v {
+        Some(v) => Some(v.with_decimal(decimal)),
+        None => None
+    }
+}
+
+
+impl pb::BigInt {
+    pub fn with_decimal(self, decimal: u32) -> BigDecimal {
+        let num : BigDecimal = self.into();
+        let dem = BigInt::from(10 as u32).pow(decimal);
+        return  num / BigDecimal::from(dem)
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use bigdecimal::BigDecimal;
+    use crate::{pb::eth::v2 as pb};
+    use crate::scalar::{to_option_bigint, to_option_decimal, to_option_decimal_with_decimal};
+
+    #[test]
+    fn zero_into_bigint() {
+        let v : substreams::scalar::BigInt = new_pb_bigint(0).into();
+        assert_eq!(v.to_u64(), 0);
+    }
+
+    #[test]
+    fn number_into_bigint() {
+        let v : substreams::scalar::BigInt = new_pb_bigint(253).into();
+        assert_eq!(v.to_u64(), 253);
+    }
+
+    #[test]
+    fn zero_into_bigdecmal() {
+        let v : substreams::scalar::BigDecimal = new_pb_bigint(0).into();
+        assert_eq!(v.to_string(),"0");
+    }
+
+    #[test]
+    fn number_into_bigdecmal() {
+        let v : substreams::scalar::BigDecimal = new_pb_bigint(253).into();
+        assert_eq!(v.to_string(),"253");
+    }
+
+    #[test]
+    fn some_option_pb_to_decimal() {
+        let v =  Some(new_pb_bigint(253));
+        assert_eq!(to_option_decimal(v),Some(substreams::scalar::BigDecimal::from(253 as u32)));
+    }
+
+    #[test]
+    fn none_option_pb_to_decimal() {
+        let v : Option<pb::BigInt> =  None;
+        assert_eq!(to_option_decimal(v), None);
+    }
+
+    #[test]
+    fn some_option_pb_to_bigint() {
+        let v =  Some(new_pb_bigint(253));
+        assert_eq!(to_option_bigint(v), Some(substreams::scalar::BigInt::from(253 as u32)));
+    }
+
+    #[test]
+    fn none_option_pb_to_bigint() {
+        let v : Option<pb::BigInt> =  None;
+        assert_eq!(to_option_bigint(v), None);
+    }
+
+    #[test]
+    fn with_decimal() {
+        let v = new_pb_bigint_bytes(vec![114,10,199,169,74,64,0].as_ref());
+        assert_eq!(v.with_decimal(18).to_string(), "0.0321");
+    }
+
+    #[test]
+    fn some_option_pb_to_bigdecimal_with_decimal() {
+        let v =  Some(new_pb_bigint_bytes(vec![114,10,199,169,74,64,0].as_ref()));
+        let out = substreams::scalar::BigDecimal::try_from("0.0321".to_owned()).unwrap();
+        assert_eq!(to_option_decimal_with_decimal(v, 18),Some(out));
+    }
+
+    #[test]
+    fn none_option_pb_to_bigdecimal_with_decimal() {
+        let v : Option<pb::BigInt> =  None;
+        assert_eq!(to_option_decimal_with_decimal(v, 18), None);
+    }
+
+
+    #[test]
+    fn some_option_pb_to_bigdecimal() {
+        let v =  Some(new_pb_bigint(253));
+        assert_eq!(to_option_decimal(v),Some(substreams::scalar::BigDecimal::from(253 as u32)));
+    }
+
+    #[test]
+    fn none_option_pb_to_bigdecimal() {
+        let v : Option<pb::BigInt> =  None;
+        assert_eq!(to_option_decimal(v), None);
+    }
+
+    pub fn new_pb_bigint(value: u32) -> pb::BigInt {
+        let v = num_bigint::BigInt::new(num_bigint::Sign::Plus, vec![value]);
+        let (_, bytes) = v.to_bytes_be();
+        pb::BigInt{ bytes }
+    }
+
+    pub fn new_pb_bigint_bytes(bytes: &[u8]) -> pb::BigInt {
+        let v = num_bigint::BigInt::from_bytes_be(num_bigint::Sign::Plus, bytes);
+        let (_, bytes) = v.to_bytes_be();
+        pb::BigInt{ bytes }
+    }
+
+}
+
+
+// let old_value = match balance_change.old_value.as_ref() {
+// Some(value) => {
+// BigDecimal::from(BigInt::from_unsigned_bytes_be(&value.bytes))
+// / BigDecimal::from(1e18 as i64)
+// }
+// None => BigDecimal::zero(),
+// };
