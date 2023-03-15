@@ -41,6 +41,8 @@ Caused by:
   thread 'main' panicked at 'not implemented: Tuples are not supported. https://github.com/openethereum/ethabi/issues/175', /home/acme/.cargo/registry/src/github.com-1ecc6299db9ec823/substreams-ethereum-abigen-0.9.0/src/lib.rs:122:13
 ```
 
+You can expand the collapsed [Instructions] section below to get detailed instructions how you can "manually" resolve that.
+
 <details>
 <summary>Instructions</summary>
 Right now, the workaround for that is to create manually the decoding code that is required to decode the ABI. The rest of this section will give the instructions needed to do so.
