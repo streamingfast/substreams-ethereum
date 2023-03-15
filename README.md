@@ -142,7 +142,7 @@ We explode `SpentItem` to it's own type and replace the `offer` type `tuple[]` t
 ]
 ```
 
-> **Info** No need to remove the `components` or change the `internalType` value, they are ignored.
+> **Note** No need to remove the `components` or change the `internalType` value, they are ignored.
 
 Perform a `cargo build` using this modified ABI so that code is generated in `src/abi/<file>.rs`, it's wrong right now but we are going to copy it somewhere else and make it work.
 
