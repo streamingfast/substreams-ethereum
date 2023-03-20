@@ -542,7 +542,7 @@
                                     .as_slice(),
                             ),
                         ),
-                        ethabi::Token::Bool(self.param6),
+                        ethabi::Token::Bool(self.param6.clone()),
                         ethabi::Token::String(self.param7.clone()),
                         {
                             let v = self
