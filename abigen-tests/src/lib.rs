@@ -11,6 +11,31 @@ mod tests {
     use substreams_ethereum::pb;
 
     #[test]
+    fn it_decode_event_tuple() {
+        use tests::events::EventUTupleAddress as Event;
+
+        let log = pb::eth::v2::Log {
+            address: hex!("0000000000000000000000000000000000000000").to_vec(),
+            topics: vec![
+                hex!("adb25b4ab5d8f04dc5e8073124d207a0974cb9aecac69a6197dbd5cf8dce87d3").to_vec(),
+            ],
+            data: hex!("000000000000000000000000db0de9288cf0713de91371969efcc9969dd94117").to_vec(),
+            ..Default::default()
+        };
+
+        assert_eq!(Event::match_log(&log), true);
+
+        let event = Event::decode(&log);
+
+        assert_eq!(
+            event,
+            Ok(Event {
+                param0: (hex!("db0de9288cf0713de91371969efcc9969dd94117").to_vec(),),
+            }),
+        );
+    }
+
+    #[test]
     fn it_decode_event_int256_idx() {
         use substreams::scalar::BigInt;
         use tests::events::EventInt256Idx as Event;

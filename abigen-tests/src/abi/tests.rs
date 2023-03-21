@@ -542,7 +542,7 @@
                                     .as_slice(),
                             ),
                         ),
-                        ethabi::Token::Bool(self.param6.clone()),
+                        ethabi::Token::Bool(self.param6),
                         ethabi::Token::String(self.param7.clone()),
                         {
                             let v = self
@@ -2627,6 +2627,94 @@
         }
         impl substreams_ethereum::Event for EventUFixedArraySubFixed {
             const NAME: &'static str = "EventUFixedArraySubFixed";
+            fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
+                Self::match_log(log)
+            }
+            fn decode(
+                log: &substreams_ethereum::pb::eth::v2::Log,
+            ) -> Result<Self, String> {
+                Self::decode(log)
+            }
+        }
+        #[derive(Debug, Clone, PartialEq)]
+        pub struct EventUTupleAddress {
+            pub param0: (Vec<u8>,),
+        }
+        impl EventUTupleAddress {
+            const TOPIC_ID: [u8; 32] = [
+                173u8,
+                178u8,
+                91u8,
+                74u8,
+                181u8,
+                216u8,
+                240u8,
+                77u8,
+                197u8,
+                232u8,
+                7u8,
+                49u8,
+                36u8,
+                210u8,
+                7u8,
+                160u8,
+                151u8,
+                76u8,
+                185u8,
+                174u8,
+                202u8,
+                198u8,
+                154u8,
+                97u8,
+                151u8,
+                219u8,
+                213u8,
+                207u8,
+                141u8,
+                206u8,
+                135u8,
+                211u8,
+            ];
+            pub fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
+                if log.topics.len() != 1usize {
+                    return false;
+                }
+                if log.data.len() != 32usize {
+                    return false;
+                }
+                return log.topics.get(0).expect("bounds already checked").as_ref()
+                    == Self::TOPIC_ID;
+            }
+            pub fn decode(
+                log: &substreams_ethereum::pb::eth::v2::Log,
+            ) -> Result<Self, String> {
+                let mut values = ethabi::decode(
+                        &[ethabi::ParamType::Tuple(vec![ethabi::ParamType::Address])],
+                        log.data.as_ref(),
+                    )
+                    .map_err(|e| format!("unable to decode log.data: {:?}", e))?;
+                values.reverse();
+                Ok(Self {
+                    param0: {
+                        let tuple_elements = values
+                            .pop()
+                            .expect(INTERNAL_ERR)
+                            .into_tuple()
+                            .expect(INTERNAL_ERR);
+                        (
+                            tuple_elements[0usize]
+                                .clone()
+                                .into_address()
+                                .expect(INTERNAL_ERR)
+                                .as_bytes()
+                                .to_vec(),
+                        )
+                    },
+                })
+            }
+        }
+        impl substreams_ethereum::Event for EventUTupleAddress {
+            const NAME: &'static str = "EventUTupleAddress";
             fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
                 Self::match_log(log)
             }

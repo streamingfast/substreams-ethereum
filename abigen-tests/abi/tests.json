@@ -12,6 +12,23 @@
     "name": "EventInt256Idx",
     "type": "event"
   },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "param0",
+        "type": "tuple",
+        "components":
+          [
+            { "name":"field0", "type": "address"}
+          ]
+      }
+    ],
+    "name": "EventUTupleAddress",
+    "type": "event"
+  },
 	{
     "anonymous": false,
     "inputs": [

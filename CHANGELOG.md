@@ -7,6 +7,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+* Added support for tuple in event in ABI generated code.
+
 * Fixed wrong handling of `FixedArray` when the array element's type is dynamic itself in ABI generated code.
 
 ## [0.9.0](https://github.com/streaminfast/substreams-ethereum/releases/tag/v0.9.0)
