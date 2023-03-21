@@ -18,7 +18,7 @@
   Using [sd](https://github.com/chmln/sd):
 
   ```bash
-  find . -type f -name Cargo.toml -not -path "./target/*" | xargs -n1 sd '^substreams-ethereum(-[^ =]+)?\s*=\s*\{\s*version\s*=\s*"[^"]+"' "substreams-ethereum$1 = { version = \"${version}\""
+  find . -type f -name Cargo.toml -not -path "./target/*" | xargs -n1 sd '^substreams-ethereum(-[^ =]+)?\s*=\s*\{\s*version\s*=\s*"[^"]+"' "substreams-ethereum\$1 = { version = \"${version}\""
   ```
 
 - Update the [CHANGELOG.md](CHANGELOG.md) to update the `## Unreleased` header to become `## [${version}](https://github.com/streamingfast/substreams-ethereum/releases/tag/v${version})`
