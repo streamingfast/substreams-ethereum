@@ -32,16 +32,7 @@ This means changes to Protobuf files must be manually re-generated and commit, s
 
 ### ABI with Tuple
 
-Internally, we are using https://github.com/rust-ethereum/ethabi library for the ABI generator. Sadly, tuple are not supported in the library today that means that ABI containing `tuple` fails compiling with the following message:
-
-```
-Caused by:
-  process didn't exit successfully: `/home/acme/target/debug/build/substreams-template-109c396339f1e9a0/build-script-build` (exit status: 101)
-  --- stderr
-  thread 'main' panicked at 'not implemented: Tuples are not supported. https://github.com/openethereum/ethabi/issues/175', /home/acme/.cargo/registry/src/github.com-1ecc6299db9ec823/substreams-ethereum-abigen-0.9.0/src/lib.rs:122:13
-```
-
-Right now, the workaround for that is to create manually the decoding code that is required to decode the ABI. You can expand the collapsed `Instructions` section below to get detailed instructions how you can "manually" resolve that.
+Tuples are now supported for ABI generated code. It does generate Rust unamed tuples for event/function that uses them. The notes below can be used if you prefer to generate "struct" for your tuple in events instead. You can expand the collapsed `Instructions` section below to get detailed instructions how you can "manually" generate the code.
 
 <details>
 <summary>Instructions</summary>
