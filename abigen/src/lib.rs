@@ -24,12 +24,12 @@ use heck::ToSnakeCase;
 use proc_macro2::Span;
 // use heck::ToSnakeCase;
 use quote::{quote, ToTokens};
-use syn::Index;
 use std::{
     borrow::Cow,
     env, fs,
     path::{Path, PathBuf},
 };
+use syn::Index;
 
 pub fn generate_abi_code<S: AsRef<str>>(
     path: S,
@@ -126,17 +126,19 @@ fn rust_type(input: &ParamType) -> proc_macro2::TokenStream {
 }
 
 fn fixed_data_size(input: &ParamType) -> Option<usize> {
-    match *input {
+    match input {
         ParamType::Address
         | ParamType::Int(_)
         | ParamType::Uint(_)
         | ParamType::Bool
         | ParamType::FixedBytes(_) => Some(32),
         ParamType::Bytes | ParamType::String | ParamType::Array(_) => None,
-        ParamType::FixedArray(_, _) if input.is_dynamic() => None,
-        ParamType::FixedArray(ref sub_type, count) => {
-            Some(count * fixed_data_size(sub_type).expect("not dynamic, will always be Some(_)"))
-        }
+        ParamType::FixedArray(ref sub_type, count) => match sub_type.is_dynamic() {
+            true => None,
+            false => Some(
+                count * fixed_data_size(sub_type).expect("not dynamic, will always be Some(_)"),
+            ),
+        },
         ParamType::Tuple(ref types) => {
             if types.iter().any(ParamType::is_dynamic) {
                 return None;
@@ -147,18 +149,23 @@ fn fixed_data_size(input: &ParamType) -> Option<usize> {
 }
 
 fn min_data_size(input: &ParamType) -> usize {
-    match *input {
-        ParamType::FixedArray(ref sub_type, count) if sub_type.is_dynamic() => {
-            count * min_data_size(sub_type)
-        }
+    match input {
         ParamType::Address
         | ParamType::Int(_)
         | ParamType::Uint(_)
         | ParamType::Bool
-        | ParamType::FixedBytes(_)
-        | ParamType::FixedArray(_, _) => {
+        | ParamType::FixedBytes(_) => {
             fixed_data_size(input).expect("not dynamic, will always be Some(_)")
         }
+        // FixedArray with dynamic element becomes "dynamic" so we have
+        // an initial data offset (32) plus the minimal data size of the sub type multipled
+        // by number of element in the fixed array (count * min_data_size(sub_type)).
+        //
+        // If the sub type is not dynamic, we use its fixed data size.
+        ParamType::FixedArray(ref sub_type, count) => match sub_type.is_dynamic() {
+            true => 32 + count * min_data_size(sub_type),
+            false => fixed_data_size(input).expect("not dynamic, will always be Some(_)"),
+        },
         // Those are dynamic type meaning there is first an offset where to find the data written (32 bytes)
         // and then minimally a length (32 bytes) so minimum size is `size(offset) + size(length)` which is
         // `32 + 32`.
@@ -281,7 +288,6 @@ fn to_token(name: &proc_macro2::TokenStream, kind: &ParamType) -> proc_macro2::T
             }
         }
         ParamType::Tuple(ref types) => {
-        
             let inner_names = (0..types.len())
                 .map(|i| {
                     let i = Index::from(i);
@@ -456,6 +462,10 @@ fn rust_variable(name: &str) -> String {
 
 #[cfg(test)]
 mod tests {
+    use ethabi::ParamType;
+
+    use crate::{fixed_data_size, min_data_size};
+
     #[test]
     fn from_firehose_types_to_ethabi_token() {
         use substreams::hex;
@@ -464,5 +474,55 @@ mod tests {
 
         // Compilation is enough for those tests
         ethabi::Token::Address(ethabi::Address::from_slice(firehose_address.as_ref()));
+    }
+
+    #[test]
+    fn it_fixed_data_size_works() {
+        let inputs: Vec<(&str, ParamType, Option<usize>)> = vec![
+            (
+                "tuple(address)",
+                ParamType::Tuple(vec![ParamType::Address]),
+                Some(32),
+            ),
+            (
+                "bool[2]",
+                ParamType::FixedArray(Box::new(ParamType::Bool), 2),
+                Some(64),
+            ),
+            (
+                "string[2]",
+                ParamType::FixedArray(Box::new(ParamType::String), 2),
+                None,
+            ),
+        ];
+
+        for (name, actual, expected) in inputs {
+            assert_eq!(fixed_data_size(&actual), expected, "test case {}", name);
+        }
+    }
+
+    #[test]
+    fn it_min_data_size_works() {
+        let inputs: Vec<(&str, ParamType, usize)> = vec![
+            (
+                "tuple(address)",
+                ParamType::Tuple(vec![ParamType::Address]),
+                32,
+            ),
+            (
+                "bool[2]",
+                ParamType::FixedArray(Box::new(ParamType::Bool), 2),
+                2 * 32,
+            ),
+            (
+                "string[2]",
+                ParamType::FixedArray(Box::new(ParamType::String), 2),
+                32 + (2 * 32) + (2 * 32),
+            ),
+        ];
+
+        for (name, actual, expected) in inputs {
+            assert_eq!(min_data_size(&actual), expected, "test case {}", name);
+        }
     }
 }

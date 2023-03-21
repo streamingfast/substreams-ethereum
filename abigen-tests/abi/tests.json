@@ -17,6 +17,19 @@
     "inputs": [
       {
         "indexed": false,
+        "internalType": "string[2]",
+        "name": "param0",
+        "type": "string[2]"
+      }
+    ],
+    "name": "EventUFixedArrayString",
+    "type": "event"
+  },
+	{
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
         "internalType": "bool[]",
         "name": "param0",
         "type": "bool[]"

@@ -60,6 +60,30 @@ mod tests {
     }
 
     #[test]
+    fn it_decode_event_fixed_array_string() {
+        use tests::events::EventUFixedArrayString as Event;
+
+        let log = pb::eth::v2::Log {
+            address: hex!("0000000000000000000000000000000000000000").to_vec(),
+            topics: vec![
+                hex!("2f66d1a00558d55ced0f61b550ca490f9718523b5181b89c06b24ed7752e137c").to_vec(),
+            ],
+            data: hex!("0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000005666972737400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000067365636f6e640000000000000000000000000000000000000000000000000000").to_vec(),
+            ..Default::default()
+        };
+
+        assert_eq!(Event::match_log(&log), true);
+
+        let event = Event::decode(&log);
+        assert_eq!(
+            event,
+            Ok(Event {
+                param0: ["first".to_string(), "second".to_string()],
+            }),
+        );
+    }
+
+    #[test]
     fn it_decode_event_int256() {
         use substreams::scalar::BigInt;
         use tests::events::EventInt256 as Event;

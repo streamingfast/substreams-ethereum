@@ -7,12 +7,10 @@ pub use event::Event;
 pub use function::Function;
 pub mod scalar;
 
-
 mod abi;
 mod event;
 mod externs;
 mod function;
-
 
 /// Represents the null address static array in bytes (20 bytes) which in hex is equivalent
 /// to:

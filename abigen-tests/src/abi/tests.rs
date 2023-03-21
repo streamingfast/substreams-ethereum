@@ -542,7 +542,7 @@
                                     .as_slice(),
                             ),
                         ),
-                        ethabi::Token::Bool(self.param6),
+                        ethabi::Token::Bool(self.param6.clone()),
                         ethabi::Token::String(self.param7.clone()),
                         {
                             let v = self
@@ -2358,6 +2358,97 @@
             }
         }
         #[derive(Debug, Clone, PartialEq)]
+        pub struct EventUFixedArrayString {
+            pub param0: [String; 2usize],
+        }
+        impl EventUFixedArrayString {
+            const TOPIC_ID: [u8; 32] = [
+                47u8,
+                102u8,
+                209u8,
+                160u8,
+                5u8,
+                88u8,
+                213u8,
+                92u8,
+                237u8,
+                15u8,
+                97u8,
+                181u8,
+                80u8,
+                202u8,
+                73u8,
+                15u8,
+                151u8,
+                24u8,
+                82u8,
+                59u8,
+                81u8,
+                129u8,
+                184u8,
+                156u8,
+                6u8,
+                178u8,
+                78u8,
+                215u8,
+                117u8,
+                46u8,
+                19u8,
+                124u8,
+            ];
+            pub fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
+                if log.topics.len() != 1usize {
+                    return false;
+                }
+                if log.data.len() < 160usize {
+                    return false;
+                }
+                return log.topics.get(0).expect("bounds already checked").as_ref()
+                    == Self::TOPIC_ID;
+            }
+            pub fn decode(
+                log: &substreams_ethereum::pb::eth::v2::Log,
+            ) -> Result<Self, String> {
+                let mut values = ethabi::decode(
+                        &[
+                            ethabi::ParamType::FixedArray(
+                                Box::new(ethabi::ParamType::String),
+                                2usize,
+                            ),
+                        ],
+                        log.data.as_ref(),
+                    )
+                    .map_err(|e| format!("unable to decode log.data: {:?}", e))?;
+                values.reverse();
+                Ok(Self {
+                    param0: {
+                        let mut iter = values
+                            .pop()
+                            .expect(INTERNAL_ERR)
+                            .into_fixed_array()
+                            .expect(INTERNAL_ERR)
+                            .into_iter()
+                            .map(|inner| inner.into_string().expect(INTERNAL_ERR));
+                        [
+                            iter.next().expect(INTERNAL_ERR),
+                            iter.next().expect(INTERNAL_ERR),
+                        ]
+                    },
+                })
+            }
+        }
+        impl substreams_ethereum::Event for EventUFixedArrayString {
+            const NAME: &'static str = "EventUFixedArrayString";
+            fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
+                Self::match_log(log)
+            }
+            fn decode(
+                log: &substreams_ethereum::pb::eth::v2::Log,
+            ) -> Result<Self, String> {
+                Self::decode(log)
+            }
+        }
+        #[derive(Debug, Clone, PartialEq)]
         pub struct EventUFixedArraySubDynamic {
             pub param0: [Vec<u8>; 2usize],
         }
@@ -2400,7 +2491,7 @@
                 if log.topics.len() != 1usize {
                     return false;
                 }
-                if log.data.len() < 128usize {
+                if log.data.len() < 160usize {
                     return false;
                 }
                 return log.topics.get(0).expect("bounds already checked").as_ref()
