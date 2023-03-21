@@ -138,12 +138,10 @@ fn fixed_data_size(input: &ParamType) -> Option<usize> {
             Some(count * fixed_data_size(sub_type).expect("not dynamic, will always be Some(_)"))
         }
         ParamType::Tuple(ref types) => {
-            let sizes = types.iter().map(fixed_data_size);
-            if sizes.clone().any(|x| x.is_none()) {
-                None
-            } else {
-                Some(sizes.map(Option::unwrap).sum())
+            if types.iter().any(ParamType::is_dynamic) {
+                return None;
             }
+            Some(types.iter().map(fixed_data_size).map(Option::unwrap).sum())
         }
     }
 }
