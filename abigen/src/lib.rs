@@ -23,7 +23,8 @@ use ethabi::{Contract, Error, Param, ParamType};
 use heck::ToSnakeCase;
 use proc_macro2::Span;
 // use heck::ToSnakeCase;
-use quote::quote;
+use quote::{quote, ToTokens};
+use syn::Index;
 use std::{
     borrow::Cow,
     env, fs,
@@ -71,10 +72,9 @@ fn to_syntax_string(param_type: &ethabi::ParamType) -> proc_macro2::TokenStream 
             let param_type_quote = to_syntax_string(param_type);
             quote! { ethabi::ParamType::FixedArray(Box::new(#param_type_quote), #x) }
         }
-        ParamType::Tuple(_) => {
-            unimplemented!(
-                "Tuples are not supported. https://github.com/openethereum/ethabi/issues/175"
-            )
+        ParamType::Tuple(ref v) => {
+            let param_type_quotes = v.iter().map(|x| to_syntax_string(x));
+            quote! { ethabi::ParamType::Tuple(vec![#(#param_type_quotes),*]) }
         }
     }
 }
@@ -118,10 +118,9 @@ fn rust_type(input: &ParamType) -> proc_macro2::TokenStream {
             let t = rust_type(&*kind);
             quote! { [#t; #size] }
         }
-        ParamType::Tuple(_) => {
-            unimplemented!(
-                "Tuples are not supported. https://github.com/openethereum/ethabi/issues/175"
-            )
+        ParamType::Tuple(ref types) => {
+            let tuple_elements = types.iter().map(rust_type);
+            quote! { (#(#tuple_elements,)*) }
         }
     }
 }
@@ -138,10 +137,11 @@ fn fixed_data_size(input: &ParamType) -> Option<usize> {
         ParamType::FixedArray(ref sub_type, count) => {
             Some(count * fixed_data_size(sub_type).expect("not dynamic, will always be Some(_)"))
         }
-        ParamType::Tuple(_) => {
-            unimplemented!(
-                "Tuples are not supported. https://github.com/openethereum/ethabi/issues/175"
-            )
+        ParamType::Tuple(ref types) => {
+            if types.iter().any(ParamType::is_dynamic) {
+                return None;
+            }
+            Some(types.iter().map(fixed_data_size).map(Option::unwrap).sum())
         }
     }
 }
@@ -163,11 +163,7 @@ fn min_data_size(input: &ParamType) -> usize {
         // and then minimally a length (32 bytes) so minimum size is `size(offset) + size(length)` which is
         // `32 + 32`.
         ParamType::Bytes | ParamType::String | ParamType::Array(_) => 32 + 32,
-        ParamType::Tuple(_) => {
-            unimplemented!(
-                "Tuples are not supported. https://github.com/openethereum/ethabi/issues/175"
-            )
-        }
+        ParamType::Tuple(ref types) => types.iter().map(min_data_size).sum(),
     }
 }
 
@@ -260,7 +256,7 @@ fn to_token(name: &proc_macro2::TokenStream, kind: &ParamType) -> proc_macro2::T
                         )
             }
         }
-        ParamType::Bool => quote! { ethabi::Token::Bool(#name) },
+        ParamType::Bool => quote! { ethabi::Token::Bool(#name.clone()) },
         ParamType::String => quote! { ethabi::Token::String(#name.clone()) },
         ParamType::Array(ref kind) => {
             let inner_name = quote! { inner };
@@ -284,10 +280,26 @@ fn to_token(name: &proc_macro2::TokenStream, kind: &ParamType) -> proc_macro2::T
                 }
             }
         }
-        ParamType::Tuple(_) => {
-            unimplemented!(
-                "Tuples are not supported. https://github.com/openethereum/ethabi/issues/175"
-            )
+        ParamType::Tuple(ref types) => {
+        
+            let inner_names = (0..types.len())
+                .map(|i| {
+                    let i = Index::from(i);
+                    quote! { inner.#i }
+                })
+                .collect::<Vec<_>>();
+
+            let inner_tokens = types
+                .iter()
+                .zip(&inner_names)
+                .map(|(kind, inner_name)| to_token(&inner_name.to_token_stream(), kind))
+                .collect::<Vec<_>>();
+
+            quote! {
+                ethabi::Token::Tuple(vec![
+                    #(#inner_tokens),*
+                ])
+            }
         }
     }
 }
@@ -348,10 +360,19 @@ fn from_token(kind: &ParamType, token: &proc_macro2::TokenStream) -> proc_macro2
                 }
             }
         }
-        ParamType::Tuple(_) => {
-            unimplemented!(
-                "Tuples are not supported. https://github.com/openethereum/ethabi/issues/175"
-            )
+        ParamType::Tuple(ref types) => {
+            let conversion = types.iter().enumerate().map(|(i, t)| {
+                let inner = quote! { tuple_elements[#i].clone() };
+                let inner_conversion = from_token(t, &inner);
+                quote! { #inner_conversion }
+            });
+
+            quote! {
+                {
+                    let tuple_elements = #token.into_tuple().expect(INTERNAL_ERR);
+                    (#(#conversion,)*)
+                }
+            }
         }
     }
 }
