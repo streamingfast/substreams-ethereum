@@ -1,17 +1,42 @@
 ### Release
 
-> *Important* Don't forget to replace `${version}` by your real version like `0.1.3`!
+> *Important* Don't forget to replace `${version}` by your real version like `0.1.3`! (`export version=0.1.3`)
 
 - Clean build dirs `cargo clean`
 - Ensure build `cargo build --release` and tests `cargo test --target aarch64-apple-darwin` pass (adapt `--target` value to fit your machine's architecture)
 - Ensure you are in a clean and pushed Git state
 - Find & replace all occurrences of Regex `^version = "[^"]+"` in all `Cargo.toml` files to `version = "${version}"`
+
+  Using [sd](https://github.com/chmln/sd):
+
+  ```bash
+  find . -type f -name Cargo.toml -not -path "./target/*" | xargs -n1 sd '^version = "[^"]+"' "version = \"${version}\""
+  ```
+
 - Find & replace all occurrences of Regex `^substreams-ethereum(-[^ =]+)?\s*=\s*\{\s*version\s*=\s*"[^"]+"` in all `Cargo.toml` files to `substreams-ethereum$1 = { version = "${version}"`
-- Update the [CHANGELOG.md](CHANGELOG.md) to update the `## Next` header to become `## [${version}](https://github.com/streamingfast/substreams-ethereum/releases/tag/v${version})`
+
+  Using [sd](https://github.com/chmln/sd):
+
+  ```bash
+  find . -type f -name Cargo.toml -not -path "./target/*" | xargs -n1 sd '^substreams-ethereum(-[^ =]+)?\s*=\s*\{\s*version\s*=\s*"[^"]+"' "substreams-ethereum$1 = { version = \"${version}\""
+  ```
+
+- Update the [CHANGELOG.md](CHANGELOG.md) to update the `## Unreleased` header to become `## [${version}](https://github.com/streamingfast/substreams-ethereum/releases/tag/v${version})`
+
+  Using [sd](https://github.com/chmln/sd):
+
+  ```bash
+  sd '## Unreleased' "## [${version}](https://github.com/streamingfast/substreams-ethereum/releases/tag/v${version})" CHANGELOG.md
+
 - Ensure that Keybase is running and logged in
 - Ensure that `cargo login` has been done in your terminal
 - Ensure build `cargo build --release` and tests `cargo test --target aarch64-apple-darwin` still pass (adapt `--target` value to fit your machine's architecture)
 - Commit everything with message `Preparing release of ${version}`.
+
+  ```bash
+  git add -A . && git commit -m "Preparing release of ${version}"
+  ```
+
 - `./bin/release.sh -f v${version}`
 - If everything goes well, `crates.io` will be update and Git should be in a synced state (the release script does a `git push` of the branch and the tag).
 - Go to https://github.com/streamingfast/substreams-ethereum/releases and edit the draft release named `v${version}`.
