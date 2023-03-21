@@ -542,7 +542,7 @@
                                     .as_slice(),
                             ),
                         ),
-                        ethabi::Token::Bool(self.param6),
+                        ethabi::Token::Bool(self.param6.clone()),
                         ethabi::Token::String(self.param7.clone()),
                         {
                             let v = self
@@ -580,6 +580,75 @@
         }
         impl substreams_ethereum::Function for FunAll {
             const NAME: &'static str = "funAll";
+            fn match_call(call: &substreams_ethereum::pb::eth::v2::Call) -> bool {
+                Self::match_call(call)
+            }
+            fn decode(
+                call: &substreams_ethereum::pb::eth::v2::Call,
+            ) -> Result<Self, String> {
+                Self::decode(call)
+            }
+            fn encode(&self) -> Vec<u8> {
+                self.encode()
+            }
+        }
+        #[derive(Debug, Clone, PartialEq)]
+        pub struct FunDynamicBoolArray {
+            pub param0: Vec<bool>,
+        }
+        impl FunDynamicBoolArray {
+            const METHOD_ID: [u8; 4] = [176u8, 230u8, 21u8, 120u8];
+            pub fn decode(
+                call: &substreams_ethereum::pb::eth::v2::Call,
+            ) -> Result<Self, String> {
+                let maybe_data = call.input.get(4..);
+                if maybe_data.is_none() {
+                    return Err("no data to decode".to_string());
+                }
+                let mut values = ethabi::decode(
+                        &[ethabi::ParamType::Array(Box::new(ethabi::ParamType::Bool))],
+                        maybe_data.unwrap(),
+                    )
+                    .map_err(|e| format!("unable to decode call.input: {:?}", e))?;
+                values.reverse();
+                Ok(Self {
+                    param0: values
+                        .pop()
+                        .expect(INTERNAL_ERR)
+                        .into_array()
+                        .expect(INTERNAL_ERR)
+                        .into_iter()
+                        .map(|inner| inner.into_bool().expect(INTERNAL_ERR))
+                        .collect(),
+                })
+            }
+            pub fn encode(&self) -> Vec<u8> {
+                let data = ethabi::encode(
+                    &[
+                        {
+                            let v = self
+                                .param0
+                                .iter()
+                                .map(|inner| ethabi::Token::Bool(inner.clone()))
+                                .collect();
+                            ethabi::Token::Array(v)
+                        },
+                    ],
+                );
+                let mut encoded = Vec::with_capacity(4 + data.len());
+                encoded.extend(Self::METHOD_ID);
+                encoded.extend(data);
+                encoded
+            }
+            pub fn match_call(call: &substreams_ethereum::pb::eth::v2::Call) -> bool {
+                match call.input.get(0..4) {
+                    Some(signature) => Self::METHOD_ID == signature,
+                    None => false,
+                }
+            }
+        }
+        impl substreams_ethereum::Function for FunDynamicBoolArray {
+            const NAME: &'static str = "funDynamicBoolArray";
             fn match_call(call: &substreams_ethereum::pb::eth::v2::Call) -> bool {
                 Self::match_call(call)
             }
@@ -2715,6 +2784,92 @@
         }
         impl substreams_ethereum::Event for EventUTupleAddress {
             const NAME: &'static str = "EventUTupleAddress";
+            fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
+                Self::match_log(log)
+            }
+            fn decode(
+                log: &substreams_ethereum::pb::eth::v2::Log,
+            ) -> Result<Self, String> {
+                Self::decode(log)
+            }
+        }
+        #[derive(Debug, Clone, PartialEq)]
+        pub struct EventUTupleBool {
+            pub param0: (bool,),
+        }
+        impl EventUTupleBool {
+            const TOPIC_ID: [u8; 32] = [
+                228u8,
+                110u8,
+                6u8,
+                21u8,
+                34u8,
+                138u8,
+                133u8,
+                213u8,
+                147u8,
+                206u8,
+                254u8,
+                174u8,
+                155u8,
+                181u8,
+                249u8,
+                209u8,
+                182u8,
+                105u8,
+                136u8,
+                88u8,
+                182u8,
+                53u8,
+                213u8,
+                73u8,
+                180u8,
+                4u8,
+                146u8,
+                175u8,
+                178u8,
+                88u8,
+                255u8,
+                35u8,
+            ];
+            pub fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
+                if log.topics.len() != 1usize {
+                    return false;
+                }
+                if log.data.len() != 32usize {
+                    return false;
+                }
+                return log.topics.get(0).expect("bounds already checked").as_ref()
+                    == Self::TOPIC_ID;
+            }
+            pub fn decode(
+                log: &substreams_ethereum::pb::eth::v2::Log,
+            ) -> Result<Self, String> {
+                let mut values = ethabi::decode(
+                        &[ethabi::ParamType::Tuple(vec![ethabi::ParamType::Bool])],
+                        log.data.as_ref(),
+                    )
+                    .map_err(|e| format!("unable to decode log.data: {:?}", e))?;
+                values.reverse();
+                Ok(Self {
+                    param0: {
+                        let tuple_elements = values
+                            .pop()
+                            .expect(INTERNAL_ERR)
+                            .into_tuple()
+                            .expect(INTERNAL_ERR);
+                        (
+                            tuple_elements[0usize]
+                                .clone()
+                                .into_bool()
+                                .expect(INTERNAL_ERR),
+                        )
+                    },
+                })
+            }
+        }
+        impl substreams_ethereum::Event for EventUTupleBool {
+            const NAME: &'static str = "EventUTupleBool";
             fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
                 Self::match_log(log)
             }

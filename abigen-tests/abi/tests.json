@@ -17,7 +17,7 @@
     "inputs": [
       {
         "indexed": false,
-        "internalType": "address",
+        "internalType": "Tuple1",
         "name": "param0",
         "type": "tuple",
         "components":
@@ -27,6 +27,23 @@
       }
     ],
     "name": "EventUTupleAddress",
+    "type": "event"
+  },
+	{
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "TupleBool",
+        "name": "param0",
+        "type": "tuple",
+        "components":
+          [
+            { "name":"field0", "type": "bool"}
+          ]
+      }
+    ],
+    "name": "EventUTupleBool",
     "type": "event"
   },
 	{
@@ -562,6 +579,19 @@
 			}
 		],
 		"name": "funUint256",
+		"outputs": [],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "bool[]",
+				"name": "",
+				"type": "bool[]"
+			}
+		],
+		"name": "funDynamicBoolArray",
 		"outputs": [],
 		"stateMutability": "view",
 		"type": "function"

@@ -36,6 +36,26 @@ mod tests {
     }
 
     #[test]
+    fn it_decode_event_tuple_bool() {
+        use tests::events::EventUTupleBool as Event;
+
+        let log = pb::eth::v2::Log {
+            address: hex!("0000000000000000000000000000000000000000").to_vec(),
+            topics: vec![
+                hex!("e46e0615228a85d593cefeae9bb5f9d1b6698858b635d549b40492afb258ff23").to_vec(),
+            ],
+            data: hex!("0000000000000000000000000000000000000000000000000000000000000001").to_vec(),
+            ..Default::default()
+        };
+
+        assert_eq!(Event::match_log(&log), true);
+
+        let event = Event::decode(&log);
+
+        assert_eq!(event, Ok(Event { param0: (true,) }),);
+    }
+
+    #[test]
     fn it_decode_event_int256_idx() {
         use substreams::scalar::BigInt;
         use tests::events::EventInt256Idx as Event;
@@ -493,6 +513,21 @@ mod tests {
         assert_eq!(
             fun.encode(),
             hex!("2b15216fffffffffffffffffffffffffffffffd300000000000000000000000000000001")
+                .to_vec()
+        );
+    }
+
+    #[test]
+    fn it_encode_fun_dynamic_bool_array() {
+        use tests::functions::FunDynamicBoolArray as Function;
+
+        let fun = Function {
+            param0: vec![true, false],
+        };
+
+        assert_eq!(
+            fun.encode(),
+            hex!("b0e615780000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000")
                 .to_vec()
         );
     }

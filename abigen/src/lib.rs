@@ -263,7 +263,7 @@ fn to_token(name: &proc_macro2::TokenStream, kind: &ParamType) -> proc_macro2::T
                         )
             }
         }
-        ParamType::Bool => quote! { ethabi::Token::Bool(#name) },
+        ParamType::Bool => quote! { ethabi::Token::Bool(#name.clone()) },
         ParamType::String => quote! { ethabi::Token::String(#name.clone()) },
         ParamType::Array(ref kind) => {
             let inner_name = quote! { inner };
