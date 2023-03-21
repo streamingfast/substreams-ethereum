@@ -14,9 +14,9 @@ rust-version = "1.60"
 [dependencies]
 num-bigint = "0.4.3"
 substreams = "^0.5.0"
-substreams-ethereum = { version = "0.9.1", path = "../abigen" }
-substreams-ethereum = { version = "0.9.1", path = "../derive" }
-substreams-ethereum = { version = "0.9.1", path = "../core" }
+substreams-ethereum-abigen = { version = "0.9.1", path = "../abigen" }
+substreams-ethereum-derive = { version = "0.9.1", path = "../derive" }
+substreams-ethereum-core = { version = "0.9.1", path = "../core" }
 
 # Required so that ethabi > ethereum-types build correctly under wasm32-unknown-unknown
 [target.wasm32-unknown-unknown.dependencies]
