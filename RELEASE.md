@@ -27,6 +27,7 @@
 
   ```bash
   sd '## Unreleased' "## [${version}](https://github.com/streamingfast/substreams-ethereum/releases/tag/v${version})" CHANGELOG.md
+  ```
 
 - Ensure that Keybase is running and logged in
 - Ensure that `cargo login` has been done in your terminal
