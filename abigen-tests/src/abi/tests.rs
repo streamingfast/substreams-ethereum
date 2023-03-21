@@ -2156,6 +2156,87 @@
             }
         }
         #[derive(Debug, Clone, PartialEq)]
+        pub struct EventUArrayBool {
+            pub param0: Vec<bool>,
+        }
+        impl EventUArrayBool {
+            const TOPIC_ID: [u8; 32] = [
+                238u8,
+                12u8,
+                208u8,
+                229u8,
+                93u8,
+                87u8,
+                94u8,
+                78u8,
+                50u8,
+                219u8,
+                113u8,
+                45u8,
+                35u8,
+                149u8,
+                50u8,
+                177u8,
+                16u8,
+                73u8,
+                56u8,
+                237u8,
+                41u8,
+                113u8,
+                241u8,
+                13u8,
+                139u8,
+                99u8,
+                228u8,
+                170u8,
+                76u8,
+                23u8,
+                175u8,
+                182u8,
+            ];
+            pub fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
+                if log.topics.len() != 1usize {
+                    return false;
+                }
+                if log.data.len() < 64usize {
+                    return false;
+                }
+                return log.topics.get(0).expect("bounds already checked").as_ref()
+                    == Self::TOPIC_ID;
+            }
+            pub fn decode(
+                log: &substreams_ethereum::pb::eth::v2::Log,
+            ) -> Result<Self, String> {
+                let mut values = ethabi::decode(
+                        &[ethabi::ParamType::Array(Box::new(ethabi::ParamType::Bool))],
+                        log.data.as_ref(),
+                    )
+                    .map_err(|e| format!("unable to decode log.data: {:?}", e))?;
+                values.reverse();
+                Ok(Self {
+                    param0: values
+                        .pop()
+                        .expect(INTERNAL_ERR)
+                        .into_array()
+                        .expect(INTERNAL_ERR)
+                        .into_iter()
+                        .map(|inner| inner.into_bool().expect(INTERNAL_ERR))
+                        .collect(),
+                })
+            }
+        }
+        impl substreams_ethereum::Event for EventUArrayBool {
+            const NAME: &'static str = "EventUArrayBool";
+            fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
+                Self::match_log(log)
+            }
+            fn decode(
+                log: &substreams_ethereum::pb::eth::v2::Log,
+            ) -> Result<Self, String> {
+                Self::decode(log)
+            }
+        }
+        #[derive(Debug, Clone, PartialEq)]
         pub struct EventUBytes8UBytes16UBytes24UBytes32 {
             pub param0: [u8; 8usize],
             pub param1: [u8; 16usize],

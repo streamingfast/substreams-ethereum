@@ -36,6 +36,30 @@ mod tests {
     }
 
     #[test]
+    fn it_decode_event_array_bool() {
+        use tests::events::EventUArrayBool as Event;
+
+        let log = pb::eth::v2::Log {
+            address: hex!("0000000000000000000000000000000000000000").to_vec(),
+            topics: vec![
+                hex!("ee0cd0e55d575e4e32db712d239532b1104938ed2971f10d8b63e4aa4c17afb6").to_vec(),
+            ],
+            data: hex!("0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000").to_vec(),
+            ..Default::default()
+        };
+
+        assert_eq!(Event::match_log(&log), true);
+
+        let event = Event::decode(&log);
+        assert_eq!(
+            event,
+            Ok(Event {
+                param0: vec![true, false],
+            }),
+        );
+    }
+
+    #[test]
     fn it_decode_event_int256() {
         use substreams::scalar::BigInt;
         use tests::events::EventInt256 as Event;

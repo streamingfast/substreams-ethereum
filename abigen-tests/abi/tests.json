@@ -17,6 +17,19 @@
     "inputs": [
       {
         "indexed": false,
+        "internalType": "bool[]",
+        "name": "param0",
+        "type": "bool[]"
+      }
+    ],
+    "name": "EventUArrayBool",
+    "type": "event"
+  },
+	{
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
         "internalType": "int256",
         "name": "param0",
         "type": "int256"
