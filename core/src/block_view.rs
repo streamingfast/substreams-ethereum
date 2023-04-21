@@ -1,5 +1,5 @@
-use crate::{pb::eth::v2 as pb, Event};
 use crate::pb::eth::v2::{Call, Log};
+use crate::{pb::eth::v2 as pb, Event};
 
 impl pb::Block {
     /// Iterates over succesful transactions.
@@ -88,7 +88,7 @@ impl AsRef<pb::Call> for CallView<'_> {
 }
 
 impl pb::TransactionTrace {
-    pub fn calls(&self) -> impl Iterator<Item=CallView> {
+    pub fn calls(&self) -> impl Iterator<Item = CallView> {
         self.calls.iter().map(move |call| CallView {
             transaction: self,
             call,
