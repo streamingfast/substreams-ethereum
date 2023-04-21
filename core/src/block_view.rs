@@ -1,4 +1,5 @@
 use crate::{pb::eth::v2 as pb, Event};
+use crate::pb::eth::v2::{Call, Log};
 
 impl pb::Block {
     /// Iterates over succesful transactions.
@@ -87,7 +88,7 @@ impl AsRef<pb::Call> for CallView<'_> {
 }
 
 impl pb::TransactionTrace {
-    pub fn calls<'a>(&'a self) -> impl Iterator<Item = CallView<'a>> {
+    pub fn calls(&self) -> impl Iterator<Item=CallView> {
         self.calls.iter().map(move |call| CallView {
             transaction: self,
             call,
@@ -99,6 +100,22 @@ impl pb::TransactionTrace {
             transaction: self,
             receipt: &self.receipt.as_ref().unwrap(),
         }
+    }
+
+    pub fn logs_with_calls(&self) -> Vec<(&Log, &Call)> {
+        let mut res: Vec<(&Log, &Call)> = vec![];
+
+        for call in self.calls.iter() {
+            if call.state_reverted {
+                continue;
+            }
+            for log in call.logs.iter() {
+                res.push((&log, &call));
+            }
+        }
+
+        res.sort_by(|x, y| x.0.ordinal.cmp(&y.0.ordinal));
+        res
     }
 
     // TODO: Call view, filtering out failed calls
