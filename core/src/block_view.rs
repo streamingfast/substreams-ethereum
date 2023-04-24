@@ -83,9 +83,11 @@ pub struct CallView<'a> {
 
 impl CallView<'_> {
     pub fn parent(&self) -> Option<&Call> {
-        return self.transaction.calls.iter().find(|call| {
-            call.index == self.call.parent_index
-        })
+        return self
+            .transaction
+            .calls
+            .iter()
+            .find(|call| call.index == self.call.parent_index);
     }
 }
 
@@ -118,10 +120,13 @@ impl pb::TransactionTrace {
                 continue;
             }
             for log in call.logs.iter() {
-                res.push((&log, CallView{
-                    transaction: self,
-                    call
-                }));
+                res.push((
+                    &log,
+                    CallView {
+                        transaction: self,
+                        call,
+                    },
+                ));
             }
         }
 
