@@ -81,6 +81,14 @@ pub struct CallView<'a> {
     pub call: &'a pb::Call,
 }
 
+impl CallView<'_> {
+    pub fn parent(&self, index: u32) -> Option<&Call> {
+        return self.transaction.calls.iter().find(|call| {
+            call.parent_index == index
+        })
+    }
+}
+
 impl AsRef<pb::Call> for CallView<'_> {
     fn as_ref(&self) -> &pb::Call {
         self.call
