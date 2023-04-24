@@ -82,9 +82,9 @@ pub struct CallView<'a> {
 }
 
 impl CallView<'_> {
-    pub fn parent(&self, index: u32) -> Option<&Call> {
+    pub fn parent(&self) -> Option<&Call> {
         return self.transaction.calls.iter().find(|call| {
-            call.parent_index == index
+            call.index == self.call.parent_index
         })
     }
 }
