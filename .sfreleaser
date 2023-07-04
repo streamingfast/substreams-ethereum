@@ -1,0 +1,10 @@
+global:
+  language: rust
+  variant: library
+release:
+  # Must be specified in publish order
+  rust-crates:
+  - substreams-ethereum-core
+  - substreams-ethereum-abigen
+  - substreams-ethereum-derive
+  - substreams-ethereum
