@@ -75,7 +75,7 @@ pub struct LogView<'a> {
     pub log: &'a pb::Log,
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub struct CallView<'a> {
     pub transaction: &'a pb::TransactionTrace,
     pub call: &'a pb::Call,
@@ -112,13 +112,25 @@ impl pb::TransactionTrace {
         }
     }
 
-    pub fn logs_with_calls(&self) -> Vec<(&Log, CallView)> {
-        let mut res: Vec<(&Log, CallView)> = vec![];
+    /// Iterates over all logs in the transaction, excluding those from calls that were not
+    /// recorded to the chain's state.
+    ///
+    /// The logs are sorted by their ordinal and returned as pairs of `(log, call)` where `call`
+    /// is the call that produced the log.
+    pub fn logs_with_calls(&self) -> impl Iterator<Item = (&Log, CallView)> {
+        let mut res: Vec<(&Log, CallView)> = Vec::with_capacity(
+            self.calls
+                .iter()
+                .filter(|call| !call.state_reverted)
+                .map(|call| call.logs.len())
+                .sum(),
+        );
 
         for call in self.calls.iter() {
             if call.state_reverted {
                 continue;
             }
+
             for log in call.logs.iter() {
                 res.push((
                     &log,
@@ -131,7 +143,7 @@ impl pb::TransactionTrace {
         }
 
         res.sort_by(|x, y| x.0.ordinal.cmp(&y.0.ordinal));
-        res
+        res.into_iter()
     }
 
     // TODO: Call view, filtering out failed calls
@@ -188,5 +200,58 @@ impl<'a> LogView<'a> {
 impl AsRef<pb::Log> for LogView<'_> {
     fn as_ref(&self) -> &pb::Log {
         self.log
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::vec;
+
+    use crate::{
+        block_view::CallView,
+        pb::eth::v2::{Call, Log, TransactionTrace},
+    };
+
+    #[test]
+    fn logs_with_calls() {
+        let call = |to: &str, state_reverted, logs| Call {
+            address: to.to_string().into_bytes(),
+            state_reverted,
+            logs,
+            ..Default::default()
+        };
+
+        let log = |ordinal| Log {
+            ordinal,
+            ..Default::default()
+        };
+
+        let trace = TransactionTrace {
+            calls: vec![
+                call("1", true, vec![log(0)]),
+                call("2", false, vec![log(8), log(2)]),
+                call("3", false, vec![log(4)]),
+                call("4", true, vec![log(1), log(3)]),
+            ],
+            ..Default::default()
+        };
+
+        let call_at = |call_index: usize| CallView {
+            call: trace.calls.get(call_index).unwrap(),
+            transaction: &trace,
+        };
+
+        let log_at = |call_index: usize, log_index: usize| {
+            call_at(call_index).call.logs.get(log_index).unwrap()
+        };
+
+        assert_eq!(
+            Vec::from_iter(trace.logs_with_calls()),
+            vec![
+                (log_at(1, 1), call_at(1)),
+                (log_at(2, 0), call_at(2)),
+                (log_at(1, 0), call_at(1)),
+            ]
+        );
     }
 }

@@ -7,6 +7,24 @@ members = [
     "substreams-ethereum",
 ]
 
+[workspace.package]
+version = "0.9.1"
+edition = "2021"
+description = "Substreams development kit for Ethereum chains, contains Firehose Block model and helpers as well as utilities for Ethereum ABI encoding/decoding."
+homepage = "https://substreams.streamingfast.io/"
+repository = "https://github.com/streamingfast/substreams-ethereum/tree/develop/substreams-ethereum"
+license = "Apache-2.0"
+readme = "./README.md"
+keywords = [ "substreams", "ethereum", "streamingfast", "firehose", "thegraph"]
+categories = ["api-bindings", "external-ffi-bindings", "wasm"]
+rust-version = "1.60"
+
+[workspace.dependencies]
+substreams-ethereum = { version = "0.9.1", path = "./substreams-ethereum" }
+substreams-ethereum-abigen = { version = "0.9.1", path = "./abigen" }
+substreams-ethereum-core = { version = "0.9.1", path = "./core" }
+substreams-ethereum-derive = { version = "0.9.1", path = "./derive" }
+
 [profile.release]
 lto = true
 opt-level = 's'

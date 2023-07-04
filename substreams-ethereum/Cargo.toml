@@ -1,22 +1,22 @@
 [package]
 name = "substreams-ethereum"
-version = "0.9.1"
-edition = "2021"
-description = "Substreams development kit for Ethereum chains, contains Firehose Block model and helpers as well as utilities for Ethereum ABI encoding/decoding."
-homepage = "https://substreams.streamingfast.io/"
-repository = "https://github.com/streamingfast/substreams-ethereum/tree/develop/substreams-ethereum"
-license = "Apache-2.0"
-readme = "../README.md"
-keywords = [ "substreams", "ethereum", "streamingfast", "firehose", "thegraph"]
-categories = ["api-bindings", "external-ffi-bindings", "wasm"]
-rust-version = "1.60"
+version.workspace = true
+description.workspace = true
+edition.workspace = true
+homepage.workspace = true
+repository.workspace = true
+license.workspace = true
+readme.workspace = true
+keywords.workspace = true
+categories.workspace = true
+rust-version.workspace = true
 
 [dependencies]
 num-bigint = "0.4.3"
 substreams = "^0.5.0"
-substreams-ethereum-abigen = { version = "0.9.1", path = "../abigen" }
-substreams-ethereum-derive = { version = "0.9.1", path = "../derive" }
-substreams-ethereum-core = { version = "0.9.1", path = "../core" }
+substreams-ethereum-abigen = { workspace = true }
+substreams-ethereum-derive = { workspace = true }
+substreams-ethereum-core = { workspace = true }
 
 # Required so that ethabi > ethereum-types build correctly under wasm32-unknown-unknown
 [target.wasm32-unknown-unknown.dependencies]
