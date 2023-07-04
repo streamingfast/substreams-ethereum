@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Next
+
+* Added `logs_with_calls` which funnels in all the calls with the logs together. For each logs created by a call, add a tuple of the log and the call.
+
 ## [0.9.1](https://github.com/streamingfast/substreams-ethereum/releases/tag/v0.9.1)
 
 * Fixed encoding of function when dealing with a `bool` referenced as a sub type (like in a function that accepts `bool[]`).
