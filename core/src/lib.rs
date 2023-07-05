@@ -7,7 +7,6 @@ pub use event::Event;
 pub use function::Function;
 pub mod scalar;
 
-mod abi;
 mod event;
 mod externs;
 mod function;
