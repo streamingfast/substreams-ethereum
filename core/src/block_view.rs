@@ -1,3 +1,5 @@
+use prost_types::Timestamp;
+
 use crate::pb::eth::v2::{Call, Log};
 use crate::{pb::eth::v2 as pb, Event};
 
@@ -52,6 +54,12 @@ impl pb::Block {
         })
     }
 
+    /// Timestamp returns a reference to the block's header timestamp.
+    pub fn timestamp(&self) -> &Timestamp {
+        self.header.as_ref().unwrap().timestamp.as_ref().unwrap()
+    }
+
+    /// Timestamp returns block's header timestamp in seconds.
     pub fn timestamp_seconds(&self) -> u64 {
         self.header
             .as_ref()
