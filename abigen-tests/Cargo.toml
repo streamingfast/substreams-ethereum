@@ -11,6 +11,9 @@ keywords.workspace = true
 categories.workspace = true
 rust-version.workspace = true
 
+[lib]
+doc = false
+
 [dependencies]
 ethabi = "17.0"
 num-bigint = "0.4.3"

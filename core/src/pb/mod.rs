@@ -1,3 +1,8 @@
+//! This module contains the protobuf generated code for the Substreams Ethereum block
+//! model.
+//!
+//! This is the raw Protbuf code, types in here can be used without problem.
+
 mod generated;
 
 /// Re-export the protobuf generated code directly, at some point we might

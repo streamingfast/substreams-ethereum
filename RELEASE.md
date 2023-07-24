@@ -17,5 +17,5 @@ cargo test --target aarch64-apple-darwin # Change 'aarch64-apple-darwin' to fit 
 
 git add -A . && git commit -m "Preparing release of ${version}"
 
-sfreleaser release "${version}"
+sfreleaser release "v${version}"
 ```
