@@ -1,6 +1,10 @@
 #!/bin/bash
 
+set -e
+
 ETH_SPKG="${ETH_SPKG:-https://github.com/streamingfast/sf-ethereum/releases/download/v0.10.2/ethereum-v0.10.3.spkg}"
 
-echo "Generating Ethereum Protobuf using $ETH_SPKG"
-substreams protogen "$ETH_SPKG" --exclude-paths="sf/substreams/v1,google/" --output-path="./core/src/pb"
+input="$ETH_SPKG"#format=bin
+
+echo "Generating Ethereum Protobuf using $input"
+buf generate "$input" --exclude-path sf/substreams/v1,sf/substreams/rpc,google/

@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 * Added `timestamp` on `Block` type, returns a reference to the header's timestamp.
 
+* Re-generated Protobuf `Block` type using latest `firehose-ethereum` source, this brings in some missing `BalanceChange#Reason` enum values.
+
 ## [0.9.2](https://github.com/streamingfast/substreams-ethereum/releases/tag/v0.9.2)
 
 * Added `parent` on `CallView` to retrieve the parent call of the current `Call` pointed to by `CallView`

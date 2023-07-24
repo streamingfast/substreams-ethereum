@@ -1,17 +1,16 @@
-#[rustfmt::skip]
-#[path = "sf.ethereum.type.v2.rs"]
-mod sf_ethereum_type_v2;
+mod generated;
 
-#[rustfmt::skip]
-#[path = "sf.ethereum.substreams.v1.rs"]
-#[allow(dead_code)] // we added this since prost generates a FILE_DESCRIPTOR_SET const in the proto file that is not used
-mod sf_ethereum_substreams_v1;
+/// Re-export the protobuf generated code directly, at some point we might
+/// deprecate the `eth` module so `pb::eth::v2` becomes `pb::sf::ethereum::r#type::v2`.
+pub mod sf {
+    pub use crate::pb::generated::sf::*;
+}
 
 pub mod eth {
     pub mod v2 {
-        pub use crate::pb::sf_ethereum_type_v2::*;
+        pub use crate::pb::generated::sf::ethereum::r#type::v2::*;
     }
     pub mod rpc {
-        pub use crate::pb::sf_ethereum_substreams_v1::*;
+        pub use crate::pb::generated::sf::ethereum::substreams::v1::*;
     }
 }
