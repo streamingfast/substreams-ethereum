@@ -595,5 +595,17 @@
 		"outputs": [],
 		"stateMutability": "view",
 		"type": "function"
+	},
+	{
+		"inputs": [{
+			"components": [
+				{ "internalType": "address", "name": "sender", "type": "address" }
+			],
+			"name": "",
+			"type": "tuple"
+		}],
+		"name": "funTupleAddress",
+		"outputs": [],
+		"type": "function"
 	}
 ]

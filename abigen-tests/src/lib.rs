@@ -767,4 +767,40 @@ mod tests {
             }),
         );
     }
+
+    #[test]
+    fn it_encode_fun_tuple_address() {
+        use tests::functions::FunTupleAddress as Function;
+
+        let fun = Function {
+            param0: (hex!("FffDB7377345371817F2b4dD490319755F5899eC").to_vec(),),
+        };
+
+        assert_eq!(
+            fun.encode(),
+            hex!("a369a3c9000000000000000000000000fffdb7377345371817f2b4dd490319755f5899ec")
+                .to_vec()
+        );
+    }
+
+    #[test]
+    fn it_decode_fun_tuple_address() {
+        use tests::functions::FunTupleAddress as Function;
+
+        let call = pb::eth::v2::Call {
+            input: hex!("a369a3c9000000000000000000000000fffdb7377345371817f2b4dd490319755f5899ec")
+                .to_vec(),
+            ..Default::default()
+        };
+
+        assert_eq!(Function::match_call(&call), true);
+
+        let fun = Function::decode(&call);
+        assert_eq!(
+            fun,
+            Ok(Function {
+                param0: (hex!("FffDB7377345371817F2b4dD490319755F5899eC").to_vec(),),
+            }),
+        );
+    }
 }

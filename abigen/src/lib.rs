@@ -291,7 +291,7 @@ fn to_token(name: &proc_macro2::TokenStream, kind: &ParamType) -> proc_macro2::T
             let inner_names = (0..types.len())
                 .map(|i| {
                     let i = Index::from(i);
-                    quote! { inner.#i }
+                    quote! { #name.#i }
                 })
                 .collect::<Vec<_>>();
 

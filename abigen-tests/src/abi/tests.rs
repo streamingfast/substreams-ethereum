@@ -1417,6 +1417,80 @@
             }
         }
         #[derive(Debug, Clone, PartialEq)]
+        pub struct FunTupleAddress {
+            pub param0: (Vec<u8>,),
+        }
+        impl FunTupleAddress {
+            const METHOD_ID: [u8; 4] = [163u8, 105u8, 163u8, 201u8];
+            pub fn decode(
+                call: &substreams_ethereum::pb::eth::v2::Call,
+            ) -> Result<Self, String> {
+                let maybe_data = call.input.get(4..);
+                if maybe_data.is_none() {
+                    return Err("no data to decode".to_string());
+                }
+                let mut values = ethabi::decode(
+                        &[ethabi::ParamType::Tuple(vec![ethabi::ParamType::Address])],
+                        maybe_data.unwrap(),
+                    )
+                    .map_err(|e| format!("unable to decode call.input: {:?}", e))?;
+                values.reverse();
+                Ok(Self {
+                    param0: {
+                        let tuple_elements = values
+                            .pop()
+                            .expect(INTERNAL_ERR)
+                            .into_tuple()
+                            .expect(INTERNAL_ERR);
+                        (
+                            tuple_elements[0usize]
+                                .clone()
+                                .into_address()
+                                .expect(INTERNAL_ERR)
+                                .as_bytes()
+                                .to_vec(),
+                        )
+                    },
+                })
+            }
+            pub fn encode(&self) -> Vec<u8> {
+                let data = ethabi::encode(
+                    &[
+                        ethabi::Token::Tuple(
+                            vec![
+                                ethabi::Token::Address(ethabi::Address::from_slice(& self
+                                .param0.0))
+                            ],
+                        ),
+                    ],
+                );
+                let mut encoded = Vec::with_capacity(4 + data.len());
+                encoded.extend(Self::METHOD_ID);
+                encoded.extend(data);
+                encoded
+            }
+            pub fn match_call(call: &substreams_ethereum::pb::eth::v2::Call) -> bool {
+                match call.input.get(0..4) {
+                    Some(signature) => Self::METHOD_ID == signature,
+                    None => false,
+                }
+            }
+        }
+        impl substreams_ethereum::Function for FunTupleAddress {
+            const NAME: &'static str = "funTupleAddress";
+            fn match_call(call: &substreams_ethereum::pb::eth::v2::Call) -> bool {
+                Self::match_call(call)
+            }
+            fn decode(
+                call: &substreams_ethereum::pb::eth::v2::Call,
+            ) -> Result<Self, String> {
+                Self::decode(call)
+            }
+            fn encode(&self) -> Vec<u8> {
+                self.encode()
+            }
+        }
+        #[derive(Debug, Clone, PartialEq)]
         pub struct FunUint256 {
             pub param0: substreams::scalar::BigInt,
         }
