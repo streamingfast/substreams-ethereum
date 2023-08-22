@@ -174,7 +174,8 @@ impl Event {
         };
 
         quote! {
-            #[derive(Debug, Clone, PartialEq)]
+            #[derive(Debug, Clone)]
+            #[cfg_attr(test, derive(PartialEq))]
             pub struct #camel_name {
                 #(#log_fields),*
             }
@@ -235,7 +236,8 @@ mod tests {
         assert_ast_eq(
             e.generate_event(),
             quote! {
-                #[derive(Debug, Clone, PartialEq)]
+                #[derive(Debug, Clone)]
+                #[cfg_attr(test, derive(PartialEq))]
                 pub struct Hello {}
                 impl Hello {
                     const TOPIC_ID: [u8; 32] = [
@@ -318,7 +320,8 @@ mod tests {
         assert_ast_eq(
             e.generate_event(),
             quote! {
-                #[derive(Debug, Clone, PartialEq)]
+                #[derive(Debug, Clone)]
+                #[cfg_attr(test, derive(PartialEq))]
                 pub struct One {
                     pub foo: Vec<u8>
                 }
@@ -430,7 +433,8 @@ mod tests {
         assert_ast_eq(
             e.generate_event(),
             quote! {
-                #[derive(Debug, Clone, PartialEq)]
+                #[derive(Debug, Clone)]
+                #[cfg_attr(test, derive(PartialEq))]
                 pub struct Transfer {
                     pub from: Vec<u8>,
                     pub to: Vec<u8>,
@@ -573,7 +577,8 @@ mod tests {
         assert_ast_eq(
             e.generate_event(),
             quote! {
-                #[derive(Debug, Clone, PartialEq)]
+                #[derive(Debug, Clone)]
+                #[cfg_attr(test, derive(PartialEq))]
                 pub struct Transfer {
                     pub from: Vec<u8>,
                     pub to: Vec<u8>,

@@ -264,7 +264,8 @@ impl Function {
         };
 
         quote! {
-            #[derive(Debug, Clone, PartialEq)]
+            #[derive(Debug, Clone)]
+            #[cfg_attr(test, derive(PartialEq))]
             pub struct #camel_name {
                 #(#function_fields),*
             }
