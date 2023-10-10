@@ -46,7 +46,6 @@ pub fn generate_abi_code<S: AsRef<str>>(
     Ok(c.generate())
 }
 
-// TODO add generate_abi_code_from_bytes
 pub fn generate_abi_code_from_bytes(
     bytes: &[u8],
 ) -> Result<proc_macro2::TokenStream, anyhow::Error> {
