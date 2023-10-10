@@ -46,6 +46,15 @@ pub fn generate_abi_code<S: AsRef<str>>(
     Ok(c.generate())
 }
 
+// TODO add generate_abi_code_from_bytes
+pub fn generate_abi_code_from_bytes(
+    bytes: &[u8],
+) -> Result<proc_macro2::TokenStream, anyhow::Error> {
+    let contract = Contract::load(bytes)?;
+    let c = contract::Contract::from(&contract);
+    Ok(c.generate())
+}
+
 fn normalize_path<S: AsRef<Path>>(relative_path: S) -> Result<PathBuf, anyhow::Error> {
     // workaround for https://github.com/rust-lang/rust/issues/43860
     let cargo_toml_directory =
