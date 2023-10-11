@@ -6,7 +6,7 @@ Requires `Bash`, [sfreleaser](https://github.com/streamingfast/sfreleaser) and [
 
 ```bash
 # *Important* Do not forget to replace `0.9.2` below by your real version!
-export version="0.9.2"
+export version="0.9.2" 
 
 sd '^version = ".*?"$' "version = \"${version}\"" Cargo.toml
 sd 'version = ".*?",' "version = \"${version}\"," Cargo.toml
