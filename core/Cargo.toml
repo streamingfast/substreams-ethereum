@@ -27,4 +27,4 @@ anyhow = "1"
 
 # Required so that ethabi > ethereum-types build correctly under wasm32-unknown-unknown
 [target.wasm32-unknown-unknown.dependencies]
-getrandom = { version = "0.2", features = ["custom"] }
+getrandom = { version = "0.2.10", features = ["custom"] }
