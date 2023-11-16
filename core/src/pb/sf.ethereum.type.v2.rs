@@ -32,8 +32,17 @@ pub struct Block {
     /// reward for the block mined, the transfer of ETH to the miner happens outside the normal
     /// transaction flow of the chain and is recorded as a `BalanceChange` here since we cannot
     /// attached it to any transaction.
+    ///
+    /// Only available in DetailLevel: EXTENDED
     #[prost(message, repeated, tag="11")]
     pub balance_changes: ::prost::alloc::vec::Vec<BalanceChange>,
+    /// DetailLevel affects the data available in this block.
+    ///
+    /// EXTENDED describes the most complete block, with traces, balance changes, storage changes. It is extracted during the execution of the block.
+    /// BASE describes a block that contains only the block header, transaction receipts and event logs: everything that can be extracted using the base JSON-RPC interface (<https://ethereum.org/en/developers/docs/apis/json-rpc/#json-rpc-methods>) 
+    ///       Furthermore, the eth_getTransactionReceipt call has been avoided because it brings only minimal improvements at the cost of requiring an archive node or a full node with complete transaction index.
+    #[prost(enumeration="block::DetailLevel", tag="12")]
+    pub detail_level: i32,
     /// CodeChanges here is the array of smart code change that happened that happened at the block level
     /// outside of the normal transaction flow of a block. Some Ethereum's fork like BSC and Polygon
     /// has some capabilities to upgrade internal smart contracts used usually to track the validator
@@ -42,12 +51,43 @@ pub struct Block {
     /// On hard fork, some procedure runs to upgrade the smart contract code to a new version. In those
     /// network, a `CodeChange` for each modified smart contract on upgrade would be present here. Note
     /// that this happen rarely, so the vast majority of block will have an empty list here.
+    /// Only available in DetailLevel: EXTENDED
     #[prost(message, repeated, tag="20")]
     pub code_changes: ::prost::alloc::vec::Vec<CodeChange>,
     /// Ver represents that data model version of the block, it is used internally by Firehose on Ethereum
     /// as a validation that we are reading the correct version.
     #[prost(int32, tag="1")]
     pub ver: i32,
+}
+/// Nested message and enum types in `Block`.
+pub mod block {
+    #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+    #[repr(i32)]
+    pub enum DetailLevel {
+        DetaillevelExtended = 0,
+        /// DETAILLEVEL_TRACE = 1; // TBD
+        DetaillevelBase = 2,
+    }
+    impl DetailLevel {
+        /// String value of the enum field names used in the ProtoBuf definition.
+        ///
+        /// The values are not transformed in any way and thus are considered stable
+        /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+        pub fn as_str_name(&self) -> &'static str {
+            match self {
+                DetailLevel::DetaillevelExtended => "DETAILLEVEL_EXTENDED",
+                DetailLevel::DetaillevelBase => "DETAILLEVEL_BASE",
+            }
+        }
+        /// Creates an enum from field names used in the ProtoBuf definition.
+        pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+            match value {
+                "DETAILLEVEL_EXTENDED" => Some(Self::DetaillevelExtended),
+                "DETAILLEVEL_BASE" => Some(Self::DetaillevelBase),
+                _ => None,
+            }
+        }
+    }
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -140,8 +180,11 @@ pub struct BlockHeader {
     #[prost(message, optional, tag="18")]
     pub base_fee_per_gas: ::core::option::Option<BigInt>,
     /// Withdrawals root hash according to EIP-4895 (e.g. Shangai Fork) rules, only set if Shangai is present/active on the chain.
+    ///
+    /// Only available in DetailLevel: EXTENDED
     #[prost(bytes="vec", tag="19")]
     pub withdrawals_root: ::prost::alloc::vec::Vec<u8>,
+    /// Only available in DetailLevel: EXTENDED
     #[prost(message, optional, tag="20")]
     pub tx_dependency: ::core::option::Option<Uint64NestedArray>,
 }
@@ -202,10 +245,14 @@ pub struct TransactionTrace {
     #[prost(bytes="vec", tag="9")]
     pub s: ::prost::alloc::vec::Vec<u8>,
     /// GasUsed is the total amount of gas unit used for the whole execution of the transaction.
+    ///
+    /// Only available in DetailLevel: EXTENDED
     #[prost(uint64, tag="10")]
     pub gas_used: u64,
     /// Type represents the Ethereum transaction type, available only since EIP-2718 & EIP-2930 activation which happened on Berlin fork.
     /// The value is always set even for transaction before Berlin fork because those before the fork are still legacy transactions.
+    ///
+    /// Only available in DetailLevel: EXTENDED
     #[prost(enumeration="transaction_trace::Type", tag="12")]
     pub r#type: i32,
     /// AcccessList represents the storage access this transaction has agreed to do in which case those storage
@@ -219,13 +266,17 @@ pub struct TransactionTrace {
     ///
     /// This will is populated only if `TransactionTrace.Type == TRX_TYPE_DYNAMIC_FEE` which is possible only
     /// if Londong fork is active on the chain.
+    ///
+    /// Only available in DetailLevel: EXTENDED
     #[prost(message, optional, tag="11")]
     pub max_fee_per_gas: ::core::option::Option<BigInt>,
     /// MaxPriorityFeePerGas is priority fee per gas the user to pay in extra to the miner on top of the block's
     /// base fee.
     ///
     /// This will is populated only if `TransactionTrace.Type == TRX_TYPE_DYNAMIC_FEE` which is possible only
-    /// if Londong fork is active on the chain.
+    /// if London fork is active on the chain.
+    ///
+    /// Only available in DetailLevel: EXTENDED
     #[prost(message, optional, tag="13")]
     pub max_priority_fee_per_gas: ::core::option::Option<BigInt>,
     /// meta
@@ -235,8 +286,10 @@ pub struct TransactionTrace {
     pub hash: ::prost::alloc::vec::Vec<u8>,
     #[prost(bytes="vec", tag="22")]
     pub from: ::prost::alloc::vec::Vec<u8>,
+    /// Only available in DetailLevel: EXTENDED
     #[prost(bytes="vec", tag="23")]
     pub return_data: ::prost::alloc::vec::Vec<u8>,
+    /// Only available in DetailLevel: EXTENDED
     #[prost(bytes="vec", tag="24")]
     pub public_key: ::prost::alloc::vec::Vec<u8>,
     #[prost(uint64, tag="25")]
@@ -267,10 +320,13 @@ pub struct TransactionTrace {
     /// balance changes you process those where `reason` is either `REASON_GAS_BUY`, `REASON_GAS_REFUND` or
     /// `REASON_REWARD_TRANSACTION_FEE` and for nonce change, still on the root call, you pick the nonce change which the
     /// smallest ordinal (if more than one).
+    ///
+    /// Only available in DetailLevel: EXTENDED
     #[prost(enumeration="TransactionTraceStatus", tag="30")]
     pub status: i32,
     #[prost(message, optional, tag="31")]
     pub receipt: ::core::option::Option<TransactionReceipt>,
+    /// Only available in DetailLevel: EXTENDED
     #[prost(message, repeated, tag="32")]
     pub calls: ::prost::alloc::vec::Vec<Call>,
 }
@@ -290,6 +346,14 @@ pub mod transaction_trace {
         /// max base gas gee and max priority gas fee to pay for this transaction. Transaction's of those type are
         /// executed against EIP-1559 rules which dictates a dynamic gas cost based on the congestion of the network.
         TrxTypeDynamicFee = 2,
+        /// Arbitrum-specific transactions
+        TrxTypeArbitrumDeposit = 100,
+        TrxTypeArbitrumUnsigned = 101,
+        TrxTypeArbitrumContract = 102,
+        TrxTypeArbitrumRetry = 104,
+        TrxTypeArbitrumSubmitRetryable = 105,
+        TrxTypeArbitrumInternal = 106,
+        TrxTypeArbitrumLegacy = 120,
     }
     impl Type {
         /// String value of the enum field names used in the ProtoBuf definition.
@@ -301,6 +365,13 @@ pub mod transaction_trace {
                 Type::TrxTypeLegacy => "TRX_TYPE_LEGACY",
                 Type::TrxTypeAccessList => "TRX_TYPE_ACCESS_LIST",
                 Type::TrxTypeDynamicFee => "TRX_TYPE_DYNAMIC_FEE",
+                Type::TrxTypeArbitrumDeposit => "TRX_TYPE_ARBITRUM_DEPOSIT",
+                Type::TrxTypeArbitrumUnsigned => "TRX_TYPE_ARBITRUM_UNSIGNED",
+                Type::TrxTypeArbitrumContract => "TRX_TYPE_ARBITRUM_CONTRACT",
+                Type::TrxTypeArbitrumRetry => "TRX_TYPE_ARBITRUM_RETRY",
+                Type::TrxTypeArbitrumSubmitRetryable => "TRX_TYPE_ARBITRUM_SUBMIT_RETRYABLE",
+                Type::TrxTypeArbitrumInternal => "TRX_TYPE_ARBITRUM_INTERNAL",
+                Type::TrxTypeArbitrumLegacy => "TRX_TYPE_ARBITRUM_LEGACY",
             }
         }
         /// Creates an enum from field names used in the ProtoBuf definition.
@@ -309,6 +380,13 @@ pub mod transaction_trace {
                 "TRX_TYPE_LEGACY" => Some(Self::TrxTypeLegacy),
                 "TRX_TYPE_ACCESS_LIST" => Some(Self::TrxTypeAccessList),
                 "TRX_TYPE_DYNAMIC_FEE" => Some(Self::TrxTypeDynamicFee),
+                "TRX_TYPE_ARBITRUM_DEPOSIT" => Some(Self::TrxTypeArbitrumDeposit),
+                "TRX_TYPE_ARBITRUM_UNSIGNED" => Some(Self::TrxTypeArbitrumUnsigned),
+                "TRX_TYPE_ARBITRUM_CONTRACT" => Some(Self::TrxTypeArbitrumContract),
+                "TRX_TYPE_ARBITRUM_RETRY" => Some(Self::TrxTypeArbitrumRetry),
+                "TRX_TYPE_ARBITRUM_SUBMIT_RETRYABLE" => Some(Self::TrxTypeArbitrumSubmitRetryable),
+                "TRX_TYPE_ARBITRUM_INTERNAL" => Some(Self::TrxTypeArbitrumInternal),
+                "TRX_TYPE_ARBITRUM_LEGACY" => Some(Self::TrxTypeArbitrumLegacy),
                 _ => None,
             }
         }
@@ -338,10 +416,16 @@ pub struct TransactionReceipt {
     /// field, following `EIP-658`.
     ///
     /// Before Byzantinium hard fork, this field is always empty.
+    ///
+    /// Only available in DetailLevel: EXTENDED
     #[prost(bytes="vec", tag="1")]
     pub state_root: ::prost::alloc::vec::Vec<u8>,
+    ///
+    /// Only available in DetailLevel: EXTENDED
     #[prost(uint64, tag="2")]
     pub cumulative_gas_used: u64,
+    ///
+    /// Only available in DetailLevel: EXTENDED
     #[prost(bytes="vec", tag="3")]
     pub logs_bloom: ::prost::alloc::vec::Vec<u8>,
     #[prost(message, repeated, tag="4")]
@@ -359,6 +443,8 @@ pub struct Log {
     /// Index is the index of the log relative to the transaction. This index
     /// is always populated regardless of the state revertion of the the call
     /// that emitted this log.
+    ///
+    /// Only available in DetailLevel: EXTENDED
     #[prost(uint32, tag="4")]
     pub index: u32,
     /// BlockIndex represents the index of the log relative to the Block.
@@ -652,27 +738,77 @@ pub mod gas_change {
     #[repr(i32)]
     pub enum Reason {
         Unknown = 0,
+        /// REASON_CALL is the amount of gas that will be charged for a 'CALL' opcode executed by the EVM
         Call = 1,
+        /// REASON_CALL_CODE is the amount of gas that will be charged for a 'CALLCODE' opcode executed by the EVM
         CallCode = 2,
+        /// REASON_CALL_DATA_COPY is the amount of gas that will be charged for a 'CALLDATACOPY' opcode executed by the EVM
         CallDataCopy = 3,
+        /// REASON_CODE_COPY is the amount of gas that will be charged for a 'CALLDATACOPY' opcode executed by the EVM
         CodeCopy = 4,
+        /// REASON_CODE_STORAGE is the amount of gas that will be charged for code storage
         CodeStorage = 5,
+        /// REASON_CONTRACT_CREATION is the amount of gas that will be charged for a 'CREATE' opcode executed by the EVM and for the gas
+        /// burned for a CREATE, today controlled by EIP150 rules
         ContractCreation = 6,
+        /// REASON_CONTRACT_CREATION2 is the amount of gas that will be charged for a 'CREATE2' opcode executed by the EVM and for the gas
+        /// burned for a CREATE2, today controlled by EIP150 rules
         ContractCreation2 = 7,
+        /// REASON_DELEGATE_CALL is the amount of gas that will be charged for a 'DELEGATECALL' opcode executed by the EVM
         DelegateCall = 8,
+        /// REASON_EVENT_LOG is the amount of gas that will be charged for a 'LOG<N>' opcode executed by the EVM
         EventLog = 9,
+        /// REASON_EXT_CODE_COPY is the amount of gas that will be charged for a 'LOG<N>' opcode executed by the EVM
         ExtCodeCopy = 10,
+        /// REASON_FAILED_EXECUTION is the burning of the remaining gas when the execution failed without a revert
         FailedExecution = 11,
+        /// REASON_INTRINSIC_GAS is the amount of gas that will be charged for the intrinsic cost of the transaction, there is
+        /// always exactly one of those per transaction
         IntrinsicGas = 12,
+        /// GasChangePrecompiledContract is the amount of gas that will be charged for a precompiled contract execution
         PrecompiledContract = 13,
+        /// REASON_REFUND_AFTER_EXECUTION is the amount of gas that will be refunded to the caller after the execution of the call,
+        /// if there is left over at the end of execution
         RefundAfterExecution = 14,
+        /// REASON_RETURN is the amount of gas that will be charged for a 'RETURN' opcode executed by the EVM
         Return = 15,
+        /// REASON_RETURN_DATA_COPY is the amount of gas that will be charged for a 'RETURNDATACOPY' opcode executed by the EVM
         ReturnDataCopy = 16,
+        /// REASON_REVERT is the amount of gas that will be charged for a 'REVERT' opcode executed by the EVM
         Revert = 17,
+        /// REASON_SELF_DESTRUCT is the amount of gas that will be charged for a 'SELFDESTRUCT' opcode executed by the EVM
         SelfDestruct = 18,
+        /// REASON_STATIC_CALL is the amount of gas that will be charged for a 'STATICALL' opcode executed by the EVM
         StaticCall = 19,
+        /// REASON_STATE_COLD_ACCESS is the amount of gas that will be charged for a cold storage access as controlled by EIP2929 rules
+        ///
         /// Added in Berlin fork (Geth 1.10+)
         StateColdAccess = 20,
+        /// REASON_TX_INITIAL_BALANCE is the initial balance for the call which will be equal to the gasLimit of the call
+        ///
+        /// Added as new tracing reason in Geth, available only on some chains
+        TxInitialBalance = 21,
+        /// REASON_TX_REFUNDS is the sum of all refunds which happened during the tx execution (e.g. storage slot being cleared)
+        /// this generates an increase in gas. There is only one such gas change per transaction.
+        ///
+        /// Added as new tracing reason in Geth, available only on some chains
+        TxRefunds = 22,
+        /// REASON_TX_LEFT_OVER_RETURNED is the amount of gas left over at the end of transaction's execution that will be returned
+        /// to the chain. This change will always be a negative change as we "drain" left over gas towards 0. If there was no gas
+        /// left at the end of execution, no such even will be emitted. The returned gas's value in Wei is returned to caller.
+        /// There is at most one of such gas change per transaction.
+        ///
+        /// Added as new tracing reason in Geth, available only on some chains
+        TxLeftOverReturned = 23,
+        /// REASON_CALL_INITIAL_BALANCE is the initial balance for the call which will be equal to the gasLimit of the call. There is only
+        /// one such gas change per call.
+        ///
+        /// Added as new tracing reason in Geth, available only on some chains
+        CallInitialBalance = 24,
+        /// REASON_CALL_LEFT_OVER_RETURNED is the amount of gas left over that will be returned to the caller, this change will always
+        /// be a negative change as we "drain" left over gas towards 0. If there was no gas left at the end of execution, no such even
+        /// will be emitted.
+        CallLeftOverReturned = 25,
     }
     impl Reason {
         /// String value of the enum field names used in the ProtoBuf definition.
@@ -702,6 +838,11 @@ pub mod gas_change {
                 Reason::SelfDestruct => "REASON_SELF_DESTRUCT",
                 Reason::StaticCall => "REASON_STATIC_CALL",
                 Reason::StateColdAccess => "REASON_STATE_COLD_ACCESS",
+                Reason::TxInitialBalance => "REASON_TX_INITIAL_BALANCE",
+                Reason::TxRefunds => "REASON_TX_REFUNDS",
+                Reason::TxLeftOverReturned => "REASON_TX_LEFT_OVER_RETURNED",
+                Reason::CallInitialBalance => "REASON_CALL_INITIAL_BALANCE",
+                Reason::CallLeftOverReturned => "REASON_CALL_LEFT_OVER_RETURNED",
             }
         }
         /// Creates an enum from field names used in the ProtoBuf definition.
@@ -728,6 +869,11 @@ pub mod gas_change {
                 "REASON_SELF_DESTRUCT" => Some(Self::SelfDestruct),
                 "REASON_STATIC_CALL" => Some(Self::StaticCall),
                 "REASON_STATE_COLD_ACCESS" => Some(Self::StateColdAccess),
+                "REASON_TX_INITIAL_BALANCE" => Some(Self::TxInitialBalance),
+                "REASON_TX_REFUNDS" => Some(Self::TxRefunds),
+                "REASON_TX_LEFT_OVER_RETURNED" => Some(Self::TxLeftOverReturned),
+                "REASON_CALL_INITIAL_BALANCE" => Some(Self::CallInitialBalance),
+                "REASON_CALL_LEFT_OVER_RETURNED" => Some(Self::CallLeftOverReturned),
                 _ => None,
             }
         }

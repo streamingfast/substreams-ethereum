@@ -4,9 +4,9 @@ use crate::pb::eth::v2::{Call, Log};
 use crate::{pb::eth::v2 as pb, Event};
 
 impl pb::Block {
-    /// Iterates over successful transactions.
+    /// Iterates over transactions (successful in the case of DetaillevelExtended)
     pub fn transactions(&self) -> impl Iterator<Item = &pb::TransactionTrace> {
-        self.transaction_traces.iter().filter(|tx| tx.status == 1)
+        self.transaction_traces.iter().filter(|tx| tx.status == 1 || self.detail_level == pb::block::DetailLevel::DetaillevelBase.into())
     }
 
     /// Iterates over transaction receipts of successful transactions.
