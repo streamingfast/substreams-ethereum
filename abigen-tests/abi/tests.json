@@ -607,5 +607,13 @@
 		"name": "funTupleAddress",
 		"outputs": [],
 		"type": "function"
-	}
+	},
+  {
+    "stateMutability": "view",
+    "type": "function",
+    "name": "funInt128",
+    "inputs": [{ "name": "arg0", "type": "int128" }],
+    "outputs": [],
+    "gas": 2310
+  }
 ]

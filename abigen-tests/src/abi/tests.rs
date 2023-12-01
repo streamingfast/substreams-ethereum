@@ -662,6 +662,81 @@
             }
         }
         #[derive(Debug, Clone, PartialEq)]
+        pub struct FunInt128 {
+            pub arg0: substreams::scalar::BigInt,
+        }
+        impl FunInt128 {
+            const METHOD_ID: [u8; 4] = [91u8, 51u8, 87u8, 255u8];
+            pub fn decode(
+                call: &substreams_ethereum::pb::eth::v2::Call,
+            ) -> Result<Self, String> {
+                let maybe_data = call.input.get(4..);
+                if maybe_data.is_none() {
+                    return Err("no data to decode".to_string());
+                }
+                let mut values = ethabi::decode(
+                        &[ethabi::ParamType::Int(128usize)],
+                        maybe_data.unwrap(),
+                    )
+                    .map_err(|e| format!("unable to decode call.input: {:?}", e))?;
+                values.reverse();
+                Ok(Self {
+                    arg0: {
+                        let mut v = [0 as u8; 32];
+                        values
+                            .pop()
+                            .expect(INTERNAL_ERR)
+                            .into_int()
+                            .expect(INTERNAL_ERR)
+                            .to_big_endian(v.as_mut_slice());
+                        substreams::scalar::BigInt::from_signed_bytes_be(&v)
+                    },
+                })
+            }
+            pub fn encode(&self) -> Vec<u8> {
+                let data = ethabi::encode(
+                    &[
+                        {
+                            let non_full_signed_bytes = self.arg0.to_signed_bytes_be();
+                            let mut full_signed_bytes = [0xff as u8; 32];
+                            non_full_signed_bytes
+                                .into_iter()
+                                .rev()
+                                .enumerate()
+                                .for_each(|(i, byte)| full_signed_bytes[31 - i] = byte);
+                            ethabi::Token::Int(
+                                ethabi::Int::from_big_endian(full_signed_bytes.as_ref()),
+                            )
+                        },
+                    ],
+                );
+                let mut encoded = Vec::with_capacity(4 + data.len());
+                encoded.extend(Self::METHOD_ID);
+                encoded.extend(data);
+                encoded
+            }
+            pub fn match_call(call: &substreams_ethereum::pb::eth::v2::Call) -> bool {
+                match call.input.get(0..4) {
+                    Some(signature) => Self::METHOD_ID == signature,
+                    None => false,
+                }
+            }
+        }
+        impl substreams_ethereum::Function for FunInt128 {
+            const NAME: &'static str = "funInt128";
+            fn match_call(call: &substreams_ethereum::pb::eth::v2::Call) -> bool {
+                Self::match_call(call)
+            }
+            fn decode(
+                call: &substreams_ethereum::pb::eth::v2::Call,
+            ) -> Result<Self, String> {
+                Self::decode(call)
+            }
+            fn encode(&self) -> Vec<u8> {
+                self.encode()
+            }
+        }
+        #[derive(Debug, Clone, PartialEq)]
         pub struct FunInt256 {
             pub param0: substreams::scalar::BigInt,
         }

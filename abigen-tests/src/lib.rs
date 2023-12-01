@@ -10,6 +10,17 @@ mod tests {
     use substreams::{hex, Hex};
     use substreams_ethereum::pb;
 
+    #[macro_export]
+    macro_rules! assert_bytes {
+        ($left:expr, $right:expr$(,)?) => ({
+            let (left, right) = (&$left, &$right);
+            if !(*left == *right) {
+                // Delegate to `assert_eq!` for diff
+                assert_eq!(Hex(left).to_string(), Hex(right).to_string())
+            }
+        });
+    }
+
     #[test]
     fn it_decode_event_tuple() {
         use tests::events::EventUTupleAddress as Event;
@@ -802,5 +813,37 @@ mod tests {
                 param0: (hex!("FffDB7377345371817F2b4dD490319755F5899eC").to_vec(),),
             }),
         );
+    }
+
+    #[test]
+    fn it_decode_fun_int128() {
+        use tests::functions::FunInt128 as Function;
+
+        let call = pb::eth::v2::Call {
+            input: hex!("5b3357ff0000000000000000000000000000000000000000000000000000000000000000").to_vec(),
+            ..Default::default()
+        };
+
+        assert_eq!(Function::match_call(&call), true);
+
+        let fun = Function::decode(&call);
+        assert_eq!(
+            fun,
+            Ok(Function {
+                arg0: BigInt::zero(),
+            }),
+        );
+    }
+
+    #[test]
+    fn it_encode_fun_fun_int128() {
+        use tests::functions::FunInt128 as Function;
+        use substreams::scalar::BigInt;
+
+        let fun = Function {
+            arg0: BigInt::zero(),
+        };
+
+        assert_bytes!(fun.encode(), hex!("5b3357ff0000000000000000000000000000000000000000000000000000000000000000").to_vec());
     }
 }
