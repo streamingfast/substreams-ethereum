@@ -1,3 +1,4 @@
+
 pub use substreams_ethereum_core::scalar;
 pub use substreams_ethereum_core::{block_view, pb, rpc, Event, Function, NULL_ADDRESS};
 pub use substreams_ethereum_derive::EthabiContract;
