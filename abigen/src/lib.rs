@@ -245,11 +245,12 @@ fn to_token(name: &proc_macro2::TokenStream, kind: &ParamType) -> proc_macro2::T
         }
         ParamType::Bytes => quote! { ethabi::Token::Bytes(#name.clone()) },
         ParamType::FixedBytes(_) => quote! { ethabi::Token::FixedBytes(#name.as_ref().to_vec()) },
-        ParamType::Int(_) => {
+        ParamType::Int(size) => {
+            let full_signed_bytes_init = if size == 128 { 0x00 } else { 0xff };
             quote! {
                 {
                     let non_full_signed_bytes = #name.to_signed_bytes_be();
-                    let mut full_signed_bytes = [0xff as u8; 32];
+                    let mut full_signed_bytes = [#full_signed_bytes_init as u8; 32];
                     non_full_signed_bytes.into_iter().rev().enumerate().for_each(|(i, byte)| full_signed_bytes[31 - i] = byte);
 
                     ethabi::Token::Int(ethabi::Int::from_big_endian(full_signed_bytes.as_ref()))
