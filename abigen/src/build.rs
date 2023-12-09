@@ -39,15 +39,18 @@ impl<'a> Abigen<'a> {
     }
 
     pub fn generate(&self) -> Result<GeneratedBindings, anyhow::Error> {
-
         let tokens = match &self.bytes {
             None => generate_abi_code(self.abi_path.to_string_lossy()),
             Some(bytes) => generate_abi_code_from_bytes(bytes),
-        }.context("generating abi code")?;
+        }
+        .context("generating abi code")?;
 
         let file = syn::parse_file(&tokens.to_string()).context("parsing generated code")?;
 
-        let code = prettyplease::unparse(&file).lines().collect::<Vec<_>>().join("\n");
+        let code = prettyplease::unparse(&file)
+            .lines()
+            .collect::<Vec<_>>()
+            .join("\n");
 
         Ok(GeneratedBindings { code })
     }

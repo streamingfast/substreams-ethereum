@@ -6,7 +6,7 @@ use crate::{pb::eth::v2 as pb, Event};
 impl pb::Block {
     /// Iterates over successful transactions
     pub fn transactions(&self) -> impl Iterator<Item = &pb::TransactionTrace> {
-        self.transaction_traces.iter().filter(|tx| { tx.status == 1 })
+        self.transaction_traces.iter().filter(|tx| tx.status == 1)
     }
 
     /// Iterates over transaction receipts of successful transactions.
