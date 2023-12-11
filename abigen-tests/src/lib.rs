@@ -12,13 +12,13 @@ mod tests {
 
     #[macro_export]
     macro_rules! assert_bytes {
-        ($left:expr, $right:expr$(,)?) => ({
+        ($left:expr, $right:expr$(,)?) => {{
             let (left, right) = (&$left, &$right);
             if !(*left == *right) {
                 // Delegate to `assert_eq!` for diff
                 assert_eq!(Hex(left).to_string(), Hex(right).to_string())
             }
-        });
+        }};
     }
 
     #[test]
@@ -820,7 +820,8 @@ mod tests {
         use tests::functions::FunInt128 as Function;
 
         let call = pb::eth::v2::Call {
-            input: hex!("5b3357ff0000000000000000000000000000000000000000000000000000000000000000").to_vec(),
+            input: hex!("5b3357ff0000000000000000000000000000000000000000000000000000000000000000")
+                .to_vec(),
             ..Default::default()
         };
 
@@ -837,13 +838,17 @@ mod tests {
 
     #[test]
     fn it_encode_fun_fun_int128() {
-        use tests::functions::FunInt128 as Function;
         use substreams::scalar::BigInt;
+        use tests::functions::FunInt128 as Function;
 
         let fun = Function {
             arg0: BigInt::zero(),
         };
 
-        assert_bytes!(fun.encode(), hex!("5b3357ff0000000000000000000000000000000000000000000000000000000000000000").to_vec());
+        assert_bytes!(
+            fun.encode(),
+            hex!("5b3357ff0000000000000000000000000000000000000000000000000000000000000000")
+                .to_vec()
+        );
     }
 }
