@@ -520,7 +520,15 @@
                         ethabi::Token::FixedBytes(self.param3.as_ref().to_vec()),
                         {
                             let non_full_signed_bytes = self.param4.to_signed_bytes_be();
-                            let mut full_signed_bytes = [255i32 as u8; 32];
+                            let full_signed_bytes_init = if non_full_signed_bytes[0]
+                                & 0x80 == 0x80
+                            {
+                                0xff
+                            } else {
+                                0x00
+                            };
+                            let mut full_signed_bytes = [full_signed_bytes_init
+                                as u8; 32];
                             non_full_signed_bytes
                                 .into_iter()
                                 .rev()
@@ -698,7 +706,15 @@
                     &[
                         {
                             let non_full_signed_bytes = self.arg0.to_signed_bytes_be();
-                            let mut full_signed_bytes = [0i32 as u8; 32];
+                            let full_signed_bytes_init = if non_full_signed_bytes[0]
+                                & 0x80 == 0x80
+                            {
+                                0xff
+                            } else {
+                                0x00
+                            };
+                            let mut full_signed_bytes = [full_signed_bytes_init
+                                as u8; 32];
                             non_full_signed_bytes
                                 .into_iter()
                                 .rev()
@@ -773,7 +789,15 @@
                     &[
                         {
                             let non_full_signed_bytes = self.param0.to_signed_bytes_be();
-                            let mut full_signed_bytes = [255i32 as u8; 32];
+                            let full_signed_bytes_init = if non_full_signed_bytes[0]
+                                & 0x80 == 0x80
+                            {
+                                0xff
+                            } else {
+                                0x00
+                            };
+                            let mut full_signed_bytes = [full_signed_bytes_init
+                                as u8; 32];
                             non_full_signed_bytes
                                 .into_iter()
                                 .rev()
@@ -848,7 +872,15 @@
                     &[
                         {
                             let non_full_signed_bytes = self.param0.to_signed_bytes_be();
-                            let mut full_signed_bytes = [255i32 as u8; 32];
+                            let full_signed_bytes_init = if non_full_signed_bytes[0]
+                                & 0x80 == 0x80
+                            {
+                                0xff
+                            } else {
+                                0x00
+                            };
+                            let mut full_signed_bytes = [full_signed_bytes_init
+                                as u8; 32];
                             non_full_signed_bytes
                                 .into_iter()
                                 .rev()
@@ -923,7 +955,15 @@
                     &[
                         {
                             let non_full_signed_bytes = self.param0.to_signed_bytes_be();
-                            let mut full_signed_bytes = [255i32 as u8; 32];
+                            let full_signed_bytes_init = if non_full_signed_bytes[0]
+                                & 0x80 == 0x80
+                            {
+                                0xff
+                            } else {
+                                0x00
+                            };
+                            let mut full_signed_bytes = [full_signed_bytes_init
+                                as u8; 32];
                             non_full_signed_bytes
                                 .into_iter()
                                 .rev()
@@ -1036,7 +1076,15 @@
                     &[
                         {
                             let non_full_signed_bytes = self.param0.to_signed_bytes_be();
-                            let mut full_signed_bytes = [255i32 as u8; 32];
+                            let full_signed_bytes_init = if non_full_signed_bytes[0]
+                                & 0x80 == 0x80
+                            {
+                                0xff
+                            } else {
+                                0x00
+                            };
+                            let mut full_signed_bytes = [full_signed_bytes_init
+                                as u8; 32];
                             non_full_signed_bytes
                                 .into_iter()
                                 .rev()
@@ -1048,7 +1096,15 @@
                         },
                         {
                             let non_full_signed_bytes = self.param1.to_signed_bytes_be();
-                            let mut full_signed_bytes = [255i32 as u8; 32];
+                            let full_signed_bytes_init = if non_full_signed_bytes[0]
+                                & 0x80 == 0x80
+                            {
+                                0xff
+                            } else {
+                                0x00
+                            };
+                            let mut full_signed_bytes = [full_signed_bytes_init
+                                as u8; 32];
                             non_full_signed_bytes
                                 .into_iter()
                                 .rev()
@@ -1060,7 +1116,15 @@
                         },
                         {
                             let non_full_signed_bytes = self.param2.to_signed_bytes_be();
-                            let mut full_signed_bytes = [255i32 as u8; 32];
+                            let full_signed_bytes_init = if non_full_signed_bytes[0]
+                                & 0x80 == 0x80
+                            {
+                                0xff
+                            } else {
+                                0x00
+                            };
+                            let mut full_signed_bytes = [full_signed_bytes_init
+                                as u8; 32];
                             non_full_signed_bytes
                                 .into_iter()
                                 .rev()
@@ -1072,7 +1136,15 @@
                         },
                         {
                             let non_full_signed_bytes = self.param3.to_signed_bytes_be();
-                            let mut full_signed_bytes = [255i32 as u8; 32];
+                            let full_signed_bytes_init = if non_full_signed_bytes[0]
+                                & 0x80 == 0x80
+                            {
+                                0xff
+                            } else {
+                                0x00
+                            };
+                            let mut full_signed_bytes = [full_signed_bytes_init
+                                as u8; 32];
                             non_full_signed_bytes
                                 .into_iter()
                                 .rev()
