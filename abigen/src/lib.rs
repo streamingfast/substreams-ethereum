@@ -245,12 +245,14 @@ fn to_token(name: &proc_macro2::TokenStream, kind: &ParamType) -> proc_macro2::T
         }
         ParamType::Bytes => quote! { ethabi::Token::Bytes(#name.clone()) },
         ParamType::FixedBytes(_) => quote! { ethabi::Token::FixedBytes(#name.as_ref().to_vec()) },
-        ParamType::Int(size) => {
-            let full_signed_bytes_init = if size == 128 { 0x00 } else { 0xff };
+        ParamType::Int(_) => {
+            // The check non_full_signed_bytes[0] & 0x80 == 0x80 is checking if the leftmost bit of the first byte is set.
+            // If it is, the number is negative and full_signed_bytes_init is set to 0xff. Otherwise, it's set to 0x00.
             quote! {
                 {
                     let non_full_signed_bytes = #name.to_signed_bytes_be();
-                    let mut full_signed_bytes = [#full_signed_bytes_init as u8; 32];
+                    let full_signed_bytes_init = if non_full_signed_bytes[0] & 0x80 == 0x80 { 0xff } else { 0x00 };
+                    let mut full_signed_bytes = [full_signed_bytes_init as u8; 32];
                     non_full_signed_bytes.into_iter().rev().enumerate().for_each(|(i, byte)| full_signed_bytes[31 - i] = byte);
 
                     ethabi::Token::Int(ethabi::Int::from_big_endian(full_signed_bytes.as_ref()))
