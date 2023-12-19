@@ -2,7 +2,7 @@ use heck::{ToSnakeCase, ToUpperCamelCase};
 use proc_macro2::{Span, TokenStream};
 use quote::quote;
 
-use crate::{decode_topic, fixed_data_size, min_data_size};
+use crate::{decode_topic, fixed_data_size, min_data_size, rust_type_indexed};
 
 use super::{from_token, rust_type, to_syntax_string};
 
@@ -61,7 +61,10 @@ impl<'a> From<(&'a String, &'a ethabi::Event)> for Event {
         let kinds: Vec<_> = e
             .inputs
             .iter()
-            .map(|param| rust_type(&param.kind))
+            .map(|param| match param.indexed {
+                true => rust_type_indexed(&param.kind),
+                false => rust_type(&param.kind),
+            })
             .collect();
 
         let log_fields = names

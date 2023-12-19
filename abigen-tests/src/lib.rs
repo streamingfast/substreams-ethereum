@@ -8,7 +8,7 @@ mod tests {
     use pretty_assertions::assert_eq;
     use substreams::scalar::BigInt;
     use substreams::{hex, Hex};
-    use substreams_ethereum::pb;
+    use substreams_ethereum::{pb, IndexedDynamicValue};
 
     #[macro_export]
     macro_rules! assert_bytes {
@@ -87,6 +87,32 @@ mod tests {
             event,
             Ok(Event {
                 param0: BigInt::from(num_bigint::ToBigInt::to_bigint(&-9809887317731i64).unwrap()),
+            }),
+        );
+    }
+
+    #[test]
+    fn it_decode_event_string_idx() {
+        use tests::events::EventStringIdx as Event;
+
+        let log = pb::eth::v2::Log {
+            address: hex!("0000000000000000000000000000000000000000").to_vec(),
+            topics: vec![
+                hex!("b6e8616369603c14126f2f830d422b55910c71d2bda5145db145e33db8cb51dd").to_vec(),
+                hex!("fffffffffffffffffffffffffffffffffffffffffffffffffffff713f526b11d").to_vec(),
+            ],
+            ..Default::default()
+        };
+
+        assert_eq!(Event::match_log(&log), true);
+
+        let event = Event::decode(&log);
+        assert_eq!(
+            event,
+            Ok(Event {
+                param0: IndexedDynamicValue::<String>::new(
+                    hex!("fffffffffffffffffffffffffffffffffffffffffffffffffffff713f526b11d").to_vec(),
+                ),
             }),
         );
     }

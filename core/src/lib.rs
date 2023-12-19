@@ -7,6 +7,9 @@ pub use event::Event;
 pub use function::Function;
 pub mod scalar;
 
+/// Dependencies needed by 'substreams-abigen' to generate bindings.
+pub use event::IndexedDynamicValue;
+
 mod event;
 mod externs;
 mod function;

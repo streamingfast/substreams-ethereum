@@ -2446,6 +2446,88 @@
             }
         }
         #[derive(Debug, Clone, PartialEq)]
+        pub struct EventStringIdx {
+            pub param0: substreams_ethereum::IndexedDynamicValue<String>,
+        }
+        impl EventStringIdx {
+            const TOPIC_ID: [u8; 32] = [
+                182u8,
+                232u8,
+                97u8,
+                99u8,
+                105u8,
+                96u8,
+                60u8,
+                20u8,
+                18u8,
+                111u8,
+                47u8,
+                131u8,
+                13u8,
+                66u8,
+                43u8,
+                85u8,
+                145u8,
+                12u8,
+                113u8,
+                210u8,
+                189u8,
+                165u8,
+                20u8,
+                93u8,
+                177u8,
+                69u8,
+                227u8,
+                61u8,
+                184u8,
+                203u8,
+                81u8,
+                221u8,
+            ];
+            pub fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
+                if log.topics.len() != 2usize {
+                    return false;
+                }
+                if log.data.len() != 0usize {
+                    return false;
+                }
+                return log.topics.get(0).expect("bounds already checked").as_ref()
+                    == Self::TOPIC_ID;
+            }
+            pub fn decode(
+                log: &substreams_ethereum::pb::eth::v2::Log,
+            ) -> Result<Self, String> {
+                Ok(Self {
+                    param0: ethabi::decode(
+                            &[ethabi::ParamType::FixedBytes(32)],
+                            log.topics[1usize].as_ref(),
+                        )
+                        .map_err(|e| {
+                            format!(
+                                "unable to decode param 'param0' from topic of type 'string': {:?}",
+                                e
+                            )
+                        })?
+                        .pop()
+                        .expect(INTERNAL_ERR)
+                        .into_fixed_bytes()
+                        .expect(INTERNAL_ERR)
+                        .into(),
+                })
+            }
+        }
+        impl substreams_ethereum::Event for EventStringIdx {
+            const NAME: &'static str = "EventStringIdx";
+            fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
+                Self::match_log(log)
+            }
+            fn decode(
+                log: &substreams_ethereum::pb::eth::v2::Log,
+            ) -> Result<Self, String> {
+                Self::decode(log)
+            }
+        }
+        #[derive(Debug, Clone, PartialEq)]
         pub struct EventUArrayBool {
             pub param0: Vec<bool>,
         }
@@ -3185,7 +3267,7 @@
         }
         #[derive(Debug, Clone, PartialEq)]
         pub struct EventWithOverloads2 {
-            pub second: String,
+            pub second: substreams_ethereum::IndexedDynamicValue<String>,
         }
         impl EventWithOverloads2 {
             const TOPIC_ID: [u8; 32] = [
@@ -3237,7 +3319,7 @@
             ) -> Result<Self, String> {
                 Ok(Self {
                     second: ethabi::decode(
-                            &[ethabi::ParamType::String],
+                            &[ethabi::ParamType::FixedBytes(32)],
                             log.topics[1usize].as_ref(),
                         )
                         .map_err(|e| {
@@ -3248,8 +3330,9 @@
                         })?
                         .pop()
                         .expect(INTERNAL_ERR)
-                        .into_string()
-                        .expect(INTERNAL_ERR),
+                        .into_fixed_bytes()
+                        .expect(INTERNAL_ERR)
+                        .into(),
                 })
             }
         }

@@ -109,6 +109,16 @@ fn to_syntax_string(param_type: &ethabi::ParamType) -> proc_macro2::TokenStream 
 //     quote! { vec![ #(#p),* ] }
 // }
 
+fn rust_type_indexed(input: &ParamType) -> proc_macro2::TokenStream {
+    match input.is_dynamic() {
+        true => {
+            let t = rust_type(input);
+            return quote! { substreams_ethereum::IndexedDynamicValue<#t> };
+        }
+        false => rust_type(input),
+    }
+}
+
 fn rust_type(input: &ParamType) -> proc_macro2::TokenStream {
     match *input {
         ParamType::Address => quote! { Vec<u8> },
@@ -399,7 +409,6 @@ fn decode_topic(
     kind: &ParamType,
     data_token: &proc_macro2::TokenStream,
 ) -> proc_macro2::TokenStream {
-    let syntax_type = to_syntax_string(kind);
     let error_msg = format!(
         "unable to decode param '{}' from topic of type '{}': {{:?}}",
         name, kind
@@ -411,7 +420,21 @@ fn decode_topic(
                 substreams::scalar::BigInt::from_signed_bytes_be(#data_token)
             }
         }
+        _ if kind.is_dynamic() => {
+            let syntax_type = quote! { ethabi::ParamType::FixedBytes(32) };
+
+            quote! {
+                ethabi::decode(&[#syntax_type], #data_token)
+                    .map_err(|e| format!(#error_msg, e))?
+                    .pop()
+                    .expect(INTERNAL_ERR)
+                    .into_fixed_bytes()
+                    .expect(INTERNAL_ERR)
+                    .into()
+            }
+        }
         _ => {
+            let syntax_type = to_syntax_string(kind);
             let decode_topic = quote! {
                         ethabi::decode(&[#syntax_type], #data_token)
                         .map_err(|e| format!(#error_msg, e))?
