@@ -111,7 +111,8 @@ mod tests {
             event,
             Ok(Event {
                 param0: IndexedDynamicValue::<String>::new(
-                    hex!("fffffffffffffffffffffffffffffffffffffffffffffffffffff713f526b11d").to_vec(),
+                    hex!("fffffffffffffffffffffffffffffffffffffffffffffffffffff713f526b11d")
+                        .to_vec(),
                 ),
             }),
         );
