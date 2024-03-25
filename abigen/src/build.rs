@@ -3,7 +3,6 @@ use std::str;
 
 use crate::{generate_abi_code, generate_abi_code_from_bytes, normalize_path};
 use anyhow::Context;
-use quote::quote;
 
 #[derive(Debug, Clone)]
 pub struct Abigen<'a> {
@@ -40,42 +39,20 @@ impl<'a> Abigen<'a> {
     }
 
     pub fn generate(&self) -> Result<GeneratedBindings, anyhow::Error> {
-        let item;
-        match &self.bytes {
-            None => {
-                item = generate_abi_code(self.abi_path.to_string_lossy())
-                    .context("generating abi code")?;
-            }
-            Some(bytes) => {
-                item = generate_abi_code_from_bytes(bytes).context("generating abi code")?;
-            }
+        let tokens = match &self.bytes {
+            None => generate_abi_code(self.abi_path.to_string_lossy()),
+            Some(bytes) => generate_abi_code_from_bytes(bytes),
         }
+        .context("generating abi code")?;
 
-        // FIXME: We wrap into a fake module because `syn::parse2(file)` doesn't like it when there is
-        // no wrapping statement. Below that we remove the first and last line of the generated code
-        // which fixes the problem.
-        //
-        // There is probably a way to avoid that somehow?
-        let file = quote! {
-            mod __remove__ {
-                #item
-            }
-        };
+        let file = syn::parse_file(&tokens.to_string()).context("parsing generated code")?;
 
-        let file = syn::File {
-            attrs: vec![],
-            items: vec![syn::parse2(file).context("parsing generated code")?],
-            shebang: None,
-        };
+        let code = prettyplease::unparse(&file)
+            .lines()
+            .collect::<Vec<_>>()
+            .join("\n");
 
-        let code = prettyplease::unparse(&file);
-        let mut lines = code.lines();
-        lines.next();
-        lines.next_back();
-
-        Ok(GeneratedBindings {
-            code: lines.collect::<Vec<_>>().join("\n"),
-        })
+        Ok(GeneratedBindings { code })
     }
 }
 
