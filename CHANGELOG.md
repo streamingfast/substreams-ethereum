@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.10](https://github.com/streamingfast/substreams-ethereum/releases/tag/v0.9.10)
+
+* Re-generated the Rust Ethereum bindings with latest Firehose Ethereum Protobuf definitions.
+
 ## [0.9.9](https://github.com/streamingfast/substreams-ethereum/releases/tag/v0.9.9)
 
 * Fixed generated ABI code and decoding when dealing with indexed dynamic event like `event ContractDeployed(string indexed value)`. We introduced `substreams_ethereum::IndexedDynamicValue<T>` to hold the hash value which is equivalent to topic.

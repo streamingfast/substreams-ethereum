@@ -1,4 +1,46 @@
 // @generated
+/// Block is the representation of the tracing of a block in the Ethereum
+/// blockchain. A block is a collection of \[TransactionTrace\] that are grouped
+/// together and processed as an atomic unit. Each \[TransactionTrace\] is composed
+/// of a series of \[Call\] (a.k.a internal transactions) and there is also at
+/// least one call per transaction a.k.a the root call which essentially has the
+/// same parameters as the transaction itself (e.g. `from`, `to`, `gas`, `value`,
+/// etc.).
+///
+/// The exact tracing method used to build the block must be checked against
+/// \[DetailLevel\] field. There is two levels of details available, `BASE` and
+/// `EXTENDED`. The `BASE` level has been extracted using archive node RPC calls
+/// and will contain only the block header, transaction receipts and event logs.
+/// Refers to the Firehose service provider to know which blocks are offered on
+/// each network.
+///
+/// The `EXTENDED` level has been extracted using the Firehose tracer and all
+/// fields are available in this Protobuf.
+///
+/// The Ethereum block model is used across many chains which means that it
+/// happen that certain fields are not available in one chain but are available
+/// in another. Each field should be documented when necesssary if it's available
+/// on a subset of chains.
+///
+/// One major concept to get about the Block is the concept of 'ordinal'. The
+/// ordinal is a number that is used to globally order every element of execution
+/// that happened throughout the processing of the block like
+/// \[TransactionTracer\], \[Call\], \[Log\], \[BalanceChange\], \[StateChange\], etc.
+/// Element that have a start and end interval, \[Transaction\] and \[Call\], will
+/// have two ordinals: `begin_ordinal` and `end_ordinal`. Element that are
+/// executed as "point in time" \[Log\], \[BalanceChange\], \[StateChange\], etc. will
+/// have only one ordinal named `ordinal`. If you take all of the message in the
+/// Block that have an 'ordinal' field in an array and you sort each element
+/// against the `ordinal` field, you will get the exact order of execution of
+/// each element in the block.
+///
+/// All the 'ordinal' fields in a block are globally unique for the given block,
+/// it is **not** a chain-wide global ordering. Furthermore, caution must be take
+/// with reverted elements due to execution failure. For anything attached to a
+/// \[Call\] that has a `state_reverted` field set to `true`, the `ordinal` field
+/// is not reliable and should not be used to order the element against other
+/// elements in the block as those element might have 0 as the ordinal. Only
+/// successful calls have a reliable `ordinal` field.
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Block {
@@ -25,6 +67,8 @@ pub struct Block {
     pub uncles: ::prost::alloc::vec::Vec<BlockHeader>,
     /// TransactionTraces hold the execute trace of all the transactions that were executed
     /// in this block. In in there that you will find most of the Ethereum data model.
+    ///
+    /// They are ordered by the order of execution of the transaction in the block.
     #[prost(message, repeated, tag="10")]
     pub transaction_traces: ::prost::alloc::vec::Vec<TransactionTrace>,
     /// BalanceChanges here is the array of ETH transfer that happened at the block level
@@ -38,9 +82,20 @@ pub struct Block {
     pub balance_changes: ::prost::alloc::vec::Vec<BalanceChange>,
     /// DetailLevel affects the data available in this block.
     ///
-    /// EXTENDED describes the most complete block, with traces, balance changes, storage changes. It is extracted during the execution of the block.
-    /// BASE describes a block that contains only the block header, transaction receipts and event logs: everything that can be extracted using the base JSON-RPC interface (<https://ethereum.org/en/developers/docs/apis/json-rpc/#json-rpc-methods>) 
-    ///       Furthermore, the eth_getTransactionReceipt call has been avoided because it brings only minimal improvements at the cost of requiring an archive node or a full node with complete transaction index.
+    /// ## DetailLevel_EXTENDED
+    ///
+    /// Describes the most complete block, with traces, balance changes, storage
+    /// changes. It is extracted during the execution of the block.
+    ///
+    /// ## DetailLevel_BASE
+    ///
+    /// Describes a block that contains only the block header, transaction receipts
+    /// and event logs: everything that can be extracted using the base JSON-RPC
+    /// interface
+    /// (<https://ethereum.org/en/developers/docs/apis/json-rpc/#json-rpc-methods>)
+    /// Furthermore, the eth_getTransactionReceipt call has been avoided because it
+    /// brings only minimal improvements at the cost of requiring an archive node
+    /// or a full node with complete transaction index.
     #[prost(enumeration="block::DetailLevel", tag="12")]
     pub detail_level: i32,
     /// CodeChanges here is the array of smart code change that happened that happened at the block level
@@ -51,9 +106,15 @@ pub struct Block {
     /// On hard fork, some procedure runs to upgrade the smart contract code to a new version. In those
     /// network, a `CodeChange` for each modified smart contract on upgrade would be present here. Note
     /// that this happen rarely, so the vast majority of block will have an empty list here.
+    ///
     /// Only available in DetailLevel: EXTENDED
     #[prost(message, repeated, tag="20")]
     pub code_changes: ::prost::alloc::vec::Vec<CodeChange>,
+    /// System calls are introduced in Cancun, along with blobs. They are executed outside of transactions but affect the state.
+    ///
+    /// Only available in DetailLevel: EXTENDED
+    #[prost(message, repeated, tag="21")]
+    pub system_calls: ::prost::alloc::vec::Vec<Call>,
     /// Ver represents that data model version of the block, it is used internally by Firehose on Ethereum
     /// as a validation that we are reading the correct version.
     #[prost(int32, tag="1")]
@@ -170,8 +231,11 @@ pub struct BlockHeader {
     ///     extra_data,
     ///     mix_hash,
     ///     nonce,
-    ///     base_fee_per_gas (to be included, only if London Fork is active)
-    ///     withdrawals_root (to be included, only if Shangai Fork is active)
+    ///     base_fee_per_gas (to be included only if London fork is active)
+    ///     withdrawals_root (to be included only if Shangai fork is active)
+    ///     blob_gas_used (to be included only if Cancun fork is active)
+    ///     excess_blob_gas (to be included only if Cancun fork is active)
+    ///     parent_beacon_root (to be included only if Cancun fork is active)
     ///   ]))
     ///
     #[prost(bytes="vec", tag="16")]
@@ -187,6 +251,15 @@ pub struct BlockHeader {
     /// Only available in DetailLevel: EXTENDED
     #[prost(message, optional, tag="20")]
     pub tx_dependency: ::core::option::Option<Uint64NestedArray>,
+    /// BlobGasUsed was added by EIP-4844 and is ignored in legacy headers.
+    #[prost(uint64, optional, tag="22")]
+    pub blob_gas_used: ::core::option::Option<u64>,
+    /// ExcessBlobGas was added by EIP-4844 and is ignored in legacy headers.
+    #[prost(uint64, optional, tag="23")]
+    pub excess_blob_gas: ::core::option::Option<u64>,
+    /// ParentBeaconRoot was added by EIP-4788 and is ignored in legacy headers.
+    #[prost(bytes="vec", tag="24")]
+    pub parent_beacon_root: ::prost::alloc::vec::Vec<u8>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -206,6 +279,31 @@ pub struct BigInt {
     #[prost(bytes="vec", tag="1")]
     pub bytes: ::prost::alloc::vec::Vec<u8>,
 }
+/// TransactionTrace is full trace of execution of the transaction when the
+/// it actually executed on chain.
+///
+/// It contains all the transaction details like `from`, `to`, `gas`, etc.
+/// as well as all the internal calls that were made during the transaction.
+///
+/// The `calls` vector contains Call objects which have balance changes, events
+/// storage changes, etc.
+///
+/// If ordering is important between elements, almost each message like `Log`,
+/// `Call`, `StorageChange`, etc. have an ordinal field that is represents "execution"
+/// order of the said element against all other elements in this block.
+///
+/// Due to how the call tree works doing "naively", looping through all calls then
+/// through a Call's element like `logs` while not yielding the elements in the order
+/// they were executed on chain. A log in call could have been done before or after
+/// another in another call depending on the actual call tree.
+///
+/// The `calls` are ordered by creation order and the call tree can be re-computing
+/// using fields found in `Call` object (parent/child relationship).
+///
+/// Another important thing to note is that even if a transaction succeed, some calls
+/// within it could have been reverted internally, if this is important to you, you must
+/// check the field `state_reverted` on the `Call` to determine if it was fully committed
+/// to the chain or not.
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct TransactionTrace {
@@ -245,14 +343,10 @@ pub struct TransactionTrace {
     #[prost(bytes="vec", tag="9")]
     pub s: ::prost::alloc::vec::Vec<u8>,
     /// GasUsed is the total amount of gas unit used for the whole execution of the transaction.
-    ///
-    /// Only available in DetailLevel: EXTENDED
     #[prost(uint64, tag="10")]
     pub gas_used: u64,
     /// Type represents the Ethereum transaction type, available only since EIP-2718 & EIP-2930 activation which happened on Berlin fork.
     /// The value is always set even for transaction before Berlin fork because those before the fork are still legacy transactions.
-    ///
-    /// Only available in DetailLevel: EXTENDED
     #[prost(enumeration="transaction_trace::Type", tag="12")]
     pub r#type: i32,
     /// AcccessList represents the storage access this transaction has agreed to do in which case those storage
@@ -292,8 +386,12 @@ pub struct TransactionTrace {
     /// Only available in DetailLevel: EXTENDED
     #[prost(bytes="vec", tag="24")]
     pub public_key: ::prost::alloc::vec::Vec<u8>,
+    /// The block's global ordinal when the transaction started executing, refer to
+    /// \[Block\] documentation for further information about ordinals and total ordering.
     #[prost(uint64, tag="25")]
     pub begin_ordinal: u64,
+    /// The block's global ordinal when the transaction finished executing, refer to
+    /// \[Block\] documentation for further information about ordinals and total ordering.
     #[prost(uint64, tag="26")]
     pub end_ordinal: u64,
     /// TransactionTraceStatus is the status of the transaction execution and will let you know if the transaction
@@ -320,8 +418,6 @@ pub struct TransactionTrace {
     /// balance changes you process those where `reason` is either `REASON_GAS_BUY`, `REASON_GAS_REFUND` or
     /// `REASON_REWARD_TRANSACTION_FEE` and for nonce change, still on the root call, you pick the nonce change which the
     /// smallest ordinal (if more than one).
-    ///
-    /// Only available in DetailLevel: EXTENDED
     #[prost(enumeration="TransactionTraceStatus", tag="30")]
     pub status: i32,
     #[prost(message, optional, tag="31")]
@@ -329,6 +425,33 @@ pub struct TransactionTrace {
     /// Only available in DetailLevel: EXTENDED
     #[prost(message, repeated, tag="32")]
     pub calls: ::prost::alloc::vec::Vec<Call>,
+    /// BlobGas is the amount of gas the transaction is going to pay for the blobs, this is a computed value
+    /// equivalent to `self.blob_gas_fee_cap * len(self.blob_hashes)` and provided in the model for convenience.
+    ///
+    /// This is specified by <https://eips.ethereum.org/EIPS/eip-4844>
+    ///
+    /// This will is populated only if `TransactionTrace.Type == TRX_TYPE_BLOB` which is possible only
+    /// if Cancun fork is active on the chain.
+    #[prost(uint64, optional, tag="33")]
+    pub blob_gas: ::core::option::Option<u64>,
+    /// BlobGasFeeCap is the maximum fee per data gas the user is willing to pay for the data gas used.
+    ///
+    /// This is specified by <https://eips.ethereum.org/EIPS/eip-4844>
+    ///
+    /// This will is populated only if `TransactionTrace.Type == TRX_TYPE_BLOB` which is possible only
+    /// if Cancun fork is active on the chain.
+    #[prost(message, optional, tag="34")]
+    pub blob_gas_fee_cap: ::core::option::Option<BigInt>,
+    /// BlobHashes field represents a list of hash outputs from 'kzg_to_versioned_hash' which
+    /// essentially is a version byte + the sha256 hash of the blob commitment (e.g.
+    /// `BLOB_COMMITMENT_VERSION_KZG + sha256(commitment)\[1:\]`.
+    ///
+    /// This is specified by <https://eips.ethereum.org/EIPS/eip-4844>
+    ///
+    /// This will is populated only if `TransactionTrace.Type == TRX_TYPE_BLOB` which is possible only
+    /// if Cancun fork is active on the chain.
+    #[prost(bytes="vec", repeated, tag="35")]
+    pub blob_hashes: ::prost::alloc::vec::Vec<::prost::alloc::vec::Vec<u8>>,
 }
 /// Nested message and enum types in `TransactionTrace`.
 pub mod transaction_trace {
@@ -346,6 +469,15 @@ pub mod transaction_trace {
         /// max base gas gee and max priority gas fee to pay for this transaction. Transaction's of those type are
         /// executed against EIP-1559 rules which dictates a dynamic gas cost based on the congestion of the network.
         TrxTypeDynamicFee = 2,
+        /// Transaction which contain a large amount of data that cannot be accessed by EVM execution, but whose commitment
+        /// can be accessed. The format is intended to be fully compatible with the format that will be used in full sharding.
+        ///
+        /// Transaction that defines specifis an access list just like TRX_TYPE_ACCESS_LIST and enables dynamic fee just like
+        /// TRX_TYPE_DYNAMIC_FEE but in addition defines the fields 'max_fee_per_data_gas' of type 'uint256' and the fields
+        /// 'blob_versioned_hashes' field represents a list of hash outputs from 'kzg_to_versioned_hash'.
+        ///
+        /// Activated in Dencun
+        TrxTypeBlob = 3,
         /// Arbitrum-specific transactions
         TrxTypeArbitrumDeposit = 100,
         TrxTypeArbitrumUnsigned = 101,
@@ -365,6 +497,7 @@ pub mod transaction_trace {
                 Type::TrxTypeLegacy => "TRX_TYPE_LEGACY",
                 Type::TrxTypeAccessList => "TRX_TYPE_ACCESS_LIST",
                 Type::TrxTypeDynamicFee => "TRX_TYPE_DYNAMIC_FEE",
+                Type::TrxTypeBlob => "TRX_TYPE_BLOB",
                 Type::TrxTypeArbitrumDeposit => "TRX_TYPE_ARBITRUM_DEPOSIT",
                 Type::TrxTypeArbitrumUnsigned => "TRX_TYPE_ARBITRUM_UNSIGNED",
                 Type::TrxTypeArbitrumContract => "TRX_TYPE_ARBITRUM_CONTRACT",
@@ -380,6 +513,7 @@ pub mod transaction_trace {
                 "TRX_TYPE_LEGACY" => Some(Self::TrxTypeLegacy),
                 "TRX_TYPE_ACCESS_LIST" => Some(Self::TrxTypeAccessList),
                 "TRX_TYPE_DYNAMIC_FEE" => Some(Self::TrxTypeDynamicFee),
+                "TRX_TYPE_BLOB" => Some(Self::TrxTypeBlob),
                 "TRX_TYPE_ARBITRUM_DEPOSIT" => Some(Self::TrxTypeArbitrumDeposit),
                 "TRX_TYPE_ARBITRUM_UNSIGNED" => Some(Self::TrxTypeArbitrumUnsigned),
                 "TRX_TYPE_ARBITRUM_CONTRACT" => Some(Self::TrxTypeArbitrumContract),
@@ -416,20 +550,31 @@ pub struct TransactionReceipt {
     /// field, following `EIP-658`.
     ///
     /// Before Byzantinium hard fork, this field is always empty.
-    ///
-    /// Only available in DetailLevel: EXTENDED
     #[prost(bytes="vec", tag="1")]
     pub state_root: ::prost::alloc::vec::Vec<u8>,
-    ///
-    /// Only available in DetailLevel: EXTENDED
     #[prost(uint64, tag="2")]
     pub cumulative_gas_used: u64,
-    ///
-    /// Only available in DetailLevel: EXTENDED
     #[prost(bytes="vec", tag="3")]
     pub logs_bloom: ::prost::alloc::vec::Vec<u8>,
     #[prost(message, repeated, tag="4")]
     pub logs: ::prost::alloc::vec::Vec<Log>,
+    /// BlobGasUsed is the amount of blob gas that has been used within this transaction. At time
+    /// of writing, this is equal to `self.blob_gas_fee_cap * len(self.blob_hashes)`.
+    ///
+    /// This is specified by <https://eips.ethereum.org/EIPS/eip-4844>
+    ///
+    /// This will is populated only if `TransactionTrace.Type == TRX_TYPE_BLOB` which is possible only
+    /// if Cancun fork is active on the chain.
+    #[prost(uint64, optional, tag="5")]
+    pub blob_gas_used: ::core::option::Option<u64>,
+    /// BlobGasPrice is the amount to pay per blob item in the transaction.
+    ///
+    /// This is specified by <https://eips.ethereum.org/EIPS/eip-4844>
+    ///
+    /// This will is populated only if `TransactionTrace.Type == TRX_TYPE_BLOB` which is possible only
+    /// if Cancun fork is active on the chain.
+    #[prost(message, optional, tag="6")]
+    pub blob_gas_price: ::core::option::Option<BigInt>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -464,6 +609,8 @@ pub struct Log {
     /// the `blockIndex` value will always be 0.
     #[prost(uint32, tag="6")]
     pub block_index: u32,
+    /// The block's global ordinal when the log was recorded, refer to \[Block\]
+    /// documentation for further information about ordinals and total ordering.
     #[prost(uint64, tag="7")]
     pub ordinal: u64,
 }
@@ -558,8 +705,12 @@ pub struct Call {
     /// perform.
     #[prost(bool, tag="30")]
     pub state_reverted: bool,
+    /// The block's global ordinal when the call started executing, refer to
+    /// \[Block\] documentation for further information about ordinals and total ordering.
     #[prost(uint64, tag="31")]
     pub begin_ordinal: u64,
+    /// The block's global ordinal when the call finished executing, refer to
+    /// \[Block\] documentation for further information about ordinals and total ordering.
     #[prost(uint64, tag="32")]
     pub end_ordinal: u64,
     #[prost(message, repeated, tag="33")]
@@ -576,6 +727,8 @@ pub struct StorageChange {
     pub old_value: ::prost::alloc::vec::Vec<u8>,
     #[prost(bytes="vec", tag="4")]
     pub new_value: ::prost::alloc::vec::Vec<u8>,
+    /// The block's global ordinal when the storage change was recorded, refer to \[Block\]
+    /// documentation for further information about ordinals and total ordering.
     #[prost(uint64, tag="5")]
     pub ordinal: u64,
 }
@@ -590,6 +743,8 @@ pub struct BalanceChange {
     pub new_value: ::core::option::Option<BigInt>,
     #[prost(enumeration="balance_change::Reason", tag="4")]
     pub reason: i32,
+    /// The block's global ordinal when the balance change was recorded, refer to \[Block\]
+    /// documentation for further information about ordinals and total ordering.
     #[prost(uint64, tag="5")]
     pub ordinal: u64,
 }
@@ -682,6 +837,8 @@ pub struct NonceChange {
     pub old_value: u64,
     #[prost(uint64, tag="3")]
     pub new_value: u64,
+    /// The block's global ordinal when the nonce change was recorded, refer to \[Block\]
+    /// documentation for further information about ordinals and total ordering.
     #[prost(uint64, tag="4")]
     pub ordinal: u64,
 }
@@ -690,6 +847,8 @@ pub struct NonceChange {
 pub struct AccountCreation {
     #[prost(bytes="vec", tag="1")]
     pub account: ::prost::alloc::vec::Vec<u8>,
+    /// The block's global ordinal when the account creation was recorded, refer to \[Block\]
+    /// documentation for further information about ordinals and total ordering.
     #[prost(uint64, tag="2")]
     pub ordinal: u64,
 }
@@ -706,6 +865,8 @@ pub struct CodeChange {
     pub new_hash: ::prost::alloc::vec::Vec<u8>,
     #[prost(bytes="vec", tag="5")]
     pub new_code: ::prost::alloc::vec::Vec<u8>,
+    /// The block's global ordinal when the code change was recorded, refer to \[Block\]
+    /// documentation for further information about ordinals and total ordering.
     #[prost(uint64, tag="6")]
     pub ordinal: u64,
 }
@@ -724,6 +885,8 @@ pub struct GasChange {
     pub new_value: u64,
     #[prost(enumeration="gas_change::Reason", tag="3")]
     pub reason: i32,
+    /// The block's global ordinal when the gas change was recorded, refer to \[Block\]
+    /// documentation for further information about ordinals and total ordering.
     #[prost(uint64, tag="4")]
     pub ordinal: u64,
 }
