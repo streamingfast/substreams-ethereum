@@ -3,11 +3,23 @@ use substreams::scalar::{BigDecimal, BigInt};
 
 impl Into<BigInt> for pb::BigInt {
     fn into(self) -> BigInt {
+        Into::<BigInt>::into(&self)
+    }
+}
+
+impl Into<BigInt> for &pb::BigInt {
+    fn into(self) -> BigInt {
         BigInt::from_unsigned_bytes_be(self.bytes.as_ref())
     }
 }
 
 impl Into<BigDecimal> for pb::BigInt {
+    fn into(self) -> BigDecimal {
+        Into::<BigDecimal>::into(&self)
+    }
+}
+
+impl Into<BigDecimal> for &pb::BigInt {
     fn into(self) -> BigDecimal {
         let v = BigInt::from_unsigned_bytes_be(self.bytes.as_ref());
         BigDecimal::new(v, 0)
@@ -61,6 +73,11 @@ mod tests {
     fn number_into_bigint() {
         let v: substreams::scalar::BigInt = new_pb_bigint(253).into();
         assert_eq!(v.to_u64(), 253);
+
+        let pb = new_pb_bigint(254);
+        let pb_ref = &pb;
+        let v: substreams::scalar::BigInt = pb_ref.into();
+        assert_eq!(v.to_u64(), 254);
     }
 
     #[test]
@@ -73,6 +90,11 @@ mod tests {
     fn number_into_bigdecmal() {
         let v: substreams::scalar::BigDecimal = new_pb_bigint(253).into();
         assert_eq!(v.to_string(), "253");
+
+        let pb = new_pb_bigint(254);
+        let pb_ref = &pb;
+        let v: substreams::scalar::BigInt = pb_ref.into();
+        assert_eq!(v.to_string(), "254");
     }
 
     #[test]
