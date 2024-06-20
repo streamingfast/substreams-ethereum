@@ -111,4 +111,4 @@ jobs:
           RUSTFLAGS: "-D warnings"
         with:
           command: test
-          args: --release --target x86_64-unknown-linux-gnu
+          args: --release --target x86_64-unknown-linux-gnu --lib --bins --tests
