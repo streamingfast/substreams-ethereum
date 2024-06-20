@@ -248,6 +248,13 @@ pub struct BlockHeader {
     /// Only available in DetailLevel: EXTENDED
     #[prost(bytes="vec", tag="19")]
     pub withdrawals_root: ::prost::alloc::vec::Vec<u8>,
+    /// TxDependency is list of transaction indexes that are dependent on each other in the block
+    /// header. This is metadata only that was used by the internal Polygon parallel execution engine.
+    ///
+    /// This field was available in a few versions on Polygon Mainnet and Polygon Mumbai chains. It was actually
+    /// removed and is not populated anymore. It's now embeded in the `extraData` field, refer to Polygon source
+    /// code to determine how to extract it if you need it.
+    ///
     /// Only available in DetailLevel: EXTENDED
     #[prost(message, optional, tag="20")]
     pub tx_dependency: ::core::option::Option<Uint64NestedArray>,
@@ -397,6 +404,8 @@ pub struct TransactionTrace {
     /// TransactionTraceStatus is the status of the transaction execution and will let you know if the transaction
     /// was successful or not.
     ///
+    /// ## Explanation relevant only for blocks with `DetailLevel: EXTENDED`
+    ///
     /// A successful transaction has been recorded to the blockchain's state for calls in it that were successful.
     /// This means it's possible only a subset of the calls were properly recorded, refer to \[calls[].state_reverted\] field
     /// to determine which calls were reverted.
@@ -486,6 +495,8 @@ pub mod transaction_trace {
         TrxTypeArbitrumSubmitRetryable = 105,
         TrxTypeArbitrumInternal = 106,
         TrxTypeArbitrumLegacy = 120,
+        /// OPTIMISM-specific transactions
+        TrxTypeOptimismDeposit = 126,
     }
     impl Type {
         /// String value of the enum field names used in the ProtoBuf definition.
@@ -505,6 +516,7 @@ pub mod transaction_trace {
                 Type::TrxTypeArbitrumSubmitRetryable => "TRX_TYPE_ARBITRUM_SUBMIT_RETRYABLE",
                 Type::TrxTypeArbitrumInternal => "TRX_TYPE_ARBITRUM_INTERNAL",
                 Type::TrxTypeArbitrumLegacy => "TRX_TYPE_ARBITRUM_LEGACY",
+                Type::TrxTypeOptimismDeposit => "TRX_TYPE_OPTIMISM_DEPOSIT",
             }
         }
         /// Creates an enum from field names used in the ProtoBuf definition.
@@ -521,6 +533,7 @@ pub mod transaction_trace {
                 "TRX_TYPE_ARBITRUM_SUBMIT_RETRYABLE" => Some(Self::TrxTypeArbitrumSubmitRetryable),
                 "TRX_TYPE_ARBITRUM_INTERNAL" => Some(Self::TrxTypeArbitrumInternal),
                 "TRX_TYPE_ARBITRUM_LEGACY" => Some(Self::TrxTypeArbitrumLegacy),
+                "TRX_TYPE_OPTIMISM_DEPOSIT" => Some(Self::TrxTypeOptimismDeposit),
                 _ => None,
             }
         }
@@ -735,12 +748,32 @@ pub struct StorageChange {
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct BalanceChange {
+    /// Address is the address of the account that has changed balance.
     #[prost(bytes="vec", tag="1")]
     pub address: ::prost::alloc::vec::Vec<u8>,
+    /// OldValue is the balance of the address before the change. This value
+    /// can be **nil/null/None** if there was no previous balance for the address.
+    /// It is safe in those case(s) to consider the balance as being 0.
+    ///
+    /// If you consume this from a Substreams, you can safely use:
+    ///
+    ///      let old_value = old_value.unwrap_or_default();
+    ///
     #[prost(message, optional, tag="2")]
     pub old_value: ::core::option::Option<BigInt>,
+    /// NewValue is the balance of the address after the change. This value
+    /// can be **nil/null/None** if there was no previous balance for the address
+    /// after the change. It is safe in those case(s) to consider the balance as being
+    /// 0.
+    ///
+    /// If you consume this from a Substreams, you can safely use:
+    ///
+    ///      let new_value = new_value.unwrap_or_default();
+    ///
     #[prost(message, optional, tag="3")]
     pub new_value: ::core::option::Option<BigInt>,
+    /// Reason is the reason why the balance has changed. This is useful to determine
+    /// why the balance has changed and what is the context of the change.
     #[prost(enumeration="balance_change::Reason", tag="4")]
     pub reason: i32,
     /// The block's global ordinal when the balance change was recorded, refer to \[Block\]
@@ -776,6 +809,11 @@ pub mod balance_change {
         /// Used on chain(s) where some Ether burning happens
         Burn = 15,
         Withdrawal = 16,
+        /// Rewards for Blob processing on BNB chain added in Tycho hard-fork, refers
+        /// to BNB documentation to check the timestamp at which it was activated.
+        RewardBlobFee = 17,
+        /// USE on optimism chan
+        IncreaseMint = 18,
     }
     impl Reason {
         /// String value of the enum field names used in the ProtoBuf definition.
@@ -801,6 +839,8 @@ pub mod balance_change {
                 Reason::CallBalanceOverride => "REASON_CALL_BALANCE_OVERRIDE",
                 Reason::Burn => "REASON_BURN",
                 Reason::Withdrawal => "REASON_WITHDRAWAL",
+                Reason::RewardBlobFee => "REASON_REWARD_BLOB_FEE",
+                Reason::IncreaseMint => "REASON_INCREASE_MINT",
             }
         }
         /// Creates an enum from field names used in the ProtoBuf definition.
@@ -823,6 +863,8 @@ pub mod balance_change {
                 "REASON_CALL_BALANCE_OVERRIDE" => Some(Self::CallBalanceOverride),
                 "REASON_BURN" => Some(Self::Burn),
                 "REASON_WITHDRAWAL" => Some(Self::Withdrawal),
+                "REASON_REWARD_BLOB_FEE" => Some(Self::RewardBlobFee),
+                "REASON_INCREASE_MINT" => Some(Self::IncreaseMint),
                 _ => None,
             }
         }
