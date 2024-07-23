@@ -8,7 +8,7 @@ mod tests {
     use pretty_assertions::assert_eq;
     use substreams::scalar::BigInt;
     use substreams::{hex, Hex};
-    use substreams_ethereum::{pb, IndexedDynamicValue};
+    use substreams_ethereum::{pb, Event, Function, IndexedDynamicValue};
 
     #[macro_export]
     macro_rules! assert_bytes {
@@ -89,6 +89,17 @@ mod tests {
                 param0: BigInt::from(num_bigint::ToBigInt::to_bigint(&-9809887317731i64).unwrap()),
             }),
         );
+    }
+
+    #[test]
+    fn it_renders_original_event_name_on_dedup() {
+        use tests::events::EventWithOverloads1 as Event1;
+        use tests::events::EventWithOverloads2 as Event2;
+        use tests::events::EventWithOverloads3 as Event3;
+
+        assert!(Event1::NAME == "EventWithOverloads");
+        assert!(Event2::NAME == "EventWithOverloads");
+        assert!(Event3::NAME == "EventWithOverloads");
     }
 
     #[test]
@@ -877,5 +888,14 @@ mod tests {
             hex!("5b3357ff0000000000000000000000000000000000000000000000000000000000000000")
                 .to_vec()
         );
+    }
+
+    #[test]
+    fn it_renders_original_function_name_on_dedup() {
+        use tests::functions::FunWithOverloads1 as Fun1;
+        use tests::functions::FunWithOverloads2 as Fun2;
+
+        assert!(Fun1::NAME == "funWithOverloads");
+        assert!(Fun2::NAME == "funWithOverloads");
     }
 }

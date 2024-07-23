@@ -32,8 +32,10 @@ struct Outputs {
 
 /// Structure used to generate contract's function interface.
 pub struct Function {
-    /// Function name.
+    /// Name of the function, de-duped and sanitized for Rust
     pub(crate) name: String,
+    /// Original name of the function as defined in the ABI
+    original_name: String,
 
     short_signature: [u8; 4],
     /// Function input params.
@@ -179,6 +181,7 @@ impl<'a> From<(&'a String, &'a ethabi::Function)> for Function {
         #[allow(deprecated)]
         Function {
             name: name.clone(),
+            original_name: f.name.clone(),
             short_signature: f.short_signature(),
             inputs: Inputs {
                 tokenize,
@@ -198,7 +201,7 @@ impl<'a> From<(&'a String, &'a ethabi::Function)> for Function {
 impl Function {
     /// Generates the interface for contract's function.
     pub fn generate(&self) -> TokenStream {
-        let name = &self.name;
+        let original_name = &self.original_name;
         let camel_name = syn::Ident::new(&self.name.to_upper_camel_case(), Span::call_site());
 
         let signature_hash_bytes: Vec<_> = self
@@ -303,7 +306,7 @@ impl Function {
             }
 
             impl substreams_ethereum::Function for #camel_name {
-                const NAME: &'static str = #name;
+                const NAME: &'static str = #original_name;
                 fn match_call(call: &substreams_ethereum::pb::eth::v2::Call) -> bool {
                     Self::match_call(call)
                 }

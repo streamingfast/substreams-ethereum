@@ -1,5 +1,5 @@
 [
-	{
+  {
     "anonymous": false,
     "inputs": [
       {
@@ -12,7 +12,7 @@
     "name": "EventInt256Idx",
     "type": "event"
   },
-	{
+  {
     "anonymous": false,
     "inputs": [
       {
@@ -33,16 +33,13 @@
         "internalType": "Tuple1",
         "name": "param0",
         "type": "tuple",
-        "components":
-          [
-            { "name":"field0", "type": "address"}
-          ]
+        "components": [{ "name": "field0", "type": "address" }]
       }
     ],
     "name": "EventUTupleAddress",
     "type": "event"
   },
-	{
+  {
     "anonymous": false,
     "inputs": [
       {
@@ -50,16 +47,13 @@
         "internalType": "TupleBool",
         "name": "param0",
         "type": "tuple",
-        "components":
-          [
-            { "name":"field0", "type": "bool"}
-          ]
+        "components": [{ "name": "field0", "type": "bool" }]
       }
     ],
     "name": "EventUTupleBool",
     "type": "event"
   },
-	{
+  {
     "anonymous": false,
     "inputs": [
       {
@@ -72,7 +66,7 @@
     "name": "EventUFixedArrayString",
     "type": "event"
   },
-	{
+  {
     "anonymous": false,
     "inputs": [
       {
@@ -85,7 +79,7 @@
     "name": "EventUArrayBool",
     "type": "event"
   },
-	{
+  {
     "anonymous": false,
     "inputs": [
       {
@@ -98,7 +92,7 @@
     "name": "EventInt256",
     "type": "event"
   },
-	{
+  {
     "anonymous": false,
     "inputs": [
       {
@@ -148,153 +142,153 @@
     "name": "EventBytes20UintAddressIdx",
     "type": "event"
   },
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": false,
-				"internalType": "bytes8",
-				"name": "param0",
-				"type": "bytes8"
-			},
-			{
-				"indexed": false,
-				"internalType": "bytes16",
-				"name": "param1",
-				"type": "bytes16"
-			},
-			{
-				"indexed": false,
-				"internalType": "bytes24",
-				"name": "param2",
-				"type": "bytes24"
-			},
-			{
-				"indexed": false,
-				"internalType": "bytes32",
-				"name": "param3",
-				"type": "bytes32"
-			}
-		],
-		"name": "EventUBytes8UBytes16UBytes24UBytes32",
-		"type": "event"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": false,
-				"internalType": "bytes[2]",
-				"name": "param0",
-				"type": "bytes[2]"
-			}
-		],
-		"name": "EventUFixedArraySubDynamic",
-		"type": "event"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": false,
-				"internalType": "address[2]",
-				"name": "param0",
-				"type": "address[2]"
-			}
-		],
-		"name": "EventUFixedArraySubFixed",
-		"type": "event"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": true,
-				"internalType": "address",
-				"name": "first",
-				"type": "address"
-			}
-		],
-		"name": "EventWithOverloads",
-		"type": "event"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": true,
-				"internalType": "string",
-				"name": "second",
-				"type": "string"
-			}
-		],
-		"name": "EventWithOverloads",
-		"type": "event"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": true,
-				"internalType": "uint256",
-				"name": "third",
-				"type": "uint256"
-			}
-		],
-		"name": "EventWithOverloads",
-		"type": "event"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": true,
-				"internalType": "address",
-				"name": "first",
-				"type": "address"
-			},
-			{
-				"indexed": false,
-				"internalType": "string",
-				"name": "second",
-				"type": "string"
-			}
-		],
-		"name": "EventAddressIdxString",
-		"type": "event"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": true,
-				"internalType": "address",
-				"name": "first",
-				"type": "address"
-			},
-			{
-				"indexed": false,
-				"internalType": "string",
-				"name": "second",
-				"type": "string"
-			},
-			{
-				"indexed": true,
-				"internalType": "uint256",
-				"name": "third",
-				"type": "uint256"
-			},
-			{
-				"indexed": false,
-				"internalType": "bytes",
-				"name": "fourth",
-				"type": "bytes"
-			}
-		],
-		"name": "EventAddressIdxStringUint256IdxBytes",
-		"type": "event"
-	},
-	{
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "bytes8",
+        "name": "param0",
+        "type": "bytes8"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes16",
+        "name": "param1",
+        "type": "bytes16"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes24",
+        "name": "param2",
+        "type": "bytes24"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "param3",
+        "type": "bytes32"
+      }
+    ],
+    "name": "EventUBytes8UBytes16UBytes24UBytes32",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "bytes[2]",
+        "name": "param0",
+        "type": "bytes[2]"
+      }
+    ],
+    "name": "EventUFixedArraySubDynamic",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address[2]",
+        "name": "param0",
+        "type": "address[2]"
+      }
+    ],
+    "name": "EventUFixedArraySubFixed",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "first",
+        "type": "address"
+      }
+    ],
+    "name": "EventWithOverloads",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "string",
+        "name": "second",
+        "type": "string"
+      }
+    ],
+    "name": "EventWithOverloads",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "third",
+        "type": "uint256"
+      }
+    ],
+    "name": "EventWithOverloads",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "first",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "second",
+        "type": "string"
+      }
+    ],
+    "name": "EventAddressIdxString",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "first",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "second",
+        "type": "string"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "third",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes",
+        "name": "fourth",
+        "type": "bytes"
+      }
+    ],
+    "name": "EventAddressIdxStringUint256IdxBytes",
+    "type": "event"
+  },
+  {
     "anonymous": false,
     "inputs": [
       {
@@ -325,307 +319,325 @@
     "name": "EventAddressIdxUint256Uint256AddressIdx",
     "type": "event"
   },
-	{
-		"name": "funReturnsString",
-		"inputs": [],
-		"outputs": [
-			{
-				"internalType": "string",
-				"name": "first",
-				"type": "string"
-			}
-		],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"name": "funReturnsString",
-		"inputs": [],
-		"outputs": [
-			{
-				"internalType": "string",
-				"name": "first",
-				"type": "string"
-			}
-		],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"name": "funReturnsStringString",
-		"inputs": [],
-		"outputs": [
-			{
-				"internalType": "string",
-				"name": "first",
-				"type": "string"
-			},
-			{
-				"internalType": "string",
-				"name": "second",
-				"type": "string"
-			}
-		],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "string",
-				"name": "first",
-				"type": "string"
-			}
-		],
-		"name": "funString",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "string",
-				"name": "first",
-				"type": "string"
-			},
-			{
-				"internalType": "string",
-				"name": "second",
-				"type": "string"
-			}
-		],
-		"name": "funStringString",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address[2]",
-				"name": "",
-				"type": "address[2]"
-			},
-			{
-				"internalType": "address[]",
-				"name": "",
-				"type": "address[]"
-			}
-		],
-		"name": "fixedArrayAddressArrayAddressReturnsUint256String",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			},
-			{
-				"internalType": "string",
-				"name": "",
-				"type": "string"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address[2]",
-				"name": "",
-				"type": "address[2]"
-			},
-			{
-				"internalType": "uint256[]",
-				"name": "",
-				"type": "uint256[]"
-			}
-		],
-		"name": "FixedArrayAddressArrayUint256ReturnsUint256String",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			},
-			{
-				"internalType": "string",
-				"name": "",
-				"type": "string"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			},
-			{
-				"internalType": "bytes",
-				"name": "",
-				"type": "bytes"
-			},
-			{
-				"internalType": "bytes8",
-				"name": "",
-				"type": "bytes8"
-			},
-			{
-				"internalType": "bytes32",
-				"name": "",
-				"type": "bytes32"
-			},
-			{
-				"internalType": "int256",
-				"name": "",
-				"type": "int256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			},
-			{
-				"internalType": "bool",
-				"name": "",
-				"type": "bool"
-			},
-			{
-				"internalType": "string",
-				"name": "",
-				"type": "string"
-			},
-			{
-				"internalType": "address[2]",
-				"name": "",
-				"type": "address[2]"
-			},
-			{
-				"internalType": "address[]",
-				"name": "",
-				"type": "address[]"
-			}
-		],
-		"name": "funAll",
-		"outputs": [],
-		"stateMutability": "pure",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "int256",
-				"name": "",
-				"type": "int256"
-			}
-		],
-		"name": "funInt256",
-		"outputs": [],
-		"stateMutability": "pure",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "int32",
-				"name": "",
-				"type": "int32"
-			}
-		],
-		"name": "funInt32",
-		"outputs": [],
-		"stateMutability": "pure",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "int8",
-				"name": "",
-				"type": "int8"
-			}
-		],
-		"name": "funInt8",
-		"outputs": [],
-		"stateMutability": "pure",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "int8",
-				"name": "",
-				"type": "int8"
-			},
-			{
-				"internalType": "int32",
-				"name": "",
-				"type": "int32"
-			},
-			{
-				"internalType": "int64",
-				"name": "",
-				"type": "int64"
-			},
-			{
-				"internalType": "int256",
-				"name": "",
-				"type": "int256"
-			}
-		],
-		"name": "funInt8Int32Int64Int256",
-		"outputs": [],
-		"stateMutability": "pure",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"name": "funUint256",
-		"outputs": [],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "bool[]",
-				"name": "",
-				"type": "bool[]"
-			}
-		],
-		"name": "funDynamicBoolArray",
-		"outputs": [],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [{
-			"components": [
-				{ "internalType": "address", "name": "sender", "type": "address" }
-			],
-			"name": "",
-			"type": "tuple"
-		}],
-		"name": "funTupleAddress",
-		"outputs": [],
-		"type": "function"
-	},
+  {
+    "name": "funReturnsString",
+    "inputs": [],
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "first",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "name": "funReturnsString",
+    "inputs": [],
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "first",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "name": "funReturnsStringString",
+    "inputs": [],
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "first",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "second",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "first",
+        "type": "string"
+      }
+    ],
+    "name": "funString",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "first",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "second",
+        "type": "string"
+      }
+    ],
+    "name": "funStringString",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address[2]",
+        "name": "",
+        "type": "address[2]"
+      },
+      {
+        "internalType": "address[]",
+        "name": "",
+        "type": "address[]"
+      }
+    ],
+    "name": "fixedArrayAddressArrayAddressReturnsUint256String",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address[2]",
+        "name": "",
+        "type": "address[2]"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "",
+        "type": "uint256[]"
+      }
+    ],
+    "name": "FixedArrayAddressArrayUint256ReturnsUint256String",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes",
+        "name": "",
+        "type": "bytes"
+      },
+      {
+        "internalType": "bytes8",
+        "name": "",
+        "type": "bytes8"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "int256",
+        "name": "",
+        "type": "int256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      },
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      },
+      {
+        "internalType": "address[2]",
+        "name": "",
+        "type": "address[2]"
+      },
+      {
+        "internalType": "address[]",
+        "name": "",
+        "type": "address[]"
+      }
+    ],
+    "name": "funAll",
+    "outputs": [],
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "int256",
+        "name": "",
+        "type": "int256"
+      }
+    ],
+    "name": "funInt256",
+    "outputs": [],
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "int32",
+        "name": "",
+        "type": "int32"
+      }
+    ],
+    "name": "funInt32",
+    "outputs": [],
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "int8",
+        "name": "",
+        "type": "int8"
+      }
+    ],
+    "name": "funInt8",
+    "outputs": [],
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "int8",
+        "name": "",
+        "type": "int8"
+      },
+      {
+        "internalType": "int32",
+        "name": "",
+        "type": "int32"
+      },
+      {
+        "internalType": "int64",
+        "name": "",
+        "type": "int64"
+      },
+      {
+        "internalType": "int256",
+        "name": "",
+        "type": "int256"
+      }
+    ],
+    "name": "funInt8Int32Int64Int256",
+    "outputs": [],
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "funUint256",
+    "outputs": [],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bool[]",
+        "name": "",
+        "type": "bool[]"
+      }
+    ],
+    "name": "funDynamicBoolArray",
+    "outputs": [],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          { "internalType": "address", "name": "sender", "type": "address" }
+        ],
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "name": "funTupleAddress",
+    "outputs": [],
+    "type": "function"
+  },
   {
     "stateMutability": "view",
     "type": "function",
     "name": "funInt128",
     "inputs": [{ "name": "arg0", "type": "int128" }],
+    "outputs": [],
+    "gas": 2310
+  },
+  {
+    "stateMutability": "view",
+    "type": "function",
+    "name": "funWithOverloads",
+    "inputs": [{ "name": "arg0", "type": "int128" }],
+    "outputs": [],
+    "gas": 2310
+  },
+  {
+    "stateMutability": "view",
+    "type": "function",
+    "name": "funWithOverloads",
+    "inputs": [{ "name": "arg0", "type": "uint256" }],
     "outputs": [],
     "gas": 2310
   }

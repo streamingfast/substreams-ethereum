@@ -1,11 +1,6 @@
 [workspace]
-members = [
-    "abigen",
-    "abigen-tests",
-    "core",
-    "derive",
-    "substreams-ethereum",
-]
+members = ["abigen", "abigen-tests", "core", "derive", "substreams-ethereum"]
+resolver = "2"
 
 [workspace.package]
 version = "0.9.12"
@@ -15,7 +10,7 @@ homepage = "https://substreams.streamingfast.io/"
 repository = "https://github.com/streamingfast/substreams-ethereum/tree/develop/substreams-ethereum"
 license = "Apache-2.0"
 readme = "README.md"
-keywords = [ "substreams", "ethereum", "streamingfast", "firehose", "thegraph"]
+keywords = ["substreams", "ethereum", "streamingfast", "firehose", "thegraph"]
 categories = ["api-bindings", "external-ffi-bindings", "wasm"]
 rust-version = "1.60"
 

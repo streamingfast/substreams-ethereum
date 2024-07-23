@@ -8,7 +8,10 @@ use super::{from_token, rust_type, to_syntax_string};
 
 /// Structure used to generate contract's event interface.
 pub struct Event {
+    /// Name of the event, de-duped and sanitized for Rust
     pub(crate) name: String,
+    /// Original name of the event as defined in the ABI
+    original_name: String,
     topic_hash: [u8; 32],
     topic_count: usize,
     min_data_size: usize,
@@ -126,6 +129,7 @@ impl<'a> From<(&'a String, &'a ethabi::Event)> for Event {
 
         Event {
             name: name.clone(),
+            original_name: e.name.clone(),
             topic_hash: e.signature().to_fixed_bytes(),
             topic_count,
             fixed_data_size,
@@ -141,7 +145,7 @@ impl<'a> From<(&'a String, &'a ethabi::Event)> for Event {
 impl Event {
     /// Generates rust interface for contract's event.
     pub fn generate_event(&self) -> TokenStream {
-        let name = &self.name;
+        let original_name = &self.original_name;
         let topic_count = &self.topic_count;
         let topic_hash_bytes: Vec<_> = self
             .topic_hash
@@ -206,7 +210,7 @@ impl Event {
             }
 
             impl substreams_ethereum::Event for #camel_name {
-                const NAME: &'static str = #name;
+                const NAME: &'static str = #original_name;
                 fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
                     Self::match_log(log)
                 }
