@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+- Fixed AbiGen when in presence of functions that was has leading underscores or casing differences.
+
+  This was generating multiple Rust struct with the same name leading to compilation errors. Now, those cases will be de-duped and you will end up with N Rust struct all suffixed from 1 to N, like `TotalSupply1` and `TotalSupply2`.
+
 - Fixed AbiGen generated `Event#NAME` and `Function#Name` static const in presence of multiple overloads.
 
   This was previously using the de-duped name but this was wrong as the intention was always to be the ABI's defined named.

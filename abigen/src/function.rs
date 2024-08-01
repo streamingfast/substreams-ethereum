@@ -44,8 +44,8 @@ pub struct Function {
     outputs: Outputs,
 }
 
-impl<'a> From<(&'a String, &'a ethabi::Function)> for Function {
-    fn from((name, f): (&'a String, &'a ethabi::Function)) -> Self {
+impl<'a> From<(String, &'a ethabi::Function)> for Function {
+    fn from((name, f): (String, &'a ethabi::Function)) -> Self {
         // [param0, hello_world, param2]
         let input_names = param_names(&f.inputs);
 
@@ -180,7 +180,7 @@ impl<'a> From<(&'a String, &'a ethabi::Function)> for Function {
         // it must go on the entire struct
         #[allow(deprecated)]
         Function {
-            name: name.clone(),
+            name,
             original_name: f.name.clone(),
             short_signature: f.short_signature(),
             inputs: Inputs {

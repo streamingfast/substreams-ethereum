@@ -6,6 +6,9 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
+use std::collections::BTreeMap;
+
+use heck::ToUpperCamelCase;
 use proc_macro2::TokenStream;
 use quote::quote;
 
@@ -40,17 +43,29 @@ impl<'a> From<&'a ethabi::Contract> for Contract {
         // Since some people will actually commit this code, we use a "stable" generation order
         events.sort_by(|left: &Event, right: &Event| left.name.cmp(&right.name));
 
-        let mut functions: Vec<_> = c
-            .functions
-            .values()
-            .flat_map(|functions| {
+        let mut function_by_rust_struct_name = BTreeMap::<String, Vec<&ethabi::Function>>::new();
+        for (_, functions) in c.functions.iter() {
+            for function in functions {
+                let sanitized_name = function.name.to_upper_camel_case();
+
+                if let Some(existing) = function_by_rust_struct_name.get_mut(&sanitized_name) {
+                    existing.push(function);
+                } else {
+                    function_by_rust_struct_name.insert(sanitized_name, vec![function]);
+                }
+            }
+        }
+
+        let mut functions: Vec<_> = function_by_rust_struct_name
+            .iter()
+            .flat_map(|(sanitized_name, functions)| {
                 let count = functions.len();
 
                 functions.iter().enumerate().map(move |(index, function)| {
                     if count <= 1 {
-                        (&function.name, function).into()
+                        (sanitized_name.clone(), *function).into()
                     } else {
-                        (&format!("{}{}", function.name, index + 1), function).into()
+                        (format!("{}{}", sanitized_name, index + 1), *function).into()
                     }
                 })
             })

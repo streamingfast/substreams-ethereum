@@ -898,4 +898,22 @@ mod tests {
         assert!(Fun1::NAME == "funWithOverloads");
         assert!(Fun2::NAME == "funWithOverloads");
     }
+
+    #[test]
+    fn it_dedup_function_with_leading_underscore_difference() {
+        use tests::functions::FunWithOverloadsLeadingUnderscore1 as Fun1;
+        use tests::functions::FunWithOverloadsLeadingUnderscore2 as Fun2;
+
+        assert!(Fun1::NAME == "_funWithOverloadsLeadingUnderscore");
+        assert!(Fun2::NAME == "funWithOverloadsLeadingUnderscore");
+    }
+
+    #[test]
+    fn it_dedup_function_with_casing_difference() {
+        use tests::functions::FunWithOverloadsCasing1 as Fun1;
+        use tests::functions::FunWithOverloadsCasing2 as Fun2;
+
+        assert!(Fun1::NAME == "FunWithOverloadsCasing");
+        assert!(Fun2::NAME == "funWithOverloadsCasing");
+    }
 }

@@ -640,5 +640,33 @@
     "inputs": [{ "name": "arg0", "type": "uint256" }],
     "outputs": [],
     "gas": 2310
+  },
+	{
+    "stateMutability": "view",
+    "type": "function",
+    "name": "funWithOverloadsLeadingUnderscore",
+    "inputs": [{ "name": "arg0", "type": "int128" }],
+    "outputs": []
+  },
+  {
+    "stateMutability": "view",
+    "type": "function",
+    "name": "_funWithOverloadsLeadingUnderscore",
+    "inputs": [{ "name": "arg0", "type": "uint256" }],
+    "outputs": []
+  },
+	{
+    "stateMutability": "view",
+    "type": "function",
+    "name": "funWithOverloadsCasing",
+    "inputs": [{ "name": "arg0", "type": "int128" }],
+    "outputs": []
+  },
+  {
+    "stateMutability": "view",
+    "type": "function",
+    "name": "FunWithOverloadsCasing",
+    "inputs": [{ "name": "arg0", "type": "uint256" }],
+    "outputs": []
   }
 ]
