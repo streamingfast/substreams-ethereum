@@ -757,8 +757,9 @@ pub struct BalanceChange {
     ///
     /// If you consume this from a Substreams, you can safely use:
     ///
+    /// ```ignore
     ///      let old_value = old_value.unwrap_or_default();
-    ///
+    /// ```
     #[prost(message, optional, tag="2")]
     pub old_value: ::core::option::Option<BigInt>,
     /// NewValue is the balance of the address after the change. This value
@@ -768,8 +769,9 @@ pub struct BalanceChange {
     ///
     /// If you consume this from a Substreams, you can safely use:
     ///
+    /// ```ignore
     ///      let new_value = new_value.unwrap_or_default();
-    ///
+    /// ```
     #[prost(message, optional, tag="3")]
     pub new_value: ::core::option::Option<BigInt>,
     /// Reason is the reason why the balance has changed. This is useful to determine
