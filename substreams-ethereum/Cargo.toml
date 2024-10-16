@@ -13,7 +13,7 @@ rust-version.workspace = true
 
 [dependencies]
 num-bigint = "0.4.3"
-substreams = "^0.5.0"
+substreams = "0.6"
 substreams-ethereum-abigen = { workspace = true }
 substreams-ethereum-derive = { workspace = true }
 substreams-ethereum-core = { workspace = true }
