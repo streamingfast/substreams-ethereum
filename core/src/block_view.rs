@@ -44,7 +44,7 @@ impl pb::Block {
     pub fn events<'a, E: Event>(
         &'a self,
         addresses: &'a [&[u8]],
-    ) -> impl Iterator<Item = (E, LogView)> {
+    ) -> impl Iterator<Item = (E, LogView<'a>)> {
         self.logs().filter_map(|log| {
             if !addresses.contains(&log.address()) {
                 return None;
