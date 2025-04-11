@@ -2,7 +2,7 @@ name: Continuous Integration
 
 on:
   push:
-    branches: [master, develop, feature/test-new-gh-actions]
+    branches: [master, develop]
   pull_request:
     types: [opened, synchronize, reopened]
 
@@ -12,7 +12,7 @@ env:
 
 jobs:
   rustfmt:
-    name: Check rustfmt style
+    name: Build, check & tests
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -41,13 +41,19 @@ jobs:
         env:
           RUSTFLAGS: "-D warnings"
 
+      - name: Check code
+        run: |
+          cargo fmt --all -- --check
+        env:
+          RUSTFLAGS: "-D warnings"
+
       - name: Run tests
         run: |
           cargo test --release --target x86_64-unknown-linux-gnu --lib --bins --tests
         env:
           RUSTFLAGS: "-D warnings"
 
-      - name: Build
+      - name: Build (wasm32-unknown-unknown)
         run: |
           cargo build --release --target wasm32-unknown-unknown
         env:
