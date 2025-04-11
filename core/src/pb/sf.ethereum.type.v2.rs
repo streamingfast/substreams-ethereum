@@ -58,7 +58,7 @@ pub struct Block {
     /// and all other information the form a block.
     #[prost(message, optional, tag="5")]
     pub header: ::core::option::Option<BlockHeader>,
-    /// Uncles represents block produced with a valid solution but were not actually choosen
+    /// Uncles represents block produced with a valid solution but were not actually chosen
     /// as the canonical block for the given height so they are mostly "forked" blocks.
     ///
     /// If the Block has been produced using the Proof of Stake consensus algorithm, this
@@ -178,12 +178,10 @@ pub struct BlockHeader {
     /// consensus algorithm, this field will actually be constant and set to `0x00`.
     #[prost(message, optional, tag="8")]
     pub difficulty: ::core::option::Option<BigInt>,
-    /// TotalDifficulty is the sum of all previous blocks difficulty including this block difficulty.
+    /// TotalDifficulty used to be the sum of all previous blocks difficulty including this block difficulty.
     ///
-    /// If the Block containing this `BlockHeader` has been produced using the Proof of Stake
-    /// consensus algorithm, this field will actually be constant and set to the terminal total difficulty
-    /// that was required to transition to Proof of Stake algorithm, which varies per network. It is set to
-    /// 58 750 000 000 000 000 000 000 on Ethereum Mainnet and to 10 790 000 on Ethereum Testnet Goerli.
+    /// It has been deprecated in geth v1.15.0 but was already removed from the JSON-RPC interface for a while
+    #[deprecated]
     #[prost(message, optional, tag="17")]
     pub total_difficulty: ::core::option::Option<BigInt>,
     #[prost(uint64, tag="9")]
@@ -236,6 +234,7 @@ pub struct BlockHeader {
     ///     blob_gas_used (to be included only if Cancun fork is active)
     ///     excess_blob_gas (to be included only if Cancun fork is active)
     ///     parent_beacon_root (to be included only if Cancun fork is active)
+    ///     requests_hash (to be included only if Prague fork is active)
     ///   ]))
     ///
     #[prost(bytes="vec", tag="16")]
@@ -252,7 +251,7 @@ pub struct BlockHeader {
     /// header. This is metadata only that was used by the internal Polygon parallel execution engine.
     ///
     /// This field was available in a few versions on Polygon Mainnet and Polygon Mumbai chains. It was actually
-    /// removed and is not populated anymore. It's now embeded in the `extraData` field, refer to Polygon source
+    /// removed and is not populated anymore. It's now embedded in the `extraData` field, refer to Polygon source
     /// code to determine how to extract it if you need it.
     ///
     /// Only available in DetailLevel: EXTENDED
@@ -267,6 +266,9 @@ pub struct BlockHeader {
     /// ParentBeaconRoot was added by EIP-4788 and is ignored in legacy headers.
     #[prost(bytes="vec", tag="24")]
     pub parent_beacon_root: ::prost::alloc::vec::Vec<u8>,
+    /// RequestsHash was added by EIP-7685 and is ignored in legacy headers.
+    #[prost(bytes="vec", tag="25")]
+    pub requests_hash: ::prost::alloc::vec::Vec<u8>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -356,7 +358,7 @@ pub struct TransactionTrace {
     /// The value is always set even for transaction before Berlin fork because those before the fork are still legacy transactions.
     #[prost(enumeration="transaction_trace::Type", tag="12")]
     pub r#type: i32,
-    /// AcccessList represents the storage access this transaction has agreed to do in which case those storage
+    /// AccessList represents the storage access this transaction has agreed to do in which case those storage
     /// access cost less gas unit per access.
     ///
     /// This will is populated only if `TransactionTrace.Type == TRX_TYPE_ACCESS_LIST || TRX_TYPE_DYNAMIC_FEE` which
@@ -366,7 +368,7 @@ pub struct TransactionTrace {
     /// MaxFeePerGas is the maximum fee per gas the user is willing to pay for the transaction gas used.
     ///
     /// This will is populated only if `TransactionTrace.Type == TRX_TYPE_DYNAMIC_FEE` which is possible only
-    /// if Londong fork is active on the chain.
+    /// if London fork is active on the chain.
     ///
     /// Only available in DetailLevel: EXTENDED
     #[prost(message, optional, tag="11")]
@@ -388,6 +390,11 @@ pub struct TransactionTrace {
     #[prost(bytes="vec", tag="22")]
     pub from: ::prost::alloc::vec::Vec<u8>,
     /// Only available in DetailLevel: EXTENDED
+    /// Known Issues
+    /// - Version 3: 
+    ///     Field not populated. It will be empty. 
+    ///
+    ///     Fixed in `Version 4`, see <https://docs.substreams.dev/reference-material/chains-and-endpoints/ethereum-data-model> for information about block versions.
     #[prost(bytes="vec", tag="23")]
     pub return_data: ::prost::alloc::vec::Vec<u8>,
     /// Only available in DetailLevel: EXTENDED
@@ -461,6 +468,18 @@ pub struct TransactionTrace {
     /// if Cancun fork is active on the chain.
     #[prost(bytes="vec", repeated, tag="35")]
     pub blob_hashes: ::prost::alloc::vec::Vec<::prost::alloc::vec::Vec<u8>>,
+    /// SetCodeAuthorizations represents the authorizations of a transaction to set code to an EOA (Externally Owned Accounts)
+    /// as defined in EIP-7702. The list will contain all the authorizations as they were specified in the
+    /// transaction itself regardless of their validity. If you need to determined if a given authorization was
+    /// correctly applied on chain's state, refer to \[SetCodeAuthorization.discarded\] field that records
+    /// if the authorization was discarded or not by the chain due to invalidity.
+    ///
+    /// This is specified by <https://eips.ethereum.org/EIPS/eip-7702>
+    ///
+    /// This will is populated only if `TransactionTrace.Type == TRX_TYPE_SET_CODE` which is possible only
+    /// if Prague fork is active on the chain.
+    #[prost(message, repeated, tag="36")]
+    pub set_code_authorizations: ::prost::alloc::vec::Vec<SetCodeAuthorization>,
 }
 /// Nested message and enum types in `TransactionTrace`.
 pub mod transaction_trace {
@@ -481,12 +500,16 @@ pub mod transaction_trace {
         /// Transaction which contain a large amount of data that cannot be accessed by EVM execution, but whose commitment
         /// can be accessed. The format is intended to be fully compatible with the format that will be used in full sharding.
         ///
-        /// Transaction that defines specifis an access list just like TRX_TYPE_ACCESS_LIST and enables dynamic fee just like
+        /// Transaction that defines an access list just like TRX_TYPE_ACCESS_LIST and enables dynamic fee just like
         /// TRX_TYPE_DYNAMIC_FEE but in addition defines the fields 'max_fee_per_data_gas' of type 'uint256' and the fields
-        /// 'blob_versioned_hashes' field represents a list of hash outputs from 'kzg_to_versioned_hash'.
+        /// 'blob_versioned_hashes' which represents a list of hash outputs from 'kzg_to_versioned_hash'.
         ///
-        /// Activated in Dencun
+        /// Activated in Cancun fork (EIP-4844)
         TrxTypeBlob = 3,
+        /// Transaction that sets code to an EOA (Externally Owned Accounts)
+        ///
+        /// Activated in Prague (EIP-7702)
+        TrxTypeSetCode = 4,
         /// Arbitrum-specific transactions
         TrxTypeArbitrumDeposit = 100,
         TrxTypeArbitrumUnsigned = 101,
@@ -509,6 +532,7 @@ pub mod transaction_trace {
                 Type::TrxTypeAccessList => "TRX_TYPE_ACCESS_LIST",
                 Type::TrxTypeDynamicFee => "TRX_TYPE_DYNAMIC_FEE",
                 Type::TrxTypeBlob => "TRX_TYPE_BLOB",
+                Type::TrxTypeSetCode => "TRX_TYPE_SET_CODE",
                 Type::TrxTypeArbitrumDeposit => "TRX_TYPE_ARBITRUM_DEPOSIT",
                 Type::TrxTypeArbitrumUnsigned => "TRX_TYPE_ARBITRUM_UNSIGNED",
                 Type::TrxTypeArbitrumContract => "TRX_TYPE_ARBITRUM_CONTRACT",
@@ -526,6 +550,7 @@ pub mod transaction_trace {
                 "TRX_TYPE_ACCESS_LIST" => Some(Self::TrxTypeAccessList),
                 "TRX_TYPE_DYNAMIC_FEE" => Some(Self::TrxTypeDynamicFee),
                 "TRX_TYPE_BLOB" => Some(Self::TrxTypeBlob),
+                "TRX_TYPE_SET_CODE" => Some(Self::TrxTypeSetCode),
                 "TRX_TYPE_ARBITRUM_DEPOSIT" => Some(Self::TrxTypeArbitrumDeposit),
                 "TRX_TYPE_ARBITRUM_UNSIGNED" => Some(Self::TrxTypeArbitrumUnsigned),
                 "TRX_TYPE_ARBITRUM_CONTRACT" => Some(Self::TrxTypeArbitrumContract),
@@ -549,13 +574,67 @@ pub struct AccessTuple {
     #[prost(bytes="vec", repeated, tag="2")]
     pub storage_keys: ::prost::alloc::vec::Vec<::prost::alloc::vec::Vec<u8>>,
 }
+/// SetCodeAuthorization represents the authorization of a transaction to set code of an EOA (Externally Owned Account)
+/// as defined in EIP-7702.
+///
+/// The 'authority' field is the address that is authorizing the delegation mechanism. The 'authority' value is computed
+/// from the signature contained in the message using the computation
+/// `authority = ecrecover(keccak(MAGIC || rlp([chain_id, address, nonce])), y_parity, r, s)`
+/// where `MAGIC` is `0x5`, `||` is the bytes concatenation operator, `ecrecover` is the Ethereum signature recovery
+/// and `y_parity` is the recovery ID value denoted `v` in the message below. Checking the go-ethereum implementation
+/// at <https://github.com/ethereum/go-ethereum/blob/v1.15.0/core/types/tx_setcode.go#L117> might prove easier to "read".
+///
+/// We do extract the 'authority' value from the signature in the message and store it in the 'authority' field for
+/// convenience so you don't need to perform the computation yourself.
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct SetCodeAuthorization {
+    /// Discarded determines if this authorization was skipped due to being invalid. As EIP-7702 states,
+    /// if the authorization is invalid (invalid signature, nonce mismatch, etc.) it must be simply
+    /// discarded and the transaction is processed as if the authorization was not present in the
+    /// authorization list.
+    ///
+    /// This boolean records if the authorization was discarded or not by the chain due to invalidity.
+    #[prost(bool, tag="1")]
+    pub discarded: bool,
+    /// ChainID is the chain ID of the chain where the transaction was executed, used
+    /// to recover the authority from the signature.
+    #[prost(bytes="vec", tag="2")]
+    pub chain_id: ::prost::alloc::vec::Vec<u8>,
+    /// Nonce is the nonce of the account that is authorizing delegation mechanism, EIP-7702 rules
+    /// states that nonce should be verified using this rule:
+    ///
+    /// - Verify the nonce of authority is equal to nonce. In case authority does not exist in the trie,
+    /// verify that nonce is equal to 0.
+    ///
+    /// Read SetCodeAuthorization to know how to recover the `authority` value.
+    #[prost(uint64, tag="3")]
+    pub nonce: u64,
+    /// V is the recovery ID value for the signature Y point. While it's defined as a
+    /// `uint32`, it's actually bounded by a `uint8` data type withing the Ethereum protocol.
+    #[prost(uint32, tag="4")]
+    pub v: u32,
+    /// R is the signature's X point on the elliptic curve (32 bytes).
+    #[prost(bytes="vec", tag="5")]
+    pub r: ::prost::alloc::vec::Vec<u8>,
+    /// S is the signature's Y point on the elliptic curve (32 bytes).
+    #[prost(bytes="vec", tag="6")]
+    pub s: ::prost::alloc::vec::Vec<u8>,
+    /// Authority is the address of the account that is authorizing delegation mechanism, it
+    /// is computed from the signature contained in the message and stored for convenience.
+    ///
+    /// If the authority cannot be recovered from the signature, this field will be empty and
+    /// the `discarded` field will be set to `true`.
+    #[prost(bytes="vec", optional, tag="7")]
+    pub authority: ::core::option::Option<::prost::alloc::vec::Vec<u8>>,
+}
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct TransactionReceipt {
     /// State root is an intermediate state_root hash, computed in-between transactions to make
     /// **sure** you could build a proof and point to state in the middle of a block. Geth client
     /// uses `PostState + root + PostStateOrStatus`` while Parity used `status_code, root...`` this piles
-    /// hardforks, see (read the EIPs first):
+    /// hard forks, see (read the EIPs first):
     /// - <https://github.com/ethereum/EIPs/blob/master/EIPS/eip-658.md>
     ///
     /// Moreover, the notion of `Outcome`` in parity, which segregates the two concepts, which are
@@ -599,7 +678,7 @@ pub struct Log {
     #[prost(bytes="vec", tag="3")]
     pub data: ::prost::alloc::vec::Vec<u8>,
     /// Index is the index of the log relative to the transaction. This index
-    /// is always populated regardless of the state revertion of the the call
+    /// is always populated regardless of the state reversion of the the call
     /// that emitted this log.
     ///
     /// Only available in DetailLevel: EXTENDED
@@ -642,6 +721,25 @@ pub struct Call {
     pub caller: ::prost::alloc::vec::Vec<u8>,
     #[prost(bytes="vec", tag="6")]
     pub address: ::prost::alloc::vec::Vec<u8>,
+    /// AddressDelegatesTo contains the address from which the actual code to execute will be loaded
+    /// as defined per EIP-7702 rules. If the Call's address value resolves to a code
+    /// that delegates to another address, this field will be populated with the address
+    /// that the call is delegated to. It will be empty in all other situations.
+    ///
+    /// Assumes that a 'SetCode' transaction set address `0xA` to delegates to address `0xB`,
+    /// then when a call is made to `0xA`, the Call object would have:
+    ///
+    /// - caller = <from>
+    /// - address = 0xA
+    /// - address_delegates_to = 0xB
+    ///
+    /// Again, it's important to emphasize that this field relates to EIP-7702, if the call is
+    /// a DELEGATE or CALLCODE type, this field will not be populated and will remain empty.
+    ///
+    /// It will be populated only if EIP-7702 is active on the chain (Prague fork) and if the
+    /// 'address' of the call was pointing to another address at time of execution.
+    #[prost(bytes="vec", optional, tag="34")]
+    pub address_delegates_to: ::core::option::Option<::prost::alloc::vec::Vec<u8>>,
     #[prost(message, optional, tag="7")]
     pub value: ::core::option::Option<BigInt>,
     #[prost(uint64, tag="8")]
@@ -650,8 +748,25 @@ pub struct Call {
     pub gas_consumed: u64,
     #[prost(bytes="vec", tag="13")]
     pub return_data: ::prost::alloc::vec::Vec<u8>,
+    /// Known Issues
+    /// - Version 3:
+    ///     When call is `CREATE` or `CREATE2`, this field is not populated. A couple of suggestions:
+    ///       1. You can get the contract's code in the `code_changes` field.
+    ///       2. In the root `CREATE` call, you can directly use the `TransactionTrace`'s input field.
+    ///
+    ///     Fixed in `Version 4`, see <https://docs.substreams.dev/reference-material/chains-and-endpoints/ethereum-data-model> for information about block versions.
     #[prost(bytes="vec", tag="14")]
     pub input: ::prost::alloc::vec::Vec<u8>,
+    /// Indicates whether the call executed code.  
+    ///
+    /// Known Issues
+    /// - Version 3: 
+    ///     This may be incorrectly set to `false` for accounts with code handling native value transfers,  
+    ///     as well as for certain precompiles with no input.  
+    ///     The value is initially set based on `call.type != CREATE && len(call.input) > 0`  
+    ///     and later adjusted if the tracer detects an account without code.
+    ///
+    ///     Fixed in `Version 4`, see <https://docs.substreams.dev/reference-material/chains-and-endpoints/ethereum-data-model> for information about block versions.
     #[prost(bool, tag="15")]
     pub executed_code: bool,
     #[prost(bool, tag="16")]
@@ -659,6 +774,11 @@ pub struct Call {
     /// hex representation of the hash -> preimage 
     #[prost(map="string, string", tag="20")]
     pub keccak_preimages: ::std::collections::HashMap<::prost::alloc::string::String, ::prost::alloc::string::String>,
+    /// Known Issues
+    /// - Version 3: 
+    ///     The data might be not be in order.
+    ///
+    ///     Fixed in `Version 4`, see <https://docs.substreams.dev/reference-material/chains-and-endpoints/ethereum-data-model> for information about block versions.
     #[prost(message, repeated, tag="21")]
     pub storage_changes: ::prost::alloc::vec::Vec<StorageChange>,
     #[prost(message, repeated, tag="22")]
@@ -669,10 +789,17 @@ pub struct Call {
     pub logs: ::prost::alloc::vec::Vec<Log>,
     #[prost(message, repeated, tag="26")]
     pub code_changes: ::prost::alloc::vec::Vec<CodeChange>,
+    /// Known Issues
+    /// - Version 3:
+    ///     Some gas changes are not correctly tracked:
+    ///       1. Gas refunded due to data returned to the chain (occurs at the end of a transaction, before buyback).
+    ///       2. Initial gas allocation (0 -> GasLimit) at the start of a call.
+    ///       3. Final gas deduction (LeftOver -> 0) at the end of a call (if applicable). 
+    ///     Fixed in `Version 4`, see <https://docs.substreams.dev/reference-material/chains-and-endpoints/ethereum-data-model> for information about block versions.
     #[prost(message, repeated, tag="28")]
     pub gas_changes: ::prost::alloc::vec::Vec<GasChange>,
     /// In Ethereum, a call can be either:
-    /// - Successfull, execution passes without any problem encountered
+    /// - Successful, execution passes without any problem encountered
     /// - Failed, execution failed, and remaining gas should be consumed
     /// - Reverted, execution failed, but only gas consumed so far is billed, remaining gas is refunded
     ///
@@ -687,7 +814,7 @@ pub struct Call {
     /// see above for details about those flags.
     #[prost(string, tag="11")]
     pub failure_reason: ::prost::alloc::string::String,
-    /// This field represents wheter or not the state changes performed
+    /// This field represents whether or not the state changes performed
     /// by this call were correctly recorded by the blockchain.
     ///
     /// On Ethereum, a transaction can record state changes even if some
@@ -718,14 +845,31 @@ pub struct Call {
     /// perform.
     #[prost(bool, tag="30")]
     pub state_reverted: bool,
-    /// The block's global ordinal when the call started executing, refer to
-    /// \[Block\] documentation for further information about ordinals and total ordering.
+    /// Known Issues
+    /// - Version 3:
+    ///     1. The block's global ordinal when the call started executing, refer to
+    ///       \[Block\] documentation for further information about ordinals and total ordering.
+    ///     2. The transaction root call `begin_ordial` is always `0` (also in the GENESIS block), which can cause issues 
+    ///       when sorting by this field. To ensure proper execution order, set it as follows:
+    ///       `trx.Calls\[0\].BeginOrdinal = trx.BeginOrdinal`.
+    ///
+    ///     Fixed in `Version 4`, see <https://docs.substreams.dev/reference-material/chains-and-endpoints/ethereum-data-model> for information about block versions.
     #[prost(uint64, tag="31")]
     pub begin_ordinal: u64,
-    /// The block's global ordinal when the call finished executing, refer to
-    /// \[Block\] documentation for further information about ordinals and total ordering.
+    /// Known Issues
+    /// - Version 3:
+    ///     1. The block's global ordinal when the call finished executing, refer to
+    ///      \[Block\] documentation for further information about ordinals and total ordering.
+    ///     2. The root call of the GENESIS block is always `0`. To fix it, you can set it as follows:
+    ///      `rx.Calls\[0\].EndOrdinal = max.Uint64`.
+    ///
+    ///     Fixed in `Version 4`, see <https://docs.substreams.dev/reference-material/chains-and-endpoints/ethereum-data-model> for information about block versions.
     #[prost(uint64, tag="32")]
     pub end_ordinal: u64,
+    /// Known Issues
+    /// - Version 4:
+    ///     AccountCreations are NOT SUPPORTED anymore. DO NOT rely on them.
+    #[deprecated]
     #[prost(message, repeated, tag="33")]
     pub account_creations: ::prost::alloc::vec::Vec<AccountCreation>,
 }
@@ -785,11 +929,6 @@ pub struct BalanceChange {
 }
 /// Nested message and enum types in `BalanceChange`.
 pub mod balance_change {
-    /// Obtain all balanche change reasons under deep mind repository:
-    ///
-    /// ```shell
-    /// ack -ho 'BalanceChangeReason\(".*"\)' | grep -Eo '".*"' | sort | uniq
-    /// ```
     #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
     #[repr(i32)]
     pub enum Reason {
@@ -814,8 +953,10 @@ pub mod balance_change {
         /// Rewards for Blob processing on BNB chain added in Tycho hard-fork, refers
         /// to BNB documentation to check the timestamp at which it was activated.
         RewardBlobFee = 17,
-        /// USE on optimism chan
+        /// This reason is used only on Optimism chain.
         IncreaseMint = 18,
+        /// This reason is used only on Optimism chain.
+        Revert = 19,
     }
     impl Reason {
         /// String value of the enum field names used in the ProtoBuf definition.
@@ -843,6 +984,7 @@ pub mod balance_change {
                 Reason::Withdrawal => "REASON_WITHDRAWAL",
                 Reason::RewardBlobFee => "REASON_REWARD_BLOB_FEE",
                 Reason::IncreaseMint => "REASON_INCREASE_MINT",
+                Reason::Revert => "REASON_REVERT",
             }
         }
         /// Creates an enum from field names used in the ProtoBuf definition.
@@ -867,6 +1009,7 @@ pub mod balance_change {
                 "REASON_WITHDRAWAL" => Some(Self::Withdrawal),
                 "REASON_REWARD_BLOB_FEE" => Some(Self::RewardBlobFee),
                 "REASON_INCREASE_MINT" => Some(Self::IncreaseMint),
+                "REASON_REVERT" => Some(Self::Revert),
                 _ => None,
             }
         }
@@ -936,11 +1079,6 @@ pub struct GasChange {
 }
 /// Nested message and enum types in `GasChange`.
 pub mod gas_change {
-    /// Obtain all gas change reasons under deep mind repository:
-    ///
-    /// ```shell
-    /// ack -ho 'GasChangeReason\(".*"\)' | grep -Eo '".*"' | sort | uniq
-    /// ```
     #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
     #[repr(i32)]
     pub enum Reason {
@@ -1016,6 +1154,17 @@ pub mod gas_change {
         /// be a negative change as we "drain" left over gas towards 0. If there was no gas left at the end of execution, no such even
         /// will be emitted.
         CallLeftOverReturned = 25,
+        /// REASON_WITNESS_CONTRACT_INIT flags the event of adding to the witness during the contract creation initialization step.
+        WitnessContractInit = 26,
+        /// REASON_WITNESS_CONTRACT_CREATION flags the event of adding to the witness during the contract creation finalization step.
+        WitnessContractCreation = 27,
+        /// REASON_WITNESS_CODE_CHUNK flags the event of adding one or more contract code chunks to the witness.
+        WitnessCodeChunk = 28,
+        /// REASON_WITNESS_CONTRACT_COLLISION_CHECK flags the event of adding to the witness when checking for contract address collision.
+        WitnessContractCollisionCheck = 29,
+        /// REASON_TX_DATA_FLOOR is the amount of extra gas the transaction has to pay to reach the minimum gas requirement for the
+        /// transaction data. This change will always be a negative change.
+        TxDataFloor = 30,
     }
     impl Reason {
         /// String value of the enum field names used in the ProtoBuf definition.
@@ -1050,6 +1199,11 @@ pub mod gas_change {
                 Reason::TxLeftOverReturned => "REASON_TX_LEFT_OVER_RETURNED",
                 Reason::CallInitialBalance => "REASON_CALL_INITIAL_BALANCE",
                 Reason::CallLeftOverReturned => "REASON_CALL_LEFT_OVER_RETURNED",
+                Reason::WitnessContractInit => "REASON_WITNESS_CONTRACT_INIT",
+                Reason::WitnessContractCreation => "REASON_WITNESS_CONTRACT_CREATION",
+                Reason::WitnessCodeChunk => "REASON_WITNESS_CODE_CHUNK",
+                Reason::WitnessContractCollisionCheck => "REASON_WITNESS_CONTRACT_COLLISION_CHECK",
+                Reason::TxDataFloor => "REASON_TX_DATA_FLOOR",
             }
         }
         /// Creates an enum from field names used in the ProtoBuf definition.
@@ -1081,6 +1235,11 @@ pub mod gas_change {
                 "REASON_TX_LEFT_OVER_RETURNED" => Some(Self::TxLeftOverReturned),
                 "REASON_CALL_INITIAL_BALANCE" => Some(Self::CallInitialBalance),
                 "REASON_CALL_LEFT_OVER_RETURNED" => Some(Self::CallLeftOverReturned),
+                "REASON_WITNESS_CONTRACT_INIT" => Some(Self::WitnessContractInit),
+                "REASON_WITNESS_CONTRACT_CREATION" => Some(Self::WitnessContractCreation),
+                "REASON_WITNESS_CODE_CHUNK" => Some(Self::WitnessCodeChunk),
+                "REASON_WITNESS_CONTRACT_COLLISION_CHECK" => Some(Self::WitnessContractCollisionCheck),
+                "REASON_TX_DATA_FLOOR" => Some(Self::TxDataFloor),
                 _ => None,
             }
         }
