@@ -1,0 +1,11 @@
+specVersion: v0.1.0
+package:
+  name: substreams-ethereum
+  version: v0.10.4
+  url: https://github.com/streamingfast/substreams-ethereum
+  doc: |
+    Substreams development kit for Ethereum chains
+
+protobuf:
+  descriptorSets:
+    - module: buf.build/streamingfast/firehose-ethereum
