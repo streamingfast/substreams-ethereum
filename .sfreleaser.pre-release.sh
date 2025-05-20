@@ -2,15 +2,15 @@
 
 ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-main() {
-  check_sd
-  check_git_clean
+force=false
 
+main() {
   pushd "$ROOT" &> /dev/null
 
-  while getopts "h" opt; do
+  while getopts "hf" opt; do
     case $opt in
       h) usage && exit 0;;
+      f) force=true;;
       \?) usage_error "Invalid option: -$OPTARG";;
     esac
   done
@@ -21,6 +21,9 @@ main() {
     usage_error "parameter <version> is required"
   fi
 
+  check_sd
+  check_git_clean
+
   sd '^version = ".*?"$' "version = \"${version}\"" Cargo.toml
   sd 'version = ".*?",' "version = \"${version}\"," Cargo.toml
 
@@ -30,6 +33,9 @@ main() {
 
   # Important so that the Cargo.lock file is updated with the new version
   cargo test --target "$(infer_target)"
+
+  git add -A .
+  git commit -m "Preparing release of ${version}"
 }
 
 check_sd() {
@@ -44,6 +50,10 @@ check_sd() {
 }
 
 check_git_clean() {
+  if [[ "$force" == true ]]; then
+    return
+  fi
+
   if [[ -n $(git status --porcelain) ]]; then
     echo "ERROR: Your git working directory is not clean. Please commit or stash your changes before running this script."
     exit 1
@@ -53,7 +63,11 @@ check_git_clean() {
 infer_target() {
   case "$(uname -s)" in
     Darwin)
-      echo "$(uname -m)-apple-darwin";;
+      if [[ "$(uname -m)" == "arm64" ]]; then
+        echo "aarch64-apple-darwin"
+      else
+        echo "x86_64-apple-darwin"
+      fi;;
     Linux)
       echo "$(uname -m)-unknown-linux-gnu";;
     MINGW*|MSYS*|CYGWIN*)
@@ -87,6 +101,7 @@ usage() {
   echo "It will also run 'cargo test' to update Cargo.lock and validate the build."
   echo ""
   echo "Options"
+  echo "    -f          Force the script to run even if the git working directory is not clean"
   echo "    -h          Display help about this script"
 }
 
