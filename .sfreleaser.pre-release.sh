@@ -3,6 +3,7 @@
 ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 force=false
+repository="github.com/streamingfast/substreams-ethereum"
 
 main() {
   pushd "$ROOT" &> /dev/null
@@ -21,15 +22,15 @@ main() {
     usage_error "parameter <version> is required"
   fi
 
+  version="${version#v}" # Remove leading 'v' if present
+
   check_sd
   check_git_clean
 
   sd '^version = ".*?"$' "version = \"${version}\"" Cargo.toml
   sd 'version = ".*?",' "version = \"${version}\"," Cargo.toml
-
   sd 'version: v.*"' "version: v${version}" substreams.yaml
-
-  sd '## Unreleased' "## ${version}" CHANGELOG.md
+  sd '## Unreleased' "## [${version}](https://${repository}/releases/tag/v${version})" CHANGELOG.md
 
   # Important so that the Cargo.lock file is updated with the new version
   cargo test --target "$(infer_target)"

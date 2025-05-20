@@ -4,11 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 0.10.5
+## [0.10.5](https://github.com/streamingfast/substreams-ethereum/releases/tag/v0.10.5)
 
 * Updated `firehose-ethereum` Protobuf to include `address` field on `SetCodeAuthorization` message.
 
-## 0.10.4
+## [0.10.4](https://github.com/streamingfast/substreams-ethereum/releases/tag/v0.10.4)
 
 * Updated `firehose-ethereum` Protobuf.
 
