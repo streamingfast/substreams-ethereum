@@ -3,7 +3,7 @@ global:
   variant: library
 release:
   pre-build-hooks:
-    - bash -x .sfreleaser.pre-release.sh "{{ .release.Version }}"
+    - ./.sfreleaser.pre-release.sh "{{ .release.Version }}"
     - substreams pack -o "{{ .buildDir }}/substreams-sink-database-changes-{{ .release.Version }}.spkg" substreams.yaml
   upload-extra-assets:
     - "{{ .buildDir }}/substreams-sink-database-changes-{{ .release.Version }}.spkg"

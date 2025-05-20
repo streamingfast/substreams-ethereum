@@ -35,8 +35,10 @@ main() {
   # Important so that the Cargo.lock file is updated with the new version
   cargo test --target "$(infer_target)"
 
-  git add -A .
-  git commit -m "Preparing release of ${version}"
+  if [[ -n $(git status --porcelain) ]]; then
+    git add -A .
+    git commit -m "Preparing release of ${version}"
+  fi
 }
 
 check_sd() {
