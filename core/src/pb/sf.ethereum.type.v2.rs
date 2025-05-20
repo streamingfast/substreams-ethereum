@@ -391,8 +391,8 @@ pub struct TransactionTrace {
     pub from: ::prost::alloc::vec::Vec<u8>,
     /// Only available in DetailLevel: EXTENDED
     /// Known Issues
-    /// - Version 3: 
-    ///     Field not populated. It will be empty. 
+    /// - Version 3:
+    ///     Field not populated. It will be empty.
     ///
     ///     Fixed in `Version 4`, see <https://docs.substreams.dev/reference-material/chains-and-endpoints/ethereum-data-model> for information about block versions.
     #[prost(bytes="vec", tag="23")]
@@ -601,6 +601,14 @@ pub struct SetCodeAuthorization {
     /// to recover the authority from the signature.
     #[prost(bytes="vec", tag="2")]
     pub chain_id: ::prost::alloc::vec::Vec<u8>,
+    /// Address contains the address this account is delegating to. This address usually
+    /// contain code that this account essentially "delegates" to.
+    ///
+    /// Note: This was missing when EIP-7702 was first activated on Holesky, Sepolia, BSC Chapel,
+    /// BSC Mainnet and Arbitrum Sepolia but was ready for Ethereum Mainnet hard fork. We will backfill
+    /// those missing values in the near future at which point we will remove this note.
+    #[prost(bytes="vec", tag="8")]
+    pub address: ::prost::alloc::vec::Vec<u8>,
     /// Nonce is the nonce of the account that is authorizing delegation mechanism, EIP-7702 rules
     /// states that nonce should be verified using this rule:
     ///
@@ -757,13 +765,13 @@ pub struct Call {
     ///     Fixed in `Version 4`, see <https://docs.substreams.dev/reference-material/chains-and-endpoints/ethereum-data-model> for information about block versions.
     #[prost(bytes="vec", tag="14")]
     pub input: ::prost::alloc::vec::Vec<u8>,
-    /// Indicates whether the call executed code.  
+    /// Indicates whether the call executed code.
     ///
     /// Known Issues
-    /// - Version 3: 
-    ///     This may be incorrectly set to `false` for accounts with code handling native value transfers,  
-    ///     as well as for certain precompiles with no input.  
-    ///     The value is initially set based on `call.type != CREATE && len(call.input) > 0`  
+    /// - Version 3:
+    ///     This may be incorrectly set to `false` for accounts with code handling native value transfers,
+    ///     as well as for certain precompiles with no input.
+    ///     The value is initially set based on `call.type != CREATE && len(call.input) > 0`
     ///     and later adjusted if the tracer detects an account without code.
     ///
     ///     Fixed in `Version 4`, see <https://docs.substreams.dev/reference-material/chains-and-endpoints/ethereum-data-model> for information about block versions.
@@ -775,7 +783,7 @@ pub struct Call {
     #[prost(map="string, string", tag="20")]
     pub keccak_preimages: ::std::collections::HashMap<::prost::alloc::string::String, ::prost::alloc::string::String>,
     /// Known Issues
-    /// - Version 3: 
+    /// - Version 3:
     ///     The data might be not be in order.
     ///
     ///     Fixed in `Version 4`, see <https://docs.substreams.dev/reference-material/chains-and-endpoints/ethereum-data-model> for information about block versions.
@@ -794,7 +802,7 @@ pub struct Call {
     ///     Some gas changes are not correctly tracked:
     ///       1. Gas refunded due to data returned to the chain (occurs at the end of a transaction, before buyback).
     ///       2. Initial gas allocation (0 -> GasLimit) at the start of a call.
-    ///       3. Final gas deduction (LeftOver -> 0) at the end of a call (if applicable). 
+    ///       3. Final gas deduction (LeftOver -> 0) at the end of a call (if applicable).
     ///     Fixed in `Version 4`, see <https://docs.substreams.dev/reference-material/chains-and-endpoints/ethereum-data-model> for information about block versions.
     #[prost(message, repeated, tag="28")]
     pub gas_changes: ::prost::alloc::vec::Vec<GasChange>,
@@ -849,7 +857,7 @@ pub struct Call {
     /// - Version 3:
     ///     1. The block's global ordinal when the call started executing, refer to
     ///       \[Block\] documentation for further information about ordinals and total ordering.
-    ///     2. The transaction root call `begin_ordial` is always `0` (also in the GENESIS block), which can cause issues 
+    ///     2. The transaction root call `begin_ordial` is always `0` (also in the GENESIS block), which can cause issues
     ///       when sorting by this field. To ensure proper execution order, set it as follows:
     ///       `trx.Calls\[0\].BeginOrdinal = trx.BeginOrdinal`.
     ///
