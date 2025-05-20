@@ -2,6 +2,11 @@ global:
   language: rust
   variant: library
 release:
+  pre-build-hooks:
+    - bash -x .sfreleaser.pre-release.sh
+    - substreams pack -o "{{ .buildDir }}/substreams-sink-database-changes-{{ .release.Version }}.spkg" substreams.yaml
+  upload-extra-assets:
+    - "{{ .buildDir }}/substreams-sink-database-changes-{{ .release.Version }}.spkg"
   # Must be specified in publish order
   rust-crates:
   - substreams-ethereum-core
