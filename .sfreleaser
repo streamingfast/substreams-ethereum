@@ -4,9 +4,9 @@ global:
 release:
   pre-build-hooks:
     - ./.sfreleaser.pre-release.sh "{{ .release.Version }}"
-    - substreams pack -o "{{ .buildDir }}/{{ .release.Project }}-{{ .release.Version }}.spkg" substreams.yaml
+    - substreams pack -o "{{ .buildDir }}/{{ .global.Project }}-{{ .release.Version }}.spkg" substreams.yaml
   upload-extra-assets:
-    - "{{ .buildDir }}/{{ .release.Project }}-{{ .release.Version }}.spkg"
+    - "{{ .buildDir }}/{{ .global.Project }}-{{ .release.Version }}.spkg"
   # Must be specified in publish order
   rust-crates:
   - substreams-ethereum-core
