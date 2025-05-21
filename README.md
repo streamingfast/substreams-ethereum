@@ -13,12 +13,12 @@ version = 0.1.2
 crate-type = ["cdylib"]
 
 [dependencies]
-substreams-ethereum = "0.6.0"
+substreams-ethereum = "0.10"
 ```
 
 ## Development
 
-We manually keep in sync the rendered Rust Firehose Block models with the actual Protocol Buffer definitions file found in [sf-ethereum](https://github.com/streamingfast/sf-ethereum/tree/develop/proto) and we commit them to Git.
+We manually keep in sync the rendered Rust Firehose Block models with the actual Protocol Buffer definitions file found in [firehose-ethereum](https://github.com/streamingfast/firehose-ethereum/blob/develop/proto/sf/ethereum/type/v2/type.proto#L51o) and we commit them to Git.
 
 This means changes to Protobuf files must be manually re-generated and commit, see below for how to do it.
 
@@ -607,3 +607,12 @@ impl SpentItem {
 ```
 
 If you struggle with something, reach out to us on Discord and we are going to help you out.
+
+
+## Release
+
+```bash
+sfreleaser release
+```
+
+Follow instructions the CLI is asking, the process is now automatic and version bump and Substreams package building is now all done automatically.
