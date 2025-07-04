@@ -1,7 +1,5 @@
 use crate::pb::eth::rpc::{RpcCall, RpcCalls, RpcResponse, RpcResponses};
-use crate::pb::eth::rpc::{
-    RpcGetBalanceRequest, RpcGetBalanceRequests, RpcGetBalanceResponse, RpcGetBalanceResponses,
-};
+use crate::pb::eth::rpc::{RpcGetBalanceRequests, RpcGetBalanceResponses};
 use crate::Function;
 use substreams::proto;
 
