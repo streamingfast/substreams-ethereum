@@ -1,4 +1,7 @@
 use crate::pb::eth::rpc::{RpcCall, RpcCalls, RpcResponse, RpcResponses};
+use crate::pb::eth::rpc::{
+    RpcGetBalanceRequest, RpcGetBalanceRequests, RpcGetBalanceResponse, RpcGetBalanceResponses,
+};
 use crate::Function;
 use substreams::proto;
 
@@ -76,4 +79,25 @@ pub fn eth_call(input: &RpcCalls) -> RpcResponses {
     let resp: RpcResponses = proto::decode(&raw_resp).unwrap();
 
     return resp;
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), allow(unused_variables))]
+fn eth_get_balance_internal(input: Vec<u8>) -> Vec<u8> {
+    #[cfg(target_arch = "wasm32")]
+    unsafe {
+        use substreams::memory;
+
+        let rpc_response_ptr = memory::alloc(8);
+        crate::externs::rpc::eth_get_balance(input.as_ptr(), input.len() as u32, rpc_response_ptr);
+        return memory::get_output_data(rpc_response_ptr);
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    unimplemented!("this method is not implemented outside of 'wasm32' target compilation")
+}
+
+pub fn eth_get_balance(requests: &RpcGetBalanceRequests) -> RpcGetBalanceResponses {
+    let raw_req = proto::encode(requests).expect("failed to encode RpcGetBalanceRequests");
+    let raw_resp: Vec<u8> = eth_get_balance_internal(raw_req);
+    proto::decode(&raw_resp).expect("failed to decode RpcGetBalanceResponses")
 }
