@@ -15,5 +15,12 @@ pub mod sf {
                 // @@protoc_insertion_point(sf.ethereum.substreams.v1)
             }
         }
+        pub mod transform {
+            // @@protoc_insertion_point(attribute:sf.ethereum.transform.v1)
+            pub mod v1 {
+                include!("sf.ethereum.transform.v1.rs");
+                // @@protoc_insertion_point(sf.ethereum.transform.v1)
+            }
+        }
     }
 }

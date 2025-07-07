@@ -27,4 +27,32 @@ pub struct RpcResponse {
     #[prost(bool, tag="2")]
     pub failed: bool,
 }
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct RpcGetBalanceRequest {
+    #[prost(bytes="vec", tag="1")]
+    pub address: ::prost::alloc::vec::Vec<u8>,
+    #[prost(string, tag="2")]
+    pub block: ::prost::alloc::string::String,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct RpcGetBalanceResponse {
+    #[prost(bytes="vec", tag="1")]
+    pub balance: ::prost::alloc::vec::Vec<u8>,
+    #[prost(bool, tag="2")]
+    pub failed: bool,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct RpcGetBalanceRequests {
+    #[prost(message, repeated, tag="1")]
+    pub requests: ::prost::alloc::vec::Vec<RpcGetBalanceRequest>,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct RpcGetBalanceResponses {
+    #[prost(message, repeated, tag="1")]
+    pub responses: ::prost::alloc::vec::Vec<RpcGetBalanceResponse>,
+}
 // @@protoc_insertion_point(module)
