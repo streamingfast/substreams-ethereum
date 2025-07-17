@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.6](https://github.com/streamingfast/substreams-ethereum/releases/tag/v0.10.6)
+
+- Added extern binding `eth_get_balance` for the WASM target in `core/src/externs.rs`
+- Added `sf.ethereum.transform.v1` Protobuf module inclusion in `core/src/pb/generated.rs`
+- Added `RpcGetBalanceRequest`, `RpcGetBalanceResponse`, `RpcGetBalanceRequests` and `RpcGetBalanceResponses` messages in `core/src/pb/sf.ethereum.substreams.v1.rs`
+- Added `eth_get_balance` wrapper and internal implementation in `core/src/rpc.rs`
+
 ## [0.10.5](https://github.com/streamingfast/substreams-ethereum/releases/tag/v0.10.5)
 
 * Updated `firehose-ethereum` Protobuf to include `address` field on `SetCodeAuthorization` message.
