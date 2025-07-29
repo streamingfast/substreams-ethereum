@@ -6,10 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [0.10.6](https://github.com/streamingfast/substreams-ethereum/releases/tag/v0.10.6)
 
-- Added extern binding `eth_get_balance` for the WASM target in `core/src/externs.rs`
-- Added `sf.ethereum.transform.v1` Protobuf module inclusion in `core/src/pb/generated.rs`
-- Added `RpcGetBalanceRequest`, `RpcGetBalanceResponse`, `RpcGetBalanceRequests` and `RpcGetBalanceResponses` messages in `core/src/pb/sf.ethereum.substreams.v1.rs`
-- Added `eth_get_balance` wrapper and internal implementation in `core/src/rpc.rs`
+* Release for testing some experimental concepts.
 
 ## [0.10.5](https://github.com/streamingfast/substreams-ethereum/releases/tag/v0.10.5)
 
