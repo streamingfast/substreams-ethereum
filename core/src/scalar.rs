@@ -13,6 +13,22 @@ impl Into<BigInt> for &pb::BigInt {
     }
 }
 
+impl From<BigInt> for pb::BigInt {
+    fn from(value: BigInt) -> Self {
+        pb::BigInt {
+            bytes: value.to_unsigned_bytes_be(),
+        }
+    }
+}
+
+impl From<&BigInt> for pb::BigInt {
+    fn from(value: &BigInt) -> Self {
+        pb::BigInt {
+            bytes: value.to_unsigned_bytes_be(),
+        }
+    }
+}
+
 impl Into<BigDecimal> for pb::BigInt {
     fn into(self) -> BigDecimal {
         Into::<BigDecimal>::into(&self)
@@ -161,6 +177,35 @@ mod tests {
     fn none_option_pb_to_bigdecimal() {
         let v: Option<pb::BigInt> = None;
         assert_eq!(to_option_decimal(v), None);
+    }
+
+    #[test]
+    fn bigint_to_pb_bigint() {
+        let scalar_bigint = substreams::scalar::BigInt::from(42 as u32);
+        let pb_bigint: pb::BigInt = scalar_bigint.into();
+        assert_eq!(pb_bigint.bytes, vec![42]);
+        
+        // Test with a larger number
+        let scalar_bigint = substreams::scalar::BigInt::from(256 as u32);
+        let pb_bigint: pb::BigInt = scalar_bigint.into();
+        assert_eq!(pb_bigint.bytes, vec![1, 0]);
+    }
+
+    #[test]
+    fn ref_bigint_to_pb_bigint() {
+        let scalar_bigint = substreams::scalar::BigInt::from(42 as u32);
+        let pb_bigint: pb::BigInt = (&scalar_bigint).into();
+        assert_eq!(pb_bigint.bytes, vec![42]);
+    }
+
+    #[test]
+    fn roundtrip_conversion() {
+        // Test roundtrip conversion: scalar::BigInt -> pb::BigInt -> scalar::BigInt
+        let original = substreams::scalar::BigInt::from(12345 as u32);
+        let pb_bigint: pb::BigInt = original.clone().into();
+        let roundtrip: substreams::scalar::BigInt = pb_bigint.into();
+        
+        assert_eq!(original.to_string(), roundtrip.to_string());
     }
 
     pub fn new_pb_bigint(value: u32) -> pb::BigInt {

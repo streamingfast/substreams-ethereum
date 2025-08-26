@@ -1,5 +1,5 @@
 pub use substreams_ethereum_core::scalar;
-pub use substreams_ethereum_core::{block_view, pb, rpc, Event, Function, NULL_ADDRESS};
+pub use substreams_ethereum_core::{block_view, pb, prelude, rpc, Event, Function, NULL_ADDRESS};
 pub use substreams_ethereum_derive::EthabiContract;
 
 // Those are dependencies that needs to be exported for `substreams-abigen` to work. Must not
