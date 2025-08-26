@@ -7,6 +7,9 @@ pub use event::Event;
 pub use function::Function;
 pub mod scalar;
 
+/// Prelude module that exports all the common types and traits for working with Ethereum data.
+pub mod prelude;
+
 /// Dependencies needed by 'substreams-abigen' to generate bindings.
 pub use event::IndexedDynamicValue;
 
