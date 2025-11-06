@@ -20,7 +20,7 @@ num-bigint = "0.4.3"
 num-traits = "0.2.15"
 prost = "^0.13.0"
 prost-types = "^0.13.0"
-substreams = "^0.6.0"
+substreams = "^0.7.0"
 substreams-ethereum = { workspace = true }
 
 [build-dependencies]
