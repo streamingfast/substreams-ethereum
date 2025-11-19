@@ -15,7 +15,7 @@ rust-version.workspace = true
 ethabi = "17.0"
 prost = "^0.13"
 prost-types = "^0.13"
-substreams = "0.6"
+substreams = "0.7.0"
 num-bigint = "0.4"
 bigdecimal = "0.3"
 
