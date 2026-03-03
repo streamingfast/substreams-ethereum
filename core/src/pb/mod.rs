@@ -3,6 +3,9 @@
 //!
 //! This is the raw Protbuf code, types in here can be used without problem.
 
+#[cfg(feature = "quick-protobuf")]
+pub mod quick;
+
 mod generated;
 
 /// Re-export the protobuf generated code directly, at some point we might
