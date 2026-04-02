@@ -41,21 +41,30 @@ fn bool_required_false() {
 // Call.executed_code: true / false / nil
 #[test]
 fn call_executed_code_true() {
-    let call = Call { executed_code: Some(true), ..Default::default() };
+    let call = Call {
+        executed_code: Some(true),
+        ..Default::default()
+    };
     let got = Call::decode(call.encode_to_vec().as_slice()).unwrap();
     assert_eq!(got.executed_code, Some(true));
 }
 
 #[test]
 fn call_executed_code_false() {
-    let call = Call { executed_code: Some(false), ..Default::default() };
+    let call = Call {
+        executed_code: Some(false),
+        ..Default::default()
+    };
     let got = Call::decode(call.encode_to_vec().as_slice()).unwrap();
     assert_eq!(got.executed_code, Some(false));
 }
 
 #[test]
 fn call_executed_code_nil() {
-    let call = Call { executed_code: None, ..Default::default() };
+    let call = Call {
+        executed_code: None,
+        ..Default::default()
+    };
     let got = Call::decode(call.encode_to_vec().as_slice()).unwrap();
     assert_eq!(got.executed_code, None);
 }
@@ -66,8 +75,14 @@ fn bool_optional_nil_vs_false_are_distinct() {
     let nil_data = BoolOptional { state: None }.encode_to_vec();
     let false_data = BoolOptional { state: Some(false) }.encode_to_vec();
 
-    assert!(nil_data.is_empty(), "optional nil must encode to empty bytes");
-    assert!(!false_data.is_empty(), "optional false must encode to non-empty bytes");
+    assert!(
+        nil_data.is_empty(),
+        "optional nil must encode to empty bytes"
+    );
+    assert!(
+        !false_data.is_empty(),
+        "optional false must encode to non-empty bytes"
+    );
 
     let got_nil = BoolOptional::decode(nil_data.as_slice()).unwrap();
     let got_false = BoolOptional::decode(false_data.as_slice()).unwrap();
@@ -86,8 +101,15 @@ fn bool_optional_backward_compatible() {
     let got_true = BoolOptional::decode(true_data.as_slice()).unwrap();
     let got_false = BoolOptional::decode(false_data.as_slice()).unwrap();
 
-    assert_eq!(got_true.state, Some(true), "old true readable as optional true");
-    assert_eq!(got_false.state, None, "old false is absent on the wire, reads as nil");
+    assert_eq!(
+        got_true.state,
+        Some(true),
+        "old true readable as optional true"
+    );
+    assert_eq!(
+        got_false.state, None,
+        "old false is absent on the wire, reads as nil"
+    );
 }
 
 // Forward compatibility: new producer (BoolOptional) -> old consumer (BoolRequired)
@@ -106,5 +128,8 @@ fn bool_optional_forward_compatible() {
 
     assert_eq!(got_true.state, true);
     assert_eq!(got_false.state, false);
-    assert_eq!(got_nil.state, false, "new nil decodes to required false (zero value)");
+    assert_eq!(
+        got_nil.state, false,
+        "new nil decodes to required false (zero value)"
+    );
 }
