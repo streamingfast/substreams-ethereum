@@ -20,6 +20,9 @@ mod function;
 /// ```text
 /// 0000000000000000000000000000000000000000
 /// ```
+#[cfg(test)]
+mod tests;
+
 pub const NULL_ADDRESS: [u8; 20] = [
     0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
     0u8,
