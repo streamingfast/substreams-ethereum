@@ -12,12 +12,12 @@ categories.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-ethabi = "17.0"
-prost = "^0.13"
-prost-types = "^0.13"
+ethabi = "18.0"
+prost = "^0.14"
+prost-types = "^0.14"
 substreams = "0.7.0"
 num-bigint = "0.4"
-bigdecimal = "0.3"
+bigdecimal = "0.4"
 
 [build-dependencies]
 prost-build = "^0.11.0"
@@ -27,4 +27,4 @@ anyhow = "1"
 
 # Required so that ethabi > ethereum-types build correctly under wasm32-unknown-unknown
 [target.wasm32-unknown-unknown.dependencies]
-getrandom = { version = "0.2.10", features = ["custom"] }
+getrandom = { version = "0.4.2", features = ["custom"] }

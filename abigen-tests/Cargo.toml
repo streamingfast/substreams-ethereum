@@ -15,11 +15,11 @@ rust-version.workspace = true
 doc = false
 
 [dependencies]
-ethabi = "17.0"
+ethabi = "18.0"
 num-bigint = "0.4.3"
 num-traits = "0.2.15"
-prost = "^0.13.0"
-prost-types = "^0.13.0"
+prost = "^0.14.3"
+prost-types = "^0.14.3"
 substreams = "^0.7.0"
 substreams-ethereum = { workspace = true }
 

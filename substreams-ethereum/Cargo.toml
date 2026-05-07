@@ -20,8 +20,8 @@ substreams-ethereum-core = { workspace = true }
 
 # Required so that ethabi > ethereum-types build correctly under wasm32-unknown-unknown
 [target.wasm32-unknown-unknown.dependencies]
-getrandom = { version = "0.2.10", features = ["custom"] }
+getrandom = { version = "0.4.2", features = ["custom"] }
 
 [dev-dependencies]
 anyhow = "1"
-ethabi = "17"
+ethabi = "18"
