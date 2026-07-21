@@ -10,17 +10,17 @@ impl pb::Block {
     }
 
     /// Iterates over transaction receipts of successful transactions.
-    pub fn receipts(&self) -> impl Iterator<Item = ReceiptView> {
+    pub fn receipts(&self) -> impl Iterator<Item = ReceiptView<'_>> {
         self.transactions().map(|transaction| transaction.receipt())
     }
 
     /// Iterates over logs in receipts of succesful transactions.
-    pub fn logs(&self) -> impl Iterator<Item = LogView> {
+    pub fn logs(&self) -> impl Iterator<Item = LogView<'_>> {
         self.receipts().map(|receipt| receipt.logs()).flatten()
     }
 
     /// Iterates over calls of successful transactions.
-    pub fn calls(&self) -> impl Iterator<Item = CallView> {
+    pub fn calls(&self) -> impl Iterator<Item = CallView<'_>> {
         self.transactions().map(|trx| trx.calls()).flatten()
     }
 
@@ -106,14 +106,14 @@ impl AsRef<pb::Call> for CallView<'_> {
 }
 
 impl pb::TransactionTrace {
-    pub fn calls(&self) -> impl Iterator<Item = CallView> {
+    pub fn calls(&self) -> impl Iterator<Item = CallView<'_>> {
         self.calls.iter().map(move |call| CallView {
             transaction: self,
             call,
         })
     }
 
-    pub fn receipt(&self) -> ReceiptView {
+    pub fn receipt(&self) -> ReceiptView<'_> {
         ReceiptView {
             transaction: self,
             receipt: &self.receipt.as_ref().unwrap(),
@@ -125,7 +125,7 @@ impl pb::TransactionTrace {
     ///
     /// The logs are sorted by their ordinal and returned as pairs of `(log, call)` where `call`
     /// is the call that produced the log.
-    pub fn logs_with_calls(&self) -> impl Iterator<Item = (&Log, CallView)> {
+    pub fn logs_with_calls(&self) -> impl Iterator<Item = (&Log, CallView<'_>)> {
         let mut res: Vec<(&Log, CallView)> = Vec::with_capacity(
             self.calls
                 .iter()
