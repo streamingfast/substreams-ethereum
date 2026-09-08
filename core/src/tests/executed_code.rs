@@ -1,25 +1,25 @@
 use crate::pb::eth::v2::{BoolOptional, BoolRequired, Call};
-use prost::Message;
+use buffa::Message;
 
 // BoolOptional: true / false / nil
 #[test]
 fn bool_optional_true() {
     let msg = BoolOptional { state: Some(true) };
-    let got = BoolOptional::decode(msg.encode_to_vec().as_slice()).unwrap();
+    let got = BoolOptional::decode_from_slice(&msg.encode_to_vec()).unwrap();
     assert_eq!(got.state, Some(true));
 }
 
 #[test]
 fn bool_optional_false() {
     let msg = BoolOptional { state: Some(false) };
-    let got = BoolOptional::decode(msg.encode_to_vec().as_slice()).unwrap();
+    let got = BoolOptional::decode_from_slice(&msg.encode_to_vec()).unwrap();
     assert_eq!(got.state, Some(false));
 }
 
 #[test]
 fn bool_optional_nil() {
     let msg = BoolOptional { state: None };
-    let got = BoolOptional::decode(msg.encode_to_vec().as_slice()).unwrap();
+    let got = BoolOptional::decode_from_slice(&msg.encode_to_vec()).unwrap();
     assert_eq!(got.state, None);
 }
 
@@ -27,46 +27,49 @@ fn bool_optional_nil() {
 #[test]
 fn bool_required_true() {
     let msg = BoolRequired { state: true };
-    let got = BoolRequired::decode(msg.encode_to_vec().as_slice()).unwrap();
+    let got = BoolRequired::decode_from_slice(&msg.encode_to_vec()).unwrap();
     assert_eq!(got.state, true);
 }
 
 #[test]
 fn bool_required_false() {
     let msg = BoolRequired { state: false };
-    let got = BoolRequired::decode(msg.encode_to_vec().as_slice()).unwrap();
+    let got = BoolRequired::decode_from_slice(&msg.encode_to_vec()).unwrap();
     assert_eq!(got.state, false);
 }
 
-// Call.executed_code: true / false / nil
+// `Call.executed_code` is a plain `bool`: no third "unset" state, unlike `BoolOptional`.
 #[test]
 fn call_executed_code_true() {
     let call = Call {
-        executed_code: Some(true),
+        executed_code: true,
         ..Default::default()
     };
-    let got = Call::decode(call.encode_to_vec().as_slice()).unwrap();
-    assert_eq!(got.executed_code, Some(true));
+    let got = Call::decode_from_slice(&call.encode_to_vec()).unwrap();
+    assert!(got.executed_code);
 }
 
 #[test]
 fn call_executed_code_false() {
     let call = Call {
-        executed_code: Some(false),
+        executed_code: false,
         ..Default::default()
     };
-    let got = Call::decode(call.encode_to_vec().as_slice()).unwrap();
-    assert_eq!(got.executed_code, Some(false));
+    let got = Call::decode_from_slice(&call.encode_to_vec()).unwrap();
+    assert!(!got.executed_code);
 }
 
 #[test]
-fn call_executed_code_nil() {
+fn call_executed_code_false_encodes_to_empty() {
     let call = Call {
-        executed_code: None,
+        executed_code: false,
         ..Default::default()
     };
-    let got = Call::decode(call.encode_to_vec().as_slice()).unwrap();
-    assert_eq!(got.executed_code, None);
+
+    assert!(
+        call.encode_to_vec().is_empty(),
+        "a plain bool set to its default must not be written to the wire"
+    );
 }
 
 // nil and false must encode differently on the wire
@@ -84,8 +87,8 @@ fn bool_optional_nil_vs_false_are_distinct() {
         "optional false must encode to non-empty bytes"
     );
 
-    let got_nil = BoolOptional::decode(nil_data.as_slice()).unwrap();
-    let got_false = BoolOptional::decode(false_data.as_slice()).unwrap();
+    let got_nil = BoolOptional::decode_from_slice(&nil_data).unwrap();
+    let got_false = BoolOptional::decode_from_slice(&false_data).unwrap();
     assert_eq!(got_nil.state, None);
     assert_eq!(got_false.state, Some(false));
 }
@@ -98,8 +101,8 @@ fn bool_optional_backward_compatible() {
     let true_data = BoolRequired { state: true }.encode_to_vec();
     let false_data = BoolRequired { state: false }.encode_to_vec();
 
-    let got_true = BoolOptional::decode(true_data.as_slice()).unwrap();
-    let got_false = BoolOptional::decode(false_data.as_slice()).unwrap();
+    let got_true = BoolOptional::decode_from_slice(&true_data).unwrap();
+    let got_false = BoolOptional::decode_from_slice(&false_data).unwrap();
 
     assert_eq!(
         got_true.state,
@@ -122,9 +125,9 @@ fn bool_optional_forward_compatible() {
     let false_data = BoolOptional { state: Some(false) }.encode_to_vec();
     let nil_data = BoolOptional { state: None }.encode_to_vec();
 
-    let got_true = BoolRequired::decode(true_data.as_slice()).unwrap();
-    let got_false = BoolRequired::decode(false_data.as_slice()).unwrap();
-    let got_nil = BoolRequired::decode(nil_data.as_slice()).unwrap();
+    let got_true = BoolRequired::decode_from_slice(&true_data).unwrap();
+    let got_false = BoolRequired::decode_from_slice(&false_data).unwrap();
+    let got_nil = BoolRequired::decode_from_slice(&nil_data).unwrap();
 
     assert_eq!(got_true.state, true);
     assert_eq!(got_false.state, false);

@@ -2361,29 +2361,23 @@ pub mod events {
             70u8,
             168u8,
         ];
-        pub fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
-            if log.topics.len() != 2usize {
+        pub fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
+            if log.topic_count() != 2usize {
                 return false;
             }
-            if log.data.len() < 64usize {
+            if log.data().len() < 64usize {
                 return false;
             }
-            return log.topics.get(0).expect("bounds already checked").as_ref() as &[u8]
-                == Self::TOPIC_ID;
+            return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
-        pub fn decode(
-            log: &substreams_ethereum::pb::eth::v2::Log,
-        ) -> Result<Self, String> {
-            let mut values = ethabi::decode(
-                    &[ethabi::ParamType::String],
-                    log.data.as_ref(),
-                )
+        pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+            let mut values = ethabi::decode(&[ethabi::ParamType::String], log.data())
                 .map_err(|e| format!("unable to decode log.data: {:?}", e))?;
             values.reverse();
             Ok(Self {
                 first: ethabi::decode(
                         &[ethabi::ParamType::Address],
-                        log.topics[1usize].as_ref(),
+                        log.topic(1usize).expect("bounds already checked"),
                     )
                     .map_err(|e| {
                         format!(
@@ -2407,10 +2401,10 @@ pub mod events {
     }
     impl substreams_ethereum::Event for EventAddressIdxString {
         const NAME: &'static str = "EventAddressIdxString";
-        fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
+        fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
             Self::match_log(log)
         }
-        fn decode(log: &substreams_ethereum::pb::eth::v2::Log) -> Result<Self, String> {
+        fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
             Self::decode(log)
         }
     }
@@ -2456,29 +2450,26 @@ pub mod events {
             51u8,
             169u8,
         ];
-        pub fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
-            if log.topics.len() != 3usize {
+        pub fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
+            if log.topic_count() != 3usize {
                 return false;
             }
-            if log.data.len() < 128usize {
+            if log.data().len() < 128usize {
                 return false;
             }
-            return log.topics.get(0).expect("bounds already checked").as_ref() as &[u8]
-                == Self::TOPIC_ID;
+            return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
-        pub fn decode(
-            log: &substreams_ethereum::pb::eth::v2::Log,
-        ) -> Result<Self, String> {
+        pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
             let mut values = ethabi::decode(
                     &[ethabi::ParamType::String, ethabi::ParamType::Bytes],
-                    log.data.as_ref(),
+                    log.data(),
                 )
                 .map_err(|e| format!("unable to decode log.data: {:?}", e))?;
             values.reverse();
             Ok(Self {
                 first: ethabi::decode(
                         &[ethabi::ParamType::Address],
-                        log.topics[1usize].as_ref(),
+                        log.topic(1usize).expect("bounds already checked"),
                     )
                     .map_err(|e| {
                         format!(
@@ -2496,7 +2487,7 @@ pub mod events {
                     let mut v = [0 as u8; 32];
                     ethabi::decode(
                             &[ethabi::ParamType::Uint(256usize)],
-                            log.topics[2usize].as_ref(),
+                            log.topic(2usize).expect("bounds already checked"),
                         )
                         .map_err(|e| {
                             format!(
@@ -2526,10 +2517,10 @@ pub mod events {
     }
     impl substreams_ethereum::Event for EventAddressIdxStringUint256IdxBytes {
         const NAME: &'static str = "EventAddressIdxStringUint256IdxBytes";
-        fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
+        fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
             Self::match_log(log)
         }
-        fn decode(log: &substreams_ethereum::pb::eth::v2::Log) -> Result<Self, String> {
+        fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
             Self::decode(log)
         }
     }
@@ -2575,32 +2566,29 @@ pub mod events {
             217u8,
             125u8,
         ];
-        pub fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
-            if log.topics.len() != 3usize {
+        pub fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
+            if log.topic_count() != 3usize {
                 return false;
             }
-            if log.data.len() != 64usize {
+            if log.data().len() != 64usize {
                 return false;
             }
-            return log.topics.get(0).expect("bounds already checked").as_ref() as &[u8]
-                == Self::TOPIC_ID;
+            return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
-        pub fn decode(
-            log: &substreams_ethereum::pb::eth::v2::Log,
-        ) -> Result<Self, String> {
+        pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
             let mut values = ethabi::decode(
                     &[
                         ethabi::ParamType::Uint(256usize),
                         ethabi::ParamType::Uint(256usize),
                     ],
-                    log.data.as_ref(),
+                    log.data(),
                 )
                 .map_err(|e| format!("unable to decode log.data: {:?}", e))?;
             values.reverse();
             Ok(Self {
                 first: ethabi::decode(
                         &[ethabi::ParamType::Address],
-                        log.topics[1usize].as_ref(),
+                        log.topic(1usize).expect("bounds already checked"),
                     )
                     .map_err(|e| {
                         format!(
@@ -2616,7 +2604,7 @@ pub mod events {
                     .to_vec(),
                 fourth: ethabi::decode(
                         &[ethabi::ParamType::Address],
-                        log.topics[2usize].as_ref(),
+                        log.topic(2usize).expect("bounds already checked"),
                     )
                     .map_err(|e| {
                         format!(
@@ -2655,10 +2643,10 @@ pub mod events {
     }
     impl substreams_ethereum::Event for EventAddressIdxUint256Uint256AddressIdx {
         const NAME: &'static str = "EventAddressIdxUint256Uint256AddressIdx";
-        fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
+        fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
             Self::match_log(log)
         }
-        fn decode(log: &substreams_ethereum::pb::eth::v2::Log) -> Result<Self, String> {
+        fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
             Self::decode(log)
         }
     }
@@ -2703,32 +2691,29 @@ pub mod events {
             147u8,
             225u8,
         ];
-        pub fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
-            if log.topics.len() != 2usize {
+        pub fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
+            if log.topic_count() != 2usize {
                 return false;
             }
-            if log.data.len() != 64usize {
+            if log.data().len() != 64usize {
                 return false;
             }
-            return log.topics.get(0).expect("bounds already checked").as_ref() as &[u8]
-                == Self::TOPIC_ID;
+            return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
-        pub fn decode(
-            log: &substreams_ethereum::pb::eth::v2::Log,
-        ) -> Result<Self, String> {
+        pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
             let mut values = ethabi::decode(
                     &[
                         ethabi::ParamType::FixedBytes(20usize),
                         ethabi::ParamType::Uint(256usize),
                     ],
-                    log.data.as_ref(),
+                    log.data(),
                 )
                 .map_err(|e| format!("unable to decode log.data: {:?}", e))?;
             values.reverse();
             Ok(Self {
                 third: ethabi::decode(
                         &[ethabi::ParamType::Address],
-                        log.topics[1usize].as_ref(),
+                        log.topic(1usize).expect("bounds already checked"),
                     )
                     .map_err(|e| {
                         format!(
@@ -2767,10 +2752,10 @@ pub mod events {
     }
     impl substreams_ethereum::Event for EventBytes20UintAddressIdx {
         const NAME: &'static str = "EventBytes20UintAddressIdx";
-        fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
+        fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
             Self::match_log(log)
         }
-        fn decode(log: &substreams_ethereum::pb::eth::v2::Log) -> Result<Self, String> {
+        fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
             Self::decode(log)
         }
     }
@@ -2815,32 +2800,29 @@ pub mod events {
             176u8,
             179u8,
         ];
-        pub fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
-            if log.topics.len() != 2usize {
+        pub fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
+            if log.topic_count() != 2usize {
                 return false;
             }
-            if log.data.len() != 64usize {
+            if log.data().len() != 64usize {
                 return false;
             }
-            return log.topics.get(0).expect("bounds already checked").as_ref() as &[u8]
-                == Self::TOPIC_ID;
+            return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
-        pub fn decode(
-            log: &substreams_ethereum::pb::eth::v2::Log,
-        ) -> Result<Self, String> {
+        pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
             let mut values = ethabi::decode(
                     &[
                         ethabi::ParamType::FixedBytes(32usize),
                         ethabi::ParamType::Uint(256usize),
                     ],
-                    log.data.as_ref(),
+                    log.data(),
                 )
                 .map_err(|e| format!("unable to decode log.data: {:?}", e))?;
             values.reverse();
             Ok(Self {
                 third: ethabi::decode(
                         &[ethabi::ParamType::Address],
-                        log.topics[1usize].as_ref(),
+                        log.topic(1usize).expect("bounds already checked"),
                     )
                     .map_err(|e| {
                         format!(
@@ -2879,10 +2861,10 @@ pub mod events {
     }
     impl substreams_ethereum::Event for EventBytes32UintAddressIdx {
         const NAME: &'static str = "EventBytes32UintAddressIdx";
-        fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
+        fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
             Self::match_log(log)
         }
-        fn decode(log: &substreams_ethereum::pb::eth::v2::Log) -> Result<Self, String> {
+        fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
             Self::decode(log)
         }
     }
@@ -2925,22 +2907,19 @@ pub mod events {
             237u8,
             69u8,
         ];
-        pub fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
-            if log.topics.len() != 1usize {
+        pub fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
+            if log.topic_count() != 1usize {
                 return false;
             }
-            if log.data.len() != 32usize {
+            if log.data().len() != 32usize {
                 return false;
             }
-            return log.topics.get(0).expect("bounds already checked").as_ref() as &[u8]
-                == Self::TOPIC_ID;
+            return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
-        pub fn decode(
-            log: &substreams_ethereum::pb::eth::v2::Log,
-        ) -> Result<Self, String> {
+        pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
             let mut values = ethabi::decode(
                     &[ethabi::ParamType::Int(256usize)],
-                    log.data.as_ref(),
+                    log.data(),
                 )
                 .map_err(|e| format!("unable to decode log.data: {:?}", e))?;
             values.reverse();
@@ -2960,10 +2939,10 @@ pub mod events {
     }
     impl substreams_ethereum::Event for EventInt256 {
         const NAME: &'static str = "EventInt256";
-        fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
+        fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
             Self::match_log(log)
         }
-        fn decode(log: &substreams_ethereum::pb::eth::v2::Log) -> Result<Self, String> {
+        fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
             Self::decode(log)
         }
     }
@@ -3006,32 +2985,29 @@ pub mod events {
             71u8,
             39u8,
         ];
-        pub fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
-            if log.topics.len() != 2usize {
+        pub fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
+            if log.topic_count() != 2usize {
                 return false;
             }
-            if log.data.len() != 0usize {
+            if log.data().len() != 0usize {
                 return false;
             }
-            return log.topics.get(0).expect("bounds already checked").as_ref() as &[u8]
-                == Self::TOPIC_ID;
+            return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
-        pub fn decode(
-            log: &substreams_ethereum::pb::eth::v2::Log,
-        ) -> Result<Self, String> {
+        pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
             Ok(Self {
                 param0: substreams::scalar::BigInt::from_signed_bytes_be(
-                    log.topics[1usize].as_ref(),
+                    log.topic(1usize).expect("bounds already checked"),
                 ),
             })
         }
     }
     impl substreams_ethereum::Event for EventInt256Idx {
         const NAME: &'static str = "EventInt256Idx";
-        fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
+        fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
             Self::match_log(log)
         }
-        fn decode(log: &substreams_ethereum::pb::eth::v2::Log) -> Result<Self, String> {
+        fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
             Self::decode(log)
         }
     }
@@ -3074,23 +3050,20 @@ pub mod events {
             81u8,
             221u8,
         ];
-        pub fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
-            if log.topics.len() != 2usize {
+        pub fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
+            if log.topic_count() != 2usize {
                 return false;
             }
-            if log.data.len() != 0usize {
+            if log.data().len() != 0usize {
                 return false;
             }
-            return log.topics.get(0).expect("bounds already checked").as_ref() as &[u8]
-                == Self::TOPIC_ID;
+            return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
-        pub fn decode(
-            log: &substreams_ethereum::pb::eth::v2::Log,
-        ) -> Result<Self, String> {
+        pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
             Ok(Self {
                 param0: ethabi::decode(
                         &[ethabi::ParamType::FixedBytes(32)],
-                        log.topics[1usize].as_ref(),
+                        log.topic(1usize).expect("bounds already checked"),
                     )
                     .map_err(|e| {
                         format!(
@@ -3108,10 +3081,10 @@ pub mod events {
     }
     impl substreams_ethereum::Event for EventStringIdx {
         const NAME: &'static str = "EventStringIdx";
-        fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
+        fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
             Self::match_log(log)
         }
-        fn decode(log: &substreams_ethereum::pb::eth::v2::Log) -> Result<Self, String> {
+        fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
             Self::decode(log)
         }
     }
@@ -3168,19 +3141,16 @@ pub mod events {
             167u8,
             228u8,
         ];
-        pub fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
-            if log.topics.len() != 1usize {
+        pub fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
+            if log.topic_count() != 1usize {
                 return false;
             }
-            if log.data.len() != 416usize {
+            if log.data().len() != 416usize {
                 return false;
             }
-            return log.topics.get(0).expect("bounds already checked").as_ref() as &[u8]
-                == Self::TOPIC_ID;
+            return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
-        pub fn decode(
-            log: &substreams_ethereum::pb::eth::v2::Log,
-        ) -> Result<Self, String> {
+        pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
             let mut values = ethabi::decode(
                     &[
                         ethabi::ParamType::Tuple(
@@ -3195,7 +3165,7 @@ pub mod events {
                             ],
                         ),
                     ],
-                    log.data.as_ref(),
+                    log.data(),
                 )
                 .map_err(|e| format!("unable to decode log.data: {:?}", e))?;
             values.reverse();
@@ -3292,10 +3262,10 @@ pub mod events {
     }
     impl substreams_ethereum::Event for EventTupleMoreThanTwelveFields {
         const NAME: &'static str = "EventTupleMoreThanTwelveFields";
-        fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
+        fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
             Self::match_log(log)
         }
-        fn decode(log: &substreams_ethereum::pb::eth::v2::Log) -> Result<Self, String> {
+        fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
             Self::decode(log)
         }
     }
@@ -3338,22 +3308,19 @@ pub mod events {
             175u8,
             182u8,
         ];
-        pub fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
-            if log.topics.len() != 1usize {
+        pub fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
+            if log.topic_count() != 1usize {
                 return false;
             }
-            if log.data.len() < 64usize {
+            if log.data().len() < 64usize {
                 return false;
             }
-            return log.topics.get(0).expect("bounds already checked").as_ref() as &[u8]
-                == Self::TOPIC_ID;
+            return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
-        pub fn decode(
-            log: &substreams_ethereum::pb::eth::v2::Log,
-        ) -> Result<Self, String> {
+        pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
             let mut values = ethabi::decode(
                     &[ethabi::ParamType::Array(Box::new(ethabi::ParamType::Bool))],
-                    log.data.as_ref(),
+                    log.data(),
                 )
                 .map_err(|e| format!("unable to decode log.data: {:?}", e))?;
             values.reverse();
@@ -3371,10 +3338,10 @@ pub mod events {
     }
     impl substreams_ethereum::Event for EventUArrayBool {
         const NAME: &'static str = "EventUArrayBool";
-        fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
+        fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
             Self::match_log(log)
         }
-        fn decode(log: &substreams_ethereum::pb::eth::v2::Log) -> Result<Self, String> {
+        fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
             Self::decode(log)
         }
     }
@@ -3420,19 +3387,16 @@ pub mod events {
             176u8,
             196u8,
         ];
-        pub fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
-            if log.topics.len() != 1usize {
+        pub fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
+            if log.topic_count() != 1usize {
                 return false;
             }
-            if log.data.len() != 128usize {
+            if log.data().len() != 128usize {
                 return false;
             }
-            return log.topics.get(0).expect("bounds already checked").as_ref() as &[u8]
-                == Self::TOPIC_ID;
+            return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
-        pub fn decode(
-            log: &substreams_ethereum::pb::eth::v2::Log,
-        ) -> Result<Self, String> {
+        pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
             let mut values = ethabi::decode(
                     &[
                         ethabi::ParamType::FixedBytes(8usize),
@@ -3440,7 +3404,7 @@ pub mod events {
                         ethabi::ParamType::FixedBytes(24usize),
                         ethabi::ParamType::FixedBytes(32usize),
                     ],
-                    log.data.as_ref(),
+                    log.data(),
                 )
                 .map_err(|e| format!("unable to decode log.data: {:?}", e))?;
             values.reverse();
@@ -3490,10 +3454,10 @@ pub mod events {
     }
     impl substreams_ethereum::Event for EventUBytes8UBytes16UBytes24UBytes32 {
         const NAME: &'static str = "EventUBytes8UBytes16UBytes24UBytes32";
-        fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
+        fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
             Self::match_log(log)
         }
-        fn decode(log: &substreams_ethereum::pb::eth::v2::Log) -> Result<Self, String> {
+        fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
             Self::decode(log)
         }
     }
@@ -3536,19 +3500,16 @@ pub mod events {
             19u8,
             124u8,
         ];
-        pub fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
-            if log.topics.len() != 1usize {
+        pub fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
+            if log.topic_count() != 1usize {
                 return false;
             }
-            if log.data.len() < 160usize {
+            if log.data().len() < 160usize {
                 return false;
             }
-            return log.topics.get(0).expect("bounds already checked").as_ref() as &[u8]
-                == Self::TOPIC_ID;
+            return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
-        pub fn decode(
-            log: &substreams_ethereum::pb::eth::v2::Log,
-        ) -> Result<Self, String> {
+        pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
             let mut values = ethabi::decode(
                     &[
                         ethabi::ParamType::FixedArray(
@@ -3556,7 +3517,7 @@ pub mod events {
                             2usize,
                         ),
                     ],
-                    log.data.as_ref(),
+                    log.data(),
                 )
                 .map_err(|e| format!("unable to decode log.data: {:?}", e))?;
             values.reverse();
@@ -3576,10 +3537,10 @@ pub mod events {
     }
     impl substreams_ethereum::Event for EventUFixedArrayString {
         const NAME: &'static str = "EventUFixedArrayString";
-        fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
+        fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
             Self::match_log(log)
         }
-        fn decode(log: &substreams_ethereum::pb::eth::v2::Log) -> Result<Self, String> {
+        fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
             Self::decode(log)
         }
     }
@@ -3622,19 +3583,16 @@ pub mod events {
             140u8,
             216u8,
         ];
-        pub fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
-            if log.topics.len() != 1usize {
+        pub fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
+            if log.topic_count() != 1usize {
                 return false;
             }
-            if log.data.len() < 160usize {
+            if log.data().len() < 160usize {
                 return false;
             }
-            return log.topics.get(0).expect("bounds already checked").as_ref() as &[u8]
-                == Self::TOPIC_ID;
+            return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
-        pub fn decode(
-            log: &substreams_ethereum::pb::eth::v2::Log,
-        ) -> Result<Self, String> {
+        pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
             let mut values = ethabi::decode(
                     &[
                         ethabi::ParamType::FixedArray(
@@ -3642,7 +3600,7 @@ pub mod events {
                             2usize,
                         ),
                     ],
-                    log.data.as_ref(),
+                    log.data(),
                 )
                 .map_err(|e| format!("unable to decode log.data: {:?}", e))?;
             values.reverse();
@@ -3662,10 +3620,10 @@ pub mod events {
     }
     impl substreams_ethereum::Event for EventUFixedArraySubDynamic {
         const NAME: &'static str = "EventUFixedArraySubDynamic";
-        fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
+        fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
             Self::match_log(log)
         }
-        fn decode(log: &substreams_ethereum::pb::eth::v2::Log) -> Result<Self, String> {
+        fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
             Self::decode(log)
         }
     }
@@ -3708,19 +3666,16 @@ pub mod events {
             171u8,
             178u8,
         ];
-        pub fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
-            if log.topics.len() != 1usize {
+        pub fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
+            if log.topic_count() != 1usize {
                 return false;
             }
-            if log.data.len() != 64usize {
+            if log.data().len() != 64usize {
                 return false;
             }
-            return log.topics.get(0).expect("bounds already checked").as_ref() as &[u8]
-                == Self::TOPIC_ID;
+            return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
-        pub fn decode(
-            log: &substreams_ethereum::pb::eth::v2::Log,
-        ) -> Result<Self, String> {
+        pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
             let mut values = ethabi::decode(
                     &[
                         ethabi::ParamType::FixedArray(
@@ -3728,7 +3683,7 @@ pub mod events {
                             2usize,
                         ),
                     ],
-                    log.data.as_ref(),
+                    log.data(),
                 )
                 .map_err(|e| format!("unable to decode log.data: {:?}", e))?;
             values.reverse();
@@ -3750,10 +3705,10 @@ pub mod events {
     }
     impl substreams_ethereum::Event for EventUFixedArraySubFixed {
         const NAME: &'static str = "EventUFixedArraySubFixed";
-        fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
+        fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
             Self::match_log(log)
         }
-        fn decode(log: &substreams_ethereum::pb::eth::v2::Log) -> Result<Self, String> {
+        fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
             Self::decode(log)
         }
     }
@@ -3796,22 +3751,19 @@ pub mod events {
             135u8,
             211u8,
         ];
-        pub fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
-            if log.topics.len() != 1usize {
+        pub fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
+            if log.topic_count() != 1usize {
                 return false;
             }
-            if log.data.len() != 32usize {
+            if log.data().len() != 32usize {
                 return false;
             }
-            return log.topics.get(0).expect("bounds already checked").as_ref() as &[u8]
-                == Self::TOPIC_ID;
+            return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
-        pub fn decode(
-            log: &substreams_ethereum::pb::eth::v2::Log,
-        ) -> Result<Self, String> {
+        pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
             let mut values = ethabi::decode(
                     &[ethabi::ParamType::Tuple(vec![ethabi::ParamType::Address])],
-                    log.data.as_ref(),
+                    log.data(),
                 )
                 .map_err(|e| format!("unable to decode log.data: {:?}", e))?;
             values.reverse();
@@ -3836,10 +3788,10 @@ pub mod events {
     }
     impl substreams_ethereum::Event for EventUTupleAddress {
         const NAME: &'static str = "EventUTupleAddress";
-        fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
+        fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
             Self::match_log(log)
         }
-        fn decode(log: &substreams_ethereum::pb::eth::v2::Log) -> Result<Self, String> {
+        fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
             Self::decode(log)
         }
     }
@@ -3882,22 +3834,19 @@ pub mod events {
             255u8,
             35u8,
         ];
-        pub fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
-            if log.topics.len() != 1usize {
+        pub fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
+            if log.topic_count() != 1usize {
                 return false;
             }
-            if log.data.len() != 32usize {
+            if log.data().len() != 32usize {
                 return false;
             }
-            return log.topics.get(0).expect("bounds already checked").as_ref() as &[u8]
-                == Self::TOPIC_ID;
+            return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
-        pub fn decode(
-            log: &substreams_ethereum::pb::eth::v2::Log,
-        ) -> Result<Self, String> {
+        pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
             let mut values = ethabi::decode(
                     &[ethabi::ParamType::Tuple(vec![ethabi::ParamType::Bool])],
-                    log.data.as_ref(),
+                    log.data(),
                 )
                 .map_err(|e| format!("unable to decode log.data: {:?}", e))?;
             values.reverse();
@@ -3915,10 +3864,10 @@ pub mod events {
     }
     impl substreams_ethereum::Event for EventUTupleBool {
         const NAME: &'static str = "EventUTupleBool";
-        fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
+        fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
             Self::match_log(log)
         }
-        fn decode(log: &substreams_ethereum::pb::eth::v2::Log) -> Result<Self, String> {
+        fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
             Self::decode(log)
         }
     }
@@ -3961,23 +3910,20 @@ pub mod events {
             28u8,
             21u8,
         ];
-        pub fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
-            if log.topics.len() != 2usize {
+        pub fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
+            if log.topic_count() != 2usize {
                 return false;
             }
-            if log.data.len() != 0usize {
+            if log.data().len() != 0usize {
                 return false;
             }
-            return log.topics.get(0).expect("bounds already checked").as_ref() as &[u8]
-                == Self::TOPIC_ID;
+            return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
-        pub fn decode(
-            log: &substreams_ethereum::pb::eth::v2::Log,
-        ) -> Result<Self, String> {
+        pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
             Ok(Self {
                 first: ethabi::decode(
                         &[ethabi::ParamType::Address],
-                        log.topics[1usize].as_ref(),
+                        log.topic(1usize).expect("bounds already checked"),
                     )
                     .map_err(|e| {
                         format!(
@@ -3996,10 +3942,10 @@ pub mod events {
     }
     impl substreams_ethereum::Event for EventWithOverloads1 {
         const NAME: &'static str = "EventWithOverloads";
-        fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
+        fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
             Self::match_log(log)
         }
-        fn decode(log: &substreams_ethereum::pb::eth::v2::Log) -> Result<Self, String> {
+        fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
             Self::decode(log)
         }
     }
@@ -4042,23 +3988,20 @@ pub mod events {
             35u8,
             150u8,
         ];
-        pub fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
-            if log.topics.len() != 2usize {
+        pub fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
+            if log.topic_count() != 2usize {
                 return false;
             }
-            if log.data.len() != 0usize {
+            if log.data().len() != 0usize {
                 return false;
             }
-            return log.topics.get(0).expect("bounds already checked").as_ref() as &[u8]
-                == Self::TOPIC_ID;
+            return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
-        pub fn decode(
-            log: &substreams_ethereum::pb::eth::v2::Log,
-        ) -> Result<Self, String> {
+        pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
             Ok(Self {
                 second: ethabi::decode(
                         &[ethabi::ParamType::FixedBytes(32)],
-                        log.topics[1usize].as_ref(),
+                        log.topic(1usize).expect("bounds already checked"),
                     )
                     .map_err(|e| {
                         format!(
@@ -4076,10 +4019,10 @@ pub mod events {
     }
     impl substreams_ethereum::Event for EventWithOverloads2 {
         const NAME: &'static str = "EventWithOverloads";
-        fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
+        fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
             Self::match_log(log)
         }
-        fn decode(log: &substreams_ethereum::pb::eth::v2::Log) -> Result<Self, String> {
+        fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
             Self::decode(log)
         }
     }
@@ -4122,25 +4065,22 @@ pub mod events {
             73u8,
             118u8,
         ];
-        pub fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
-            if log.topics.len() != 2usize {
+        pub fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
+            if log.topic_count() != 2usize {
                 return false;
             }
-            if log.data.len() != 0usize {
+            if log.data().len() != 0usize {
                 return false;
             }
-            return log.topics.get(0).expect("bounds already checked").as_ref() as &[u8]
-                == Self::TOPIC_ID;
+            return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
-        pub fn decode(
-            log: &substreams_ethereum::pb::eth::v2::Log,
-        ) -> Result<Self, String> {
+        pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
             Ok(Self {
                 third: {
                     let mut v = [0 as u8; 32];
                     ethabi::decode(
                             &[ethabi::ParamType::Uint(256usize)],
-                            log.topics[1usize].as_ref(),
+                            log.topic(1usize).expect("bounds already checked"),
                         )
                         .map_err(|e| {
                             format!(
@@ -4160,10 +4100,10 @@ pub mod events {
     }
     impl substreams_ethereum::Event for EventWithOverloads3 {
         const NAME: &'static str = "EventWithOverloads";
-        fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
+        fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
             Self::match_log(log)
         }
-        fn decode(log: &substreams_ethereum::pb::eth::v2::Log) -> Result<Self, String> {
+        fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
             Self::decode(log)
         }
     }

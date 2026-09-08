@@ -1,12 +1,14 @@
-version: v1
+version: v2
 plugins:
-- plugin: buf.build/community/neoeinstein-prost:v0.2.2
-  out: ./core/src/pb
-  opt:
-    - file_descriptor_set=false
+  - remote: buf.build/anthropics/buffa
+    out: ./core/src/pb
+    opt:
+      - lazy_views=true
+      - unknown_fields=false
 
-- plugin: buf.build/community/neoeinstein-prost-crate:v0.3.1
-  out: ./core/src/pb
-  opt:
-    - no_features
-    - include_file=generated.rs
+# The block model is generated from the published schema; the transform types are the
+# client-side filter API and are not used by modules.
+inputs:
+  - module: buf.build/streamingfast/firehose-ethereum
+    exclude_paths:
+      - sf/ethereum/transform
