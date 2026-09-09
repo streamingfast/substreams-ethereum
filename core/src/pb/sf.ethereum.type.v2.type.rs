@@ -3435,7 +3435,6 @@ impl ::buffa::Message for TransactionReceipt {
     }
 }
 #[derive(Clone, PartialEq, Default)]
-#[allow(non_snake_case)]
 pub struct Log {
     /// Field 1: `address`
     pub address: ::buffa::alloc::vec::Vec<u8>,
@@ -3468,7 +3467,7 @@ pub struct Log {
     /// the `blockIndex` value will always be 0.
     ///
     /// Field 6: `blockIndex`
-    pub blockIndex: u32,
+    pub block_index: u32,
     /// The block's global ordinal when the log was recorded, refer to \[Block\]
     /// documentation for further information about ordinals and total ordering.
     ///
@@ -3482,7 +3481,7 @@ impl ::core::fmt::Debug for Log {
             .field("topics", &self.topics)
             .field("data", &self.data)
             .field("index", &self.index)
-            .field("blockIndex", &self.blockIndex)
+            .field("block_index", &self.block_index)
             .field("ordinal", &self.ordinal)
             .finish()
     }
@@ -3526,8 +3525,8 @@ impl ::buffa::Message for Log {
         if self.index != 0u32 {
             size += 1u64 + ::buffa::types::uint32_encoded_len(self.index) as u64;
         }
-        if self.blockIndex != 0u32 {
-            size += 1u64 + ::buffa::types::uint32_encoded_len(self.blockIndex) as u64;
+        if self.block_index != 0u32 {
+            size += 1u64 + ::buffa::types::uint32_encoded_len(self.block_index) as u64;
         }
         if self.ordinal != 0u64 {
             size += 1u64 + ::buffa::types::uint64_encoded_len(self.ordinal) as u64;
@@ -3553,8 +3552,8 @@ impl ::buffa::Message for Log {
         if self.index != 0u32 {
             ::buffa::types::put_uint32_field(4u32, self.index, buf);
         }
-        if self.blockIndex != 0u32 {
-            ::buffa::types::put_uint32_field(6u32, self.blockIndex, buf);
+        if self.block_index != 0u32 {
+            ::buffa::types::put_uint32_field(6u32, self.block_index, buf);
         }
         if self.ordinal != 0u64 {
             ::buffa::types::put_uint64_field(7u32, self.ordinal, buf);
@@ -3608,7 +3607,7 @@ impl ::buffa::Message for Log {
                     tag,
                     ::buffa::encoding::WireType::Varint,
                 )?;
-                self.blockIndex = ::buffa::types::decode_uint32(buf)?;
+                self.block_index = ::buffa::types::decode_uint32(buf)?;
             }
             7u32 => {
                 ::buffa::encoding::check_wire_type(
@@ -3628,7 +3627,7 @@ impl ::buffa::Message for Log {
         self.topics.clear();
         self.data.clear();
         self.index = 0u32;
-        self.blockIndex = 0u32;
+        self.block_index = 0u32;
         self.ordinal = 0u64;
     }
 }

@@ -10,13 +10,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
   Generated event decoders are now generic over the log representation, so the same decoder works with an owned `Log`, a `LogView`, or one of buffa's borrowed lazy views. ABI decoding itself is unchanged.
 
-  Generated types differ from `prost` in three ways: enum fields are `EnumValue<E>` rather than `i32` (compare against the variant directly), singular message fields are `MessageField<T>` rather than `Option<Box<T>>` and deref to a default instance, and encoding is infallible.
+  Generated types differ from `prost` in three ways: enum fields are `EnumValue<E>` rather than `i32` (compare against the variant directly), singular message fields are `MessageField<T>` rather than `Option<T>` and deref to a default instance, and encoding is infallible.
 
   Two behaviour changes do not produce compile errors: `Block::timestamp()`, `Block::timestamp_seconds()` and `TransactionTrace::receipt()` previously panicked on a block with no header or a transaction with no receipt, and now return a default.
 
 * Added lazy view accessors on `BlockLazyView`: `transactions()`, `receipts()`, `logs()`, `calls()` and `TransactionTraceLazyView::logs_with_calls()`.
 
-  A lazy view defers validation to field access, so each has a `try_` twin that surfaces decode errors where the plain one skips them.
+  A lazy view defers validation to field access, so each has a `try_` twin that surfaces decode errors where the plain one skips them. This is a real difference in behaviour, not just in error reporting: an owned `Block` containing a corrupt log fails to decode and the module aborts, while `BlockLazyView::logs()` yields the logs it could read and drops the rest silently. Use the `try_` accessor wherever a malformed block must not pass as a short one.
 
 * Added `LogLike`, the log fields ABI decoding reads, implemented for the owned `Log`, `LogView` and buffa's `LogLazyView`.
 
@@ -27,6 +27,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * Changed `Call.executed_code` to a plain `bool` from `Option<bool>`, matching the schema. The checked-in generated code had fallen behind.
 
 * Updated the `sf.ethereum.type.v2` block model, which adds `BlockHeader.slot_number` and makes `BlockHeader.parent_beacon_root` and `BlockHeader.requests_hash` optional.
+
+* Pinned the codegen plugin to `buf.build/anthropics/buffa:v0.9.2` in `buf.gen.yaml`, and enabled `idiomatic_field_names=true` so `Log.block_index` keeps the name `prost` gave it rather than the schema's `blockIndex` spelling.
 
 * Removed `pb::sf::ethereum::transform::v1`. Generation has always excluded that path, so the checked-in file was stale output.
 

@@ -15,7 +15,7 @@ rust-version.workspace = true
 buffa = { version = "0.9", default-features = false, features = ["std", "fast-utf8"] }
 buffa-types = { version = "0.9", default-features = false }
 ethabi = "17.0"
-substreams = "0.7.0"
+substreams = { workspace = true }
 num-bigint = "0.4"
 bigdecimal = "0.3"
 

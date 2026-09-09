@@ -1,4 +1,3 @@
-/// Re-exported so downstream crates encode and decode with a version-matched buffa.
 pub use buffa;
 
 pub mod pb;

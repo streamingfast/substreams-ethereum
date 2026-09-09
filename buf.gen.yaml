@@ -1,10 +1,11 @@
 version: v2
 plugins:
-  - remote: buf.build/anthropics/buffa
+  - remote: buf.build/anthropics/buffa:v0.9.2
     out: ./core/src/pb
     opt:
       - lazy_views=true
       - unknown_fields=false
+      - idiomatic_field_names=true
 
 # The block model is generated from the published schema; the transform types are the
 # client-side filter API and are not used by modules.

@@ -193,8 +193,8 @@ impl OrderFulfilled {
         return log.topic(0).expect("bounds already checked")
             == Self::TOPIC_ID;
     }
-    pub fn decode(
-        log: &substreams_ethereum::pb::eth::v2::Log,
+    pub fn decode<L: substreams_ethereum::LogLike>(
+        log: &L,
     ) -> Result<Self, String> {
         let mut values = ethabi::decode(
                 &[
@@ -236,8 +236,8 @@ impl substreams_ethereum::Event for OrderFulfilled {
     fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
         Self::match_log(log)
     }
-    fn decode(
-        log: &substreams_ethereum::pb::eth::v2::Log,
+    fn decode<L: substreams_ethereum::LogLike>(
+        log: &L,
     ) -> Result<Self, String> {
         Self::decode(log)
     }
@@ -292,8 +292,8 @@ impl SpentItem {
         return log.topic(0).expect("bounds already checked")
             == Self::TOPIC_ID;
     }
-    pub fn decode(
-        log: &substreams_ethereum::pb::eth::v2::Log,
+    pub fn decode<L: substreams_ethereum::LogLike>(
+        log: &L,
     ) -> Result<Self, String> {
         let mut values = ethabi::decode(
                 &[
@@ -333,8 +333,8 @@ impl substreams_ethereum::Event for SpentItem {
     fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
         Self::match_log(log)
     }
-    fn decode(
-        log: &substreams_ethereum::pb::eth::v2::Log,
+    fn decode<L: substreams_ethereum::LogLike>(
+        log: &L,
     ) -> Result<Self, String> {
         Self::decode(log)
     }

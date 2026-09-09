@@ -19,6 +19,7 @@ substreams-ethereum = { version = "0.11.1", path = "./substreams-ethereum" }
 substreams-ethereum-abigen = { version = "0.11.1", path = "./abigen" }
 substreams-ethereum-core = { version = "0.11.1", path = "./core" }
 substreams-ethereum-derive = { version = "0.11.1", path = "./derive" }
+substreams = { version = "0.7.0", git = "https://github.com/streamingfast/substreams-rs", branch = "feature/buffa" }
 
 [profile.release]
 lto = true

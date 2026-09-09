@@ -18,7 +18,7 @@ doc = false
 ethabi = "17.0"
 num-bigint = "0.4.3"
 num-traits = "0.2.15"
-substreams = "^0.7.0"
+substreams = { workspace = true }
 substreams-ethereum = { workspace = true }
 
 [build-dependencies]

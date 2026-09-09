@@ -5150,7 +5150,6 @@ impl ::buffa::HasMessageView for super::super::TransactionReceipt {
     type ViewHandle = TransactionReceiptOwnedView;
 }
 #[derive(Clone, Debug, Default)]
-#[allow(non_snake_case)]
 pub struct LogView<'a> {
     /// Field 1: `address`
     pub address: &'a [u8],
@@ -5183,7 +5182,7 @@ pub struct LogView<'a> {
     /// the `blockIndex` value will always be 0.
     ///
     /// Field 6: `blockIndex`
-    pub blockIndex: u32,
+    pub block_index: u32,
     /// The block's global ordinal when the log was recorded, refer to \[Block\]
     /// documentation for further information about ordinals and total ordering.
     ///
@@ -5246,7 +5245,7 @@ impl<'a> ::buffa::MessageView<'a> for LogView<'a> {
                     tag,
                     ::buffa::encoding::WireType::Varint,
                 )?;
-                view.blockIndex = ::buffa::types::decode_uint32(&mut cur)?;
+                view.block_index = ::buffa::types::decode_uint32(&mut cur)?;
             }
             7u32 => {
                 ::buffa::encoding::check_wire_type(
@@ -5290,7 +5289,7 @@ impl<'a> ::buffa::MessageView<'a> for LogView<'a> {
             topics: self.topics.iter().map(|b| (b).to_vec()).collect(),
             data: (self.data).to_vec(),
             index: self.index,
-            blockIndex: self.blockIndex,
+            block_index: self.block_index,
             ordinal: self.ordinal,
             ..::core::default::Default::default()
         })
@@ -5314,8 +5313,8 @@ impl<'a> ::buffa::ViewEncode<'a> for LogView<'a> {
         if self.index != 0u32 {
             size += 1u64 + ::buffa::types::uint32_encoded_len(self.index) as u64;
         }
-        if self.blockIndex != 0u32 {
-            size += 1u64 + ::buffa::types::uint32_encoded_len(self.blockIndex) as u64;
+        if self.block_index != 0u32 {
+            size += 1u64 + ::buffa::types::uint32_encoded_len(self.block_index) as u64;
         }
         if self.ordinal != 0u64 {
             size += 1u64 + ::buffa::types::uint64_encoded_len(self.ordinal) as u64;
@@ -5342,8 +5341,8 @@ impl<'a> ::buffa::ViewEncode<'a> for LogView<'a> {
         if self.index != 0u32 {
             ::buffa::types::put_uint32_field(4u32, self.index, buf);
         }
-        if self.blockIndex != 0u32 {
-            ::buffa::types::put_uint32_field(6u32, self.blockIndex, buf);
+        if self.block_index != 0u32 {
+            ::buffa::types::put_uint32_field(6u32, self.block_index, buf);
         }
         if self.ordinal != 0u64 {
             ::buffa::types::put_uint64_field(7u32, self.ordinal, buf);
@@ -5365,7 +5364,6 @@ impl<'a> ::buffa::MessageName for LogView<'a> {
  Field accessors return borrows tied to `&self`. Use [`Self::view`] to get the full [`LogView`] when you need struct patterns, iteration helpers, or to pass the view to lifetime-parameterised code.*/
 #[derive(Clone, Debug)]
 pub struct LogOwnedView(::buffa::OwnedView<LogView<'static>>);
-#[allow(non_snake_case)]
 impl LogOwnedView {
     /// Decode an owned view from a [`::buffa::bytes::Bytes`] buffer.
     ///
@@ -5479,8 +5477,8 @@ impl LogOwnedView {
     ///
     /// Field 6: `blockIndex`
     #[must_use]
-    pub fn blockIndex(&self) -> u32 {
-        self.0.reborrow().blockIndex
+    pub fn block_index(&self) -> u32 {
+        self.0.reborrow().block_index
     }
     /// The block's global ordinal when the log was recorded, refer to \[Block\]
     /// documentation for further information about ordinals and total ordering.

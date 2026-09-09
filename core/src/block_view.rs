@@ -57,11 +57,17 @@ impl pb::Block {
     }
 
     /// Timestamp returns a reference to the block's header timestamp.
+    ///
+    /// A block with no header, or a header with no timestamp, yields the default
+    /// `Timestamp` (the Unix epoch) rather than panicking.
     pub fn timestamp(&self) -> &Timestamp {
         &self.header.timestamp
     }
 
     /// Timestamp returns block's header timestamp in seconds.
+    ///
+    /// A block with no header, or a header with no timestamp, yields `0` rather than
+    /// panicking.
     pub fn timestamp_seconds(&self) -> u64 {
         self.header.timestamp.seconds as u64
     }
@@ -109,6 +115,8 @@ impl pb::TransactionTrace {
         })
     }
 
+    /// A transaction with no receipt yields a default `ReceiptView`, which reports no
+    /// logs, rather than panicking.
     pub fn receipt(&self) -> ReceiptView {
         ReceiptView {
             transaction: self,
@@ -198,7 +206,7 @@ impl<'a> LogView<'a> {
 
     /// The log's index within the block.
     pub fn block_index(self) -> u32 {
-        self.log.blockIndex
+        self.log.block_index
     }
 }
 
@@ -319,13 +327,15 @@ mod lazy {
 
         /// Iterates over logs in receipts of successful transactions, skipping any that fail
         /// to decode.
+        ///
+        /// A corrupt log is dropped silently, so a malformed block yields a short list rather
+        /// than an error. Use [`try_logs`](Self::try_logs) where that matters.
         pub fn logs(&self) -> impl Iterator<Item = LogLazyView<'a>> + '_ {
             self.try_logs().filter_map(Result::ok)
         }
 
         /// Iterates over logs in receipts of successful transactions, surfacing decode errors.
         pub fn try_logs(&self) -> impl Iterator<Item = Result<LogLazyView<'a>, DecodeError>> + '_ {
-            // Collected because the iterator would borrow from the closure-owned receipt.
             self.try_receipts().flat_map(|receipt| match receipt {
                 Ok(receipt) => receipt.logs.iter().collect::<Vec<_>>(),
                 Err(err) => vec![Err(err)],
@@ -477,8 +487,6 @@ mod lazy_view_parity_tests {
         }
     }
 
-    /// Two successful transactions and one failed one; the second call of the first
-    /// transaction reverted, so its log must not appear.
     fn block() -> pb::Block {
         pb::Block {
             number: 1,
