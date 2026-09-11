@@ -1011,3 +1011,129 @@ mod tests {
         );
     }
 }
+
+#[cfg(test)]
+mod lazy_view_tests {
+    use crate::abi::tests;
+    use buffa::view::LazyMessageView;
+    use buffa::Message;
+    use substreams::hex;
+    use substreams_ethereum::pb::eth::v2::{Log, __buffa::lazy_view::LogLazyView};
+    use substreams_ethereum::Event;
+
+    #[test]
+    fn it_decodes_the_same_event_from_an_owned_log_and_a_lazy_view() {
+        use tests::events::EventUTupleAddress as Event_;
+
+        let log = Log {
+            address: hex!("0000000000000000000000000000000000000000").to_vec(),
+            topics: vec![
+                hex!("adb25b4ab5d8f04dc5e8073124d207a0974cb9aecac69a6197dbd5cf8dce87d3").to_vec(),
+            ],
+            data: hex!("000000000000000000000000db0de9288cf0713de91371969efcc9969dd94117").to_vec(),
+            ..Default::default()
+        };
+
+        let bytes = log.encode_to_vec();
+        let lazy = LogLazyView::decode_lazy(&bytes).expect("valid log");
+
+        assert!(Event_::match_log(&log), "owned log must match");
+        assert!(Event_::match_log(&lazy), "lazy view must match");
+
+        assert_eq!(
+            Event_::decode(&log),
+            Event_::decode(&lazy),
+            "both representations must decode to the same event"
+        );
+    }
+
+    #[test]
+    fn it_matches_and_decodes_through_a_lazy_view() {
+        use tests::events::EventUTupleAddress as Event_;
+
+        let log = Log {
+            address: hex!("0000000000000000000000000000000000000000").to_vec(),
+            topics: vec![
+                hex!("adb25b4ab5d8f04dc5e8073124d207a0974cb9aecac69a6197dbd5cf8dce87d3").to_vec(),
+            ],
+            data: hex!("000000000000000000000000db0de9288cf0713de91371969efcc9969dd94117").to_vec(),
+            ..Default::default()
+        };
+
+        let bytes = log.encode_to_vec();
+        let lazy = LogLazyView::decode_lazy(&bytes).expect("valid log");
+
+        let from_owned = Event_::match_and_decode(log);
+        let from_lazy = Event_::match_and_decode(lazy);
+
+        assert!(from_owned.is_some(), "owned log must decode");
+        assert_eq!(from_owned, from_lazy);
+    }
+
+    #[test]
+    fn it_rejects_a_non_matching_log_in_both_representations() {
+        use tests::events::EventUTupleAddress as Event_;
+
+        let log = Log {
+            topics: vec![
+                hex!("0000000000000000000000000000000000000000000000000000000000000000").to_vec(),
+            ],
+            ..Default::default()
+        };
+
+        let bytes = log.encode_to_vec();
+        let lazy = LogLazyView::decode_lazy(&bytes).expect("valid log");
+
+        assert!(!Event_::match_log(&log));
+        assert!(!Event_::match_log(&lazy));
+    }
+}
+
+#[cfg(test)]
+mod match_and_decode_shapes {
+    use crate::abi::tests;
+    use buffa::view::LazyMessageView;
+    use buffa::Message;
+    use substreams::hex;
+    use substreams_ethereum::pb::eth::v2::{Log, __buffa::lazy_view::LogLazyView};
+    use substreams_ethereum::Event;
+
+    fn matching_log() -> Log {
+        Log {
+            topics: vec![
+                hex!("adb25b4ab5d8f04dc5e8073124d207a0974cb9aecac69a6197dbd5cf8dce87d3").to_vec(),
+            ],
+            data: hex!("000000000000000000000000db0de9288cf0713de91371969efcc9969dd94117").to_vec(),
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn it_accepts_every_log_shape() {
+        use tests::events::EventUTupleAddress as Event_;
+
+        let log = matching_log();
+        let bytes = log.encode_to_vec();
+        let lazy = LogLazyView::decode_lazy(&bytes).expect("valid log");
+
+        let by_ref = Event_::match_and_decode(&log);
+        let by_ref_lazy = Event_::match_and_decode(&lazy);
+        let owned_lazy = Event_::match_and_decode(lazy);
+        let owned = Event_::match_and_decode(log);
+
+        assert!(owned.is_some(), "owned log must decode");
+        assert_eq!(owned, by_ref);
+        assert_eq!(owned, by_ref_lazy);
+        assert_eq!(owned, owned_lazy);
+    }
+
+    #[test]
+    fn it_accepts_a_reference_from_an_iterator() {
+        use tests::events::EventUTupleAddress as Event_;
+
+        let logs = vec![matching_log()];
+        let decoded: Vec<_> = logs.iter().filter_map(Event_::match_and_decode).collect();
+
+        assert_eq!(decoded.len(), 1);
+    }
+}

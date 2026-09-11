@@ -4,6 +4,40 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+* Switched protobuf encoding and decoding from `prost` to [buffa](https://github.com/anthropics/buffa), `prost` is no longer a dependency.
+
+  Generated event decoders are now generic over the log representation, so the same decoder works with an owned `Log`, a `LogView`, or one of buffa's borrowed lazy views. ABI decoding itself is unchanged.
+
+  Generated types differ from `prost` in three ways: enum fields are `EnumValue<E>` rather than `i32` (compare against the variant directly), singular message fields are `MessageField<T>` rather than `Option<T>` and deref to a default instance, and encoding is infallible.
+
+  **Breaking**: singular message fields deref to a default instance, so a field whose absence carried meaning now reads as a zero value indistinguishable from a real one. Use `.is_set()` or `.as_option()` where the distinction matters. The affected generated fields are `BlockHeader.base_fee_per_gas` (absent before London), `TransactionTrace.max_fee_per_gas` and `max_priority_fee_per_gas` (absent on a legacy transaction, and on a `BASE`-detail block where they are `EXTENDED`-only), and `TransactionTrace.gas_price`, `TransactionTrace.value`, `Call.value`, `TransactionTrace.blob_gas_fee_cap` and `TransactionReceipt.blob_gas_price` when unset.
+
+  `Block::timestamp()`, `Block::timestamp_seconds()` and `TransactionTrace::receipt()` keep panicking on a block with no header timestamp or a transaction with no receipt, rather than deref'ing to a default. A live chain always carries both, and a default receipt would drop a transaction's logs with no error.
+
+* Added lazy view accessors on `BlockLazyView`: `transactions()`, `receipts()`, `logs()`, `calls()` and `TransactionTraceLazyView::logs_with_calls()`.
+
+  A lazy view defers validation to field access, so each has a `try_` twin that surfaces decode errors where the plain one skips them. This is a real difference in behaviour, not just in error reporting: an owned `Block` containing a corrupt log fails to decode and the module aborts, while `BlockLazyView::logs()` yields the logs it could read and drops the rest silently. Use the `try_` accessor wherever a malformed block must not pass as a short one.
+
+  A transaction carrying no receipt is skipped by `receipts()` and `try_receipts()`, matching the owned block's refusal to present one with no logs.
+
+* Added `LogLike`, the log fields ABI decoding reads, implemented for the owned `Log`, `LogView` and buffa's `LogLazyView`.
+
+* Changed `Event::match_log` and `Event::decode` to be generic over `L: LogLike`. A hand-written `impl Event` needs updating, generated code only needs `Abigen` re-run. `Function::match_and_decode` is unchanged, call decoding is not generic yet.
+
+  The failed-decode log line now reports the log's index within its transaction rather than within the block, which is what `LogLike` exposes.
+
+* Changed `Call.executed_code` to a plain `bool` from `Option<bool>`, matching the schema. The checked-in generated code had fallen behind.
+
+* Updated the `sf.ethereum.type.v2` block model, which adds `BlockHeader.slot_number` and makes `BlockHeader.parent_beacon_root` and `BlockHeader.requests_hash` optional.
+
+* Pinned the codegen plugin to `buf.build/anthropics/buffa:v0.9.2` in `buf.gen.yaml`, and enabled `idiomatic_field_names=true` so `Log.block_index` keeps the name `prost` gave it rather than the schema's `blockIndex` spelling.
+
+* Removed `pb::sf::ethereum::transform::v1`. Generation has always excluded that path, so the checked-in file was stale output.
+
+* Fixed `cargo test`, which built a WASM test binary and then tried to run it as a native executable. `.cargo/config.toml` set `wasm32-unknown-unknown` as the default target for every cargo command, CI already named its targets explicitly and was unaffected.
+
 ## v0.11.1
 * Bump substreams to 0.7.0 for ethereum core
 

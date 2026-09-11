@@ -73,7 +73,7 @@ fn eth_call_internal(input: Vec<u8>) -> Vec<u8> {
 }
 
 pub fn eth_call(input: &RpcCalls) -> RpcResponses {
-    let raw_resp: Vec<u8> = eth_call_internal(proto::encode(input).unwrap());
+    let raw_resp: Vec<u8> = eth_call_internal(proto::encode(input));
     let resp: RpcResponses = proto::decode(&raw_resp).unwrap();
 
     return resp;
@@ -95,7 +95,7 @@ fn eth_get_balance_internal(input: Vec<u8>) -> Vec<u8> {
 }
 
 pub fn eth_get_balance(requests: &RpcGetBalanceRequests) -> RpcGetBalanceResponses {
-    let raw_req = proto::encode(requests).expect("failed to encode RpcGetBalanceRequests");
+    let raw_req = proto::encode(requests);
     let raw_resp: Vec<u8> = eth_get_balance_internal(raw_req);
     proto::decode(&raw_resp).expect("failed to decode RpcGetBalanceResponses")
 }

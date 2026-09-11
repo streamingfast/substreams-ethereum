@@ -18,9 +18,7 @@ doc = false
 ethabi = "17.0"
 num-bigint = "0.4.3"
 num-traits = "0.2.15"
-prost = "^0.13.0"
-prost-types = "^0.13.0"
-substreams = "^0.7.0"
+substreams = { workspace = true }
 substreams-ethereum = { workspace = true }
 
 [build-dependencies]
@@ -28,4 +26,5 @@ anyhow = "1"
 substreams-ethereum = { workspace = true }
 
 [dev-dependencies]
+buffa = { version = "0.9", default-features = false, features = ["std", "fast-utf8"] }
 pretty_assertions = "1.2.1"

@@ -1,4 +1,4 @@
-use prost_types::Timestamp;
+use buffa_types::google::protobuf::Timestamp;
 
 use crate::pb::eth::v2::{Call, Log};
 use crate::{pb::eth::v2 as pb, Event};
@@ -6,7 +6,9 @@ use crate::{pb::eth::v2 as pb, Event};
 impl pb::Block {
     /// Iterates over successful transactions
     pub fn transactions(&self) -> impl Iterator<Item = &pb::TransactionTrace> {
-        self.transaction_traces.iter().filter(|tx| tx.status == 1)
+        self.transaction_traces
+            .iter()
+            .filter(|tx| tx.status == pb::TransactionTraceStatus::Succeeded)
     }
 
     /// Iterates over transaction receipts of successful transactions.
@@ -55,19 +57,25 @@ impl pb::Block {
     }
 
     /// Timestamp returns a reference to the block's header timestamp.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the block has no header, or the header no timestamp.
     pub fn timestamp(&self) -> &Timestamp {
-        self.header.as_ref().unwrap().timestamp.as_ref().unwrap()
+        self.header
+            .as_option()
+            .and_then(|h| h.timestamp.as_option())
+            .expect("block has no header timestamp")
     }
 
     /// Timestamp returns block's header timestamp in seconds.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the block has no header, or the header no timestamp. See
+    /// [`Self::timestamp`].
     pub fn timestamp_seconds(&self) -> u64 {
-        self.header
-            .as_ref()
-            .unwrap()
-            .timestamp
-            .as_ref()
-            .unwrap()
-            .seconds as u64
+        self.timestamp().seconds as u64
     }
 }
 
@@ -113,10 +121,18 @@ impl pb::TransactionTrace {
         })
     }
 
+    /// A transaction with no receipt yields a default `ReceiptView`, which reports no
+    /// logs, rather than panicking.
+    /// # Panics
+    ///
+    /// Panics if the transaction carries no receipt.
     pub fn receipt(&self) -> ReceiptView {
         ReceiptView {
             transaction: self,
-            receipt: &self.receipt.as_ref().unwrap(),
+            receipt: self
+                .receipt
+                .as_option()
+                .expect("transaction has no receipt"),
         }
     }
 
@@ -150,7 +166,7 @@ impl pb::TransactionTrace {
             }
         }
 
-        res.sort_by(|x, y| x.0.ordinal.cmp(&y.0.ordinal));
+        res.sort_by_key(|(log, _)| log.ordinal);
         res.into_iter()
     }
 
@@ -196,12 +212,13 @@ impl<'a> LogView<'a> {
         self.log.index
     }
 
-    pub fn block_index(self) -> u32 {
-        self.log.block_index
-    }
-
     pub fn ordinal(self) -> u64 {
         self.log.ordinal
+    }
+
+    /// The log's index within the block.
+    pub fn block_index(self) -> u32 {
+        self.log.block_index
     }
 }
 
@@ -260,6 +277,375 @@ mod tests {
                 (log_at(2, 0), call_at(2)),
                 (log_at(1, 0), call_at(1)),
             ]
+        );
+    }
+}
+
+/// Block accessors over buffa's lazy views, mirroring the `pb::Block` methods above.
+///
+/// A deferred field is only decoded when read, so these yield values rather than references
+/// and can fail. Each has a `try_` twin that surfaces the error; the plain one skips it.
+mod lazy {
+    use crate::pb::eth::v2::__buffa::lazy_view::{
+        BlockLazyView, CallLazyView, LogLazyView, TransactionReceiptLazyView,
+        TransactionTraceLazyView,
+    };
+    use buffa::DecodeError;
+
+    /// A log together with the call that emitted it.
+    pub struct LazyLogWithCall<'a> {
+        pub log: LogLazyView<'a>,
+        pub call: CallLazyView<'a>,
+    }
+
+    impl<'a> BlockLazyView<'a> {
+        /// Iterates over successful transactions, skipping any that fail to decode.
+        pub fn transactions(&self) -> impl Iterator<Item = TransactionTraceLazyView<'a>> + '_ {
+            self.try_transactions().filter_map(Result::ok)
+        }
+
+        /// Iterates over successful transactions, surfacing decode errors.
+        pub fn try_transactions(
+            &self,
+        ) -> impl Iterator<Item = Result<TransactionTraceLazyView<'a>, DecodeError>> + '_ {
+            // Keep undecodable entries so the error reaches the caller.
+            self.transaction_traces.iter().filter(|transaction| {
+                transaction
+                    .as_ref()
+                    .map(|transaction| {
+                        transaction.status == crate::pb::eth::v2::TransactionTraceStatus::Succeeded
+                    })
+                    .unwrap_or(true)
+            })
+        }
+
+        /// Iterates over transaction receipts of successful transactions, skipping any that
+        /// fail to decode.
+        pub fn receipts(&self) -> impl Iterator<Item = TransactionReceiptLazyView<'a>> + '_ {
+            self.try_receipts().filter_map(Result::ok)
+        }
+
+        /// Iterates over transaction receipts of successful transactions, surfacing decode
+        /// errors. A transaction carrying no receipt is skipped.
+        pub fn try_receipts(
+            &self,
+        ) -> impl Iterator<Item = Result<TransactionReceiptLazyView<'a>, DecodeError>> + '_
+        {
+            self.try_transactions().filter_map(|transaction| {
+                match transaction.and_then(|transaction| transaction.receipt()) {
+                    Ok(Some(receipt)) => Some(Ok(receipt)),
+                    Ok(None) => None,
+                    Err(err) => Some(Err(err)),
+                }
+            })
+        }
+
+        /// Iterates over logs in receipts of successful transactions, skipping any that fail
+        /// to decode.
+        ///
+        /// A corrupt log is dropped silently, so a malformed block yields a short list rather
+        /// than an error. Use [`try_logs`](Self::try_logs) where that matters.
+        pub fn logs(&self) -> impl Iterator<Item = LogLazyView<'a>> + '_ {
+            self.try_logs().filter_map(Result::ok)
+        }
+
+        /// Iterates over logs in receipts of successful transactions, surfacing decode errors.
+        pub fn try_logs(&self) -> impl Iterator<Item = Result<LogLazyView<'a>, DecodeError>> + '_ {
+            self.try_receipts().flat_map(|receipt| match receipt {
+                Ok(receipt) => receipt.logs.iter().collect::<Vec<_>>(),
+                Err(err) => vec![Err(err)],
+            })
+        }
+
+        /// Iterates over calls of successful transactions, skipping any that fail to decode.
+        pub fn calls(&self) -> impl Iterator<Item = CallLazyView<'a>> + '_ {
+            self.try_calls().filter_map(Result::ok)
+        }
+
+        /// Iterates over calls of successful transactions, surfacing decode errors.
+        pub fn try_calls(
+            &self,
+        ) -> impl Iterator<Item = Result<CallLazyView<'a>, DecodeError>> + '_ {
+            self.try_transactions()
+                .flat_map(|transaction| match transaction {
+                    Ok(transaction) => transaction.calls.iter().collect::<Vec<_>>(),
+                    Err(err) => vec![Err(err)],
+                })
+        }
+    }
+
+    impl<'a> TransactionTraceLazyView<'a> {
+        pub fn receipt(&self) -> Result<Option<TransactionReceiptLazyView<'a>>, DecodeError> {
+            self.receipt.get()
+        }
+
+        /// All logs in the transaction, excluding those from calls that were not recorded to
+        /// the chain's state, sorted by ordinal and paired with the call that produced them.
+        pub fn logs_with_calls(&self) -> Result<Vec<LazyLogWithCall<'a>>, DecodeError> {
+            let mut out = Vec::with_capacity(self.calls.len());
+
+            for call in self.calls.iter() {
+                let call = call?;
+                if call.state_reverted {
+                    continue;
+                }
+
+                for log in call.logs.iter() {
+                    out.push(LazyLogWithCall {
+                        log: log?,
+                        call: call.clone(),
+                    });
+                }
+            }
+
+            out.sort_by_key(|entry| entry.log.ordinal);
+
+            Ok(out)
+        }
+    }
+}
+
+pub use lazy::LazyLogWithCall;
+
+#[cfg(test)]
+mod lazy_tests {
+    use crate::pb::eth::v2::{self as pb, __buffa::lazy_view::BlockLazyView};
+    use buffa::view::LazyMessageView;
+    use buffa::Message;
+
+    fn block_with_statuses(statuses: &[i32]) -> pb::Block {
+        pb::Block {
+            number: 12_345,
+            hash: vec![0xaa; 32],
+            transaction_traces: statuses
+                .iter()
+                .enumerate()
+                .map(|(index, status)| pb::TransactionTrace {
+                    hash: vec![index as u8; 32],
+                    status: (*status).into(),
+                    ..Default::default()
+                })
+                .collect(),
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn it_selects_the_same_transactions_as_the_owned_block() {
+        let block = block_with_statuses(&[1, 2, 1, 3, 1]);
+        let bytes = block.encode_to_vec();
+        let view = BlockLazyView::decode_lazy(&bytes).expect("valid block");
+
+        assert_eq!(view.number, block.number);
+        assert_eq!(view.hash, &block.hash[..]);
+
+        let expected: Vec<_> = block.transactions().map(|tx| tx.hash.clone()).collect();
+        let actual: Vec<_> = view.transactions().map(|tx| tx.hash.to_vec()).collect();
+
+        assert_eq!(actual, expected);
+        assert_eq!(actual.len(), 3, "only the status=1 transactions are kept");
+    }
+
+    #[test]
+    fn it_yields_nothing_for_a_block_without_successful_transactions() {
+        let bytes = block_with_statuses(&[2, 3]).encode_to_vec();
+        let view = BlockLazyView::decode_lazy(&bytes).expect("valid block");
+
+        assert_eq!(view.transactions().count(), 0);
+    }
+
+    #[test]
+    fn it_surfaces_decode_errors_through_every_try_accessor() {
+        let mut bytes = block_with_statuses(&[1]).encode_to_vec();
+        let last = bytes.len() - 1;
+        bytes[last] = 0xff;
+
+        let view = BlockLazyView::decode_lazy(&bytes).expect("the block's own fields are valid");
+
+        assert!(
+            view.try_transactions().any(|entry| entry.is_err()),
+            "try_transactions must report a malformed transaction"
+        );
+        assert!(
+            view.try_receipts().any(|entry| entry.is_err()),
+            "try_receipts must report a malformed transaction"
+        );
+        assert!(
+            view.try_logs().any(|entry| entry.is_err()),
+            "try_logs must report a malformed transaction"
+        );
+        assert!(
+            view.try_calls().any(|entry| entry.is_err()),
+            "try_calls must report a malformed transaction"
+        );
+
+        assert_eq!(view.transactions().count(), 0, "the lossy twin skips it");
+    }
+}
+
+#[cfg(test)]
+mod lazy_view_parity_tests {
+    use crate::pb::eth::v2::{
+        self as pb, Call, Log, TransactionReceipt, TransactionTrace,
+        __buffa::lazy_view::BlockLazyView,
+    };
+    use buffa::view::LazyMessageView;
+    use buffa::Message;
+
+    fn log(ordinal: u64, index: u32) -> Log {
+        Log {
+            address: vec![index as u8; 20],
+            data: vec![index as u8; 4],
+            index,
+            ordinal,
+            ..Default::default()
+        }
+    }
+
+    fn block() -> pb::Block {
+        pb::Block {
+            number: 1,
+            transaction_traces: vec![
+                TransactionTrace {
+                    hash: vec![1; 32],
+                    status: pb::TransactionTraceStatus::Succeeded.into(),
+                    calls: vec![
+                        Call {
+                            index: 0,
+                            logs: vec![log(20, 0), log(10, 1)],
+                            ..Default::default()
+                        },
+                        Call {
+                            index: 1,
+                            state_reverted: true,
+                            logs: vec![log(30, 2)],
+                            ..Default::default()
+                        },
+                    ],
+                    receipt: TransactionReceipt {
+                        logs: vec![log(20, 0), log(10, 1)],
+                        cumulative_gas_used: 21_000,
+                        ..Default::default()
+                    }
+                    .into(),
+                    ..Default::default()
+                },
+                TransactionTrace {
+                    hash: vec![2; 32],
+                    status: pb::TransactionTraceStatus::Failed.into(),
+                    receipt: TransactionReceipt {
+                        logs: vec![log(40, 3)],
+                        ..Default::default()
+                    }
+                    .into(),
+                    ..Default::default()
+                },
+            ],
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn it_yields_receipts_of_successful_transactions_only() {
+        let bytes = block().encode_to_vec();
+        let view = BlockLazyView::decode_lazy(&bytes).expect("valid block");
+
+        let gas: Vec<_> = view.receipts().map(|r| r.cumulative_gas_used).collect();
+
+        assert_eq!(gas, vec![21_000], "the status=2 transaction is excluded");
+    }
+
+    fn block_without_receipt() -> pb::Block {
+        pb::Block {
+            transaction_traces: vec![TransactionTrace {
+                hash: vec![1; 32],
+                status: pb::TransactionTraceStatus::Succeeded.into(),
+                ..Default::default()
+            }],
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn the_lazy_view_skips_a_transaction_without_a_receipt() {
+        let bytes = block_without_receipt().encode_to_vec();
+        let view = BlockLazyView::decode_lazy(&bytes).expect("valid block");
+
+        assert_eq!(
+            view.receipts().count(),
+            0,
+            "a missing receipt is skipped, not presented as one with no logs"
+        );
+        assert_eq!(view.logs().count(), 0);
+    }
+
+    #[test]
+    #[should_panic(expected = "transaction has no receipt")]
+    fn the_owned_block_panics_on_a_transaction_without_a_receipt() {
+        block_without_receipt().receipts().count();
+    }
+
+    #[test]
+    #[should_panic(expected = "block has no header timestamp")]
+    fn a_block_with_no_header_has_no_timestamp() {
+        pb::Block::default().timestamp_seconds();
+    }
+
+    #[test]
+    fn a_header_timestamp_is_returned_as_seconds() {
+        let block = pb::Block {
+            header: pb::BlockHeader {
+                timestamp: buffa_types::google::protobuf::Timestamp {
+                    seconds: 1_700_000_000,
+                    ..Default::default()
+                }
+                .into(),
+                ..Default::default()
+            }
+            .into(),
+            ..Default::default()
+        };
+
+        assert_eq!(block.timestamp_seconds(), 1_700_000_000);
+        assert_eq!(block.timestamp().seconds, 1_700_000_000);
+    }
+
+    #[test]
+    fn it_yields_logs_of_successful_transactions_only() {
+        let bytes = block().encode_to_vec();
+        let view = BlockLazyView::decode_lazy(&bytes).expect("valid block");
+
+        let indexes: Vec<_> = view.logs().map(|l| l.index).collect();
+
+        assert_eq!(
+            indexes,
+            vec![0, 1],
+            "log 3 belongs to the failed transaction"
+        );
+    }
+
+    #[test]
+    fn it_yields_calls_of_successful_transactions_only() {
+        let bytes = block().encode_to_vec();
+        let view = BlockLazyView::decode_lazy(&bytes).expect("valid block");
+
+        assert_eq!(view.calls().count(), 2);
+    }
+
+    #[test]
+    fn it_pairs_logs_with_their_calls_skipping_reverted() {
+        let bytes = block().encode_to_vec();
+        let view = BlockLazyView::decode_lazy(&bytes).expect("valid block");
+
+        let transaction = view.transactions().next().expect("one successful trx");
+        let pairs = transaction.logs_with_calls().expect("decodes");
+
+        let ordinals: Vec<_> = pairs.iter().map(|entry| entry.log.ordinal).collect();
+        assert_eq!(ordinals, vec![10, 20], "sorted by ordinal");
+
+        assert!(
+            pairs.iter().all(|entry| entry.call.index == 0),
+            "the reverted call's log is excluded"
         );
     }
 }

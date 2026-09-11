@@ -25,8 +25,10 @@ This means changes to Protobuf files must be manually re-generated and commit, s
 ### Regenerate Rust Firehose Block from Protobuf
 
 ```
-./gen.sh
+buf generate
 ```
+
+The schema module and the paths to exclude are declared in `buf.gen.yaml`.
 
 ## Caveats
 
@@ -181,18 +183,18 @@ impl OrderFulfilled {
         194u8,
         244u8,
     ];
-    pub fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
-        if log.topics.len() != 1usize {
+    pub fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
+        if log.topic_count() != 1usize {
             return false;
         }
-        if log.data.len() < 96usize {
+        if log.data().len() < 96usize {
             return false;
         }
-        return log.topics.get(0).expect("bounds already checked").as_ref()
+        return log.topic(0).expect("bounds already checked")
             == Self::TOPIC_ID;
     }
-    pub fn decode(
-        log: &substreams_ethereum::pb::eth::v2::Log,
+    pub fn decode<L: substreams_ethereum::LogLike>(
+        log: &L,
     ) -> Result<Self, String> {
         let mut values = ethabi::decode(
                 &[
@@ -201,7 +203,7 @@ impl OrderFulfilled {
                         Box::new(ethabi::ParamType::Address),
                     ),
                 ],
-                log.data.as_ref(),
+                log.data(),
             )
             .map_err(|e| format!("unable to decode log.data: {:?}", e))?;
         values.reverse();
@@ -231,11 +233,11 @@ impl OrderFulfilled {
 }
 impl substreams_ethereum::Event for OrderFulfilled {
     const NAME: &'static str = "OrderFulfilled";
-    fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
+    fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
         Self::match_log(log)
     }
-    fn decode(
-        log: &substreams_ethereum::pb::eth::v2::Log,
+    fn decode<L: substreams_ethereum::LogLike>(
+        log: &L,
     ) -> Result<Self, String> {
         Self::decode(log)
     }
@@ -280,25 +282,25 @@ impl SpentItem {
         138u8,
         22u8,
     ];
-    pub fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
-        if log.topics.len() != 1usize {
+    pub fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
+        if log.topic_count() != 1usize {
             return false;
         }
-        if log.data.len() != 64usize {
+        if log.data().len() != 64usize {
             return false;
         }
-        return log.topics.get(0).expect("bounds already checked").as_ref()
+        return log.topic(0).expect("bounds already checked")
             == Self::TOPIC_ID;
     }
-    pub fn decode(
-        log: &substreams_ethereum::pb::eth::v2::Log,
+    pub fn decode<L: substreams_ethereum::LogLike>(
+        log: &L,
     ) -> Result<Self, String> {
         let mut values = ethabi::decode(
                 &[
                     ethabi::ParamType::Uint(8usize),
                     ethabi::ParamType::Uint(256usize),
                 ],
-                log.data.as_ref(),
+                log.data(),
             )
             .map_err(|e| format!("unable to decode log.data: {:?}", e))?;
         values.reverse();
@@ -328,11 +330,11 @@ impl SpentItem {
 }
 impl substreams_ethereum::Event for SpentItem {
     const NAME: &'static str = "SpentItem";
-    fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
+    fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
         Self::match_log(log)
     }
-    fn decode(
-        log: &substreams_ethereum::pb::eth::v2::Log,
+    fn decode<L: substreams_ethereum::LogLike>(
+        log: &L,
     ) -> Result<Self, String> {
         Self::decode(log)
     }
@@ -387,7 +389,7 @@ let mut values = ethabi::decode(
         ethabi::ParamType::FixedBytes(32usize),
         ethabi::ParamType::Array(Box::new(ethabi::ParamType::Address)),
     ],
-    log.data.as_ref(),
+    log.data(),
 )
 ```
 
@@ -402,7 +404,7 @@ let mut values = ethabi::decode(
             ethabi::ParamType::Uint(256usize),
         ]))),
     ],
-    log.data.as_ref(),
+    log.data(),
 ```
 
 > **Info** The `SpentItem::decode` function has a `let mut values` definition variable right at the beginning of the function that list the correct element to put for the tuple, no need to manually define the list, simply copy it over.
@@ -446,28 +448,28 @@ Change it so it forwards its decoding to `SpentItem` structure:
             .collect(),
 ```
 
-And the final modification within the `impl OrderFulfilled` structure is to modify slightly the `pub fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool` definition. It contains a code that ensure the `log.data` has a certain number of bytes, our modified ABI will produce the wrong validation code for `log.data`, so let's remove it:
+And the final modification within the `impl OrderFulfilled` structure is to modify slightly the `pub fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool` definition. It contains a code that ensure the `log.data()` has a certain number of bytes, our modified ABI will produce the wrong validation code for `log.data()`, so let's remove it:
 
 ```rust
-pub fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
-    if log.topics.len() != 1usize {
+pub fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
+    if log.topic_count() != 1usize {
         return false;
     }
-    if log.data.len() < 96usize {
+    if log.data().len() < 96usize {
         return false;
     }
-    return log.topics.get(0).expect("bounds already checked").as_ref() == Self::TOPIC_ID;
+    return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
 }
 ```
 
 Should become:
 
 ```rust
-pub fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
-    if log.topics.len() != 1usize {
+pub fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
+    if log.topic_count() != 1usize {
         return false;
     }
-    return log.topics.get(0).expect("bounds already checked").as_ref() == Self::TOPIC_ID;
+    return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
 }
 ```
 
@@ -481,7 +483,7 @@ Now, let's move our focus on the `SpentItem` implementation. Within the `impl Sp
 And remove fully the `impl substreams_ethereum::Event for SpentItem` block. Last thing to do is to tweak the `SpentItem::decode` function by changing its current signature:
 
 ```rust
-pub fn decode(log: &substreams_ethereum::pb::eth::v2::Log) -> Result<Self, String>
+pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String>
 ```
 
 So that it accepts a `Vec<ethabi::Token>` instead and rename the variable to `values` as well as making it mutable:
@@ -498,7 +500,7 @@ let mut values = ethabi::decode(
         ethabi::ParamType::Uint(8usize),
         ethabi::ParamType::Uint(256usize),
     ],
-    log.data.as_ref(),
+    log.data(),
 )
 .map_err(|e| format!("unable to decode log.data: {:?}",
 ```
@@ -518,14 +520,14 @@ impl OrderFulfilled {
     const TOPIC_ID: [u8; 32] =
         hex_literal::hex!("e86f4727db138d4b9cb776888b1d2239562eafaa38dd110b7d5def7698ccfd41");
 
-    pub fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
-        if log.topics.len() != 1usize {
+    pub fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
+        if log.topic_count() != 1usize {
             return false;
         }
-        return log.topics.get(0).expect("bounds already checked").as_ref() == Self::TOPIC_ID;
+        return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
     }
 
-    pub fn decode(log: &substreams_ethereum::pb::eth::v2::Log) -> Result<Self, String> {
+    pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
         let mut values = ethabi::decode(
             &[
                 ethabi::ParamType::FixedBytes(32usize),
@@ -534,7 +536,7 @@ impl OrderFulfilled {
                     ethabi::ParamType::Uint(256usize),
                 ]))),
             ],
-            log.data.as_ref(),
+            log.data(),
         )
         .map_err(|e| format!("unable to decode log.data: {:?}", e))?;
         values.reverse();
@@ -565,10 +567,10 @@ impl OrderFulfilled {
 }
 impl substreams_ethereum::Event for OrderFulfilled {
     const NAME: &'static str = "OrderFulfilled";
-    fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
+    fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
         Self::match_log(log)
     }
-    fn decode(log: &substreams_ethereum::pb::eth::v2::Log) -> Result<Self, String> {
+    fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
         Self::decode(log)
     }
 }

@@ -1,5 +1,6 @@
+pub use substreams_ethereum_core::buffa;
 pub use substreams_ethereum_core::scalar;
-pub use substreams_ethereum_core::{block_view, pb, rpc, Event, Function, NULL_ADDRESS};
+pub use substreams_ethereum_core::{block_view, pb, rpc, Event, Function, LogLike, NULL_ADDRESS};
 pub use substreams_ethereum_derive::EthabiContract;
 
 // Those are dependencies that needs to be exported for `substreams-abigen` to work. Must not
@@ -55,12 +56,12 @@ pub use substreams_ethereum_abigen::build::Abigen;
 ///         }
 ///
 ///         impl Transfer {
-///             pub fn match_log(log: &substreams_ethereum::pb::eth::v2::Log) -> bool {
+///             pub fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
 ///                // ...
 ///                # todo!()
 ///             }
 ///
-///             pub fn decode(log: &substreams_ethereum::pb::eth::v2::Log) -> Result<Transfer, String> {
+///             pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Transfer, String> {
 ///                // ...
 ///                # todo!()
 ///             }

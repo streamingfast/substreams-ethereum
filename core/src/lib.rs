@@ -1,9 +1,11 @@
+pub use buffa;
+
 pub mod pb;
 pub mod rpc;
 
 /// Helpers to deal with block sources.
 pub mod block_view;
-pub use event::Event;
+pub use event::{Event, LogLike};
 pub use function::Function;
 pub mod scalar;
 
