@@ -28,8 +28,6 @@ main() {
   check_git_clean
 
   sd '^version = ".*?"$' "version = \"${version}\"" Cargo.toml
-  # Only the workspace's own crates track the release version; an external
-  # dependency pinned in the same shape must keep its own.
   sd '^(substreams-ethereum[a-z-]*) = \{ version = ".*?",' "\$1 = { version = \"${version}\"," Cargo.toml
   sd 'version: v.*' "version: v${version}" substreams.yaml
   sd '## Unreleased' "## [${version}](https://${repository}/releases/tag/v${version})" CHANGELOG.md
