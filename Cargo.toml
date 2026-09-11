@@ -19,13 +19,9 @@ substreams-ethereum = { version = "0.11.1", path = "./substreams-ethereum" }
 substreams-ethereum-abigen = { version = "0.11.1", path = "./abigen" }
 substreams-ethereum-core = { version = "0.11.1", path = "./core" }
 substreams-ethereum-derive = { version = "0.11.1", path = "./derive" }
-substreams = { version = "0.7.0", git = "https://github.com/streamingfast/substreams-rs", branch = "feature/buffa" }
+substreams = { version = "0.8.0-beta" }
 
 [profile.release]
 lto = true
 opt-level = 's'
 strip = "debuginfo"
-
-[patch.crates-io]
-substreams = { git = "https://github.com/streamingfast/substreams-rs", branch = "feature/buffa" }
-substreams-macro = { git = "https://github.com/streamingfast/substreams-rs", branch = "feature/buffa" }
