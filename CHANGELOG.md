@@ -12,11 +12,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
   Generated types differ from `prost` in three ways: enum fields are `EnumValue<E>` rather than `i32` (compare against the variant directly), singular message fields are `MessageField<T>` rather than `Option<T>` and deref to a default instance, and encoding is infallible.
 
-  Two behaviour changes do not produce compile errors: `Block::timestamp()`, `Block::timestamp_seconds()` and `TransactionTrace::receipt()` previously panicked on a block with no header or a transaction with no receipt, and now return a default.
+  **Breaking**: singular message fields deref to a default instance, so a field whose absence carried meaning now reads as a zero value indistinguishable from a real one. Use `.is_set()` or `.as_option()` where the distinction matters. The affected generated fields are `BlockHeader.base_fee_per_gas` (absent before London), `TransactionTrace.max_fee_per_gas` and `max_priority_fee_per_gas` (absent on a legacy transaction, and on a `BASE`-detail block where they are `EXTENDED`-only), and `TransactionTrace.gas_price`, `TransactionTrace.value`, `Call.value`, `TransactionTrace.blob_gas_fee_cap` and `TransactionReceipt.blob_gas_price` when unset.
+
+  `Block::timestamp()`, `Block::timestamp_seconds()` and `TransactionTrace::receipt()` keep panicking on a block with no header timestamp or a transaction with no receipt, rather than deref'ing to a default. A live chain always carries both, and a default receipt would drop a transaction's logs with no error.
 
 * Added lazy view accessors on `BlockLazyView`: `transactions()`, `receipts()`, `logs()`, `calls()` and `TransactionTraceLazyView::logs_with_calls()`.
 
   A lazy view defers validation to field access, so each has a `try_` twin that surfaces decode errors where the plain one skips them. This is a real difference in behaviour, not just in error reporting: an owned `Block` containing a corrupt log fails to decode and the module aborts, while `BlockLazyView::logs()` yields the logs it could read and drops the rest silently. Use the `try_` accessor wherever a malformed block must not pass as a short one.
+
+  A transaction carrying no receipt is skipped by `receipts()` and `try_receipts()`, matching the owned block's refusal to present one with no logs.
 
 * Added `LogLike`, the log fields ABI decoding reads, implemented for the owned `Log`, `LogView` and buffa's `LogLazyView`.
 

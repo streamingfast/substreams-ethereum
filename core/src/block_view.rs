@@ -58,18 +58,24 @@ impl pb::Block {
 
     /// Timestamp returns a reference to the block's header timestamp.
     ///
-    /// A block with no header, or a header with no timestamp, yields the default
-    /// `Timestamp` (the Unix epoch) rather than panicking.
+    /// # Panics
+    ///
+    /// Panics if the block has no header, or the header no timestamp.
     pub fn timestamp(&self) -> &Timestamp {
-        &self.header.timestamp
+        self.header
+            .as_option()
+            .and_then(|h| h.timestamp.as_option())
+            .expect("block has no header timestamp")
     }
 
     /// Timestamp returns block's header timestamp in seconds.
     ///
-    /// A block with no header, or a header with no timestamp, yields `0` rather than
-    /// panicking.
+    /// # Panics
+    ///
+    /// Panics if the block has no header, or the header no timestamp. See
+    /// [`Self::timestamp`].
     pub fn timestamp_seconds(&self) -> u64 {
-        self.header.timestamp.seconds as u64
+        self.timestamp().seconds as u64
     }
 }
 
@@ -117,10 +123,16 @@ impl pb::TransactionTrace {
 
     /// A transaction with no receipt yields a default `ReceiptView`, which reports no
     /// logs, rather than panicking.
+    /// # Panics
+    ///
+    /// Panics if the transaction carries no receipt.
     pub fn receipt(&self) -> ReceiptView {
         ReceiptView {
             transaction: self,
-            receipt: &self.receipt,
+            receipt: self
+                .receipt
+                .as_option()
+                .expect("transaction has no receipt"),
         }
     }
 
@@ -314,14 +326,17 @@ mod lazy {
         }
 
         /// Iterates over transaction receipts of successful transactions, surfacing decode
-        /// errors. A transaction with no receipt yields a default one, as on the owned block.
+        /// errors. A transaction carrying no receipt is skipped.
         pub fn try_receipts(
             &self,
         ) -> impl Iterator<Item = Result<TransactionReceiptLazyView<'a>, DecodeError>> + '_
         {
-            self.try_transactions().map(|transaction| {
-                transaction
-                    .and_then(|transaction| transaction.receipt().map(Option::unwrap_or_default))
+            self.try_transactions().filter_map(|transaction| {
+                match transaction.and_then(|transaction| transaction.receipt()) {
+                    Ok(Some(receipt)) => Some(Ok(receipt)),
+                    Ok(None) => None,
+                    Err(err) => Some(Err(err)),
+                }
             })
         }
 
@@ -540,25 +555,59 @@ mod lazy_view_parity_tests {
         assert_eq!(gas, vec![21_000], "the status=2 transaction is excluded");
     }
 
-    #[test]
-    fn it_yields_a_default_receipt_for_a_transaction_without_one() {
-        let block = pb::Block {
+    fn block_without_receipt() -> pb::Block {
+        pb::Block {
             transaction_traces: vec![TransactionTrace {
                 hash: vec![1; 32],
                 status: pb::TransactionTraceStatus::Succeeded.into(),
                 ..Default::default()
             }],
             ..Default::default()
-        };
-        let bytes = block.encode_to_vec();
+        }
+    }
+
+    #[test]
+    fn the_lazy_view_skips_a_transaction_without_a_receipt() {
+        let bytes = block_without_receipt().encode_to_vec();
         let view = BlockLazyView::decode_lazy(&bytes).expect("valid block");
 
         assert_eq!(
-            block.receipts().count(),
-            1,
-            "owned block yields one receipt"
+            view.receipts().count(),
+            0,
+            "a missing receipt is skipped, not presented as one with no logs"
         );
-        assert_eq!(view.receipts().count(), 1, "lazy view must agree");
+        assert_eq!(view.logs().count(), 0);
+    }
+
+    #[test]
+    #[should_panic(expected = "transaction has no receipt")]
+    fn the_owned_block_panics_on_a_transaction_without_a_receipt() {
+        block_without_receipt().receipts().count();
+    }
+
+    #[test]
+    #[should_panic(expected = "block has no header timestamp")]
+    fn a_block_with_no_header_has_no_timestamp() {
+        pb::Block::default().timestamp_seconds();
+    }
+
+    #[test]
+    fn a_header_timestamp_is_returned_as_seconds() {
+        let block = pb::Block {
+            header: pb::BlockHeader {
+                timestamp: buffa_types::google::protobuf::Timestamp {
+                    seconds: 1_700_000_000,
+                    ..Default::default()
+                }
+                .into(),
+                ..Default::default()
+            }
+            .into(),
+            ..Default::default()
+        };
+
+        assert_eq!(block.timestamp_seconds(), 1_700_000_000);
+        assert_eq!(block.timestamp().seconds, 1_700_000_000);
     }
 
     #[test]
