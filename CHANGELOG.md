@@ -4,11 +4,32 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.12.0-beta](https://github.com/streamingfast/substreams-ethereum/releases/tag/v0.12.0-beta)
+## [0.12.0-beta.1](https://github.com/streamingfast/substreams-ethereum/releases/tag/v0.12.0-beta.1)
+
+* Decoding no longer goes through `ethabi`. Generated events and functions read their parameters at
+  offsets computed when the ABI is read, rather than through `ethabi::decode` and a `Vec<Token>`. This
+  covers an event's data section and its indexed parameters, and a function's input and return data.
+  The decoded values are unchanged.
+
+  Every type is read by a primitive in `substreams_ethereum::abi`: `address`, `uintN`, `intN`, `bool`
+  and `bytesN` from a word at a known offset, and `bytes`, `string`, arrays and tuples by following the
+  offsets in their head words. What each accepts and rejects follows `ethabi`, including its tolerance
+  of a buffer longer than the parameters need, of non-zero padding above an `address`, and its lossy
+  reading of a `string` whose bytes are not valid UTF-8.
+
+  Measured against the previous generation on the same bytes, decoding an ERC-20 `Transfer` is 4.4x
+  faster, and the event and function shapes covered by the benchmark are between 1.9x and 6.8x faster.
+
+  `ethabi` is still a dependency: it parses the ABI when bindings are generated, and it still encodes a
+  function call.
+
+* `decode` now checks the log's topic count before reading an indexed parameter, and reports a data
+  section shorter than the parameters need, rather than panicking. `match_log` already rejected both,
+  but `decode` is public and callable on its own.
 
 * Switched protobuf encoding and decoding from `prost` to [buffa](https://github.com/anthropics/buffa), `prost` is no longer a dependency.
 
-  Generated event decoders are now generic over the log representation, so the same decoder works with an owned `Log`, a `LogView`, or one of buffa's borrowed lazy views. ABI decoding itself is unchanged.
+  Generated event decoders are now generic over the log representation, so the same decoder works with an owned `Log`, a `LogView`, or one of buffa's borrowed lazy views.
 
   Generated types differ from `prost` in three ways: enum fields are `EnumValue<E>` rather than `i32` (compare against the variant directly), singular message fields are `MessageField<T>` rather than `Option<T>` and deref to a default instance, and encoding is infallible.
 
@@ -18,9 +39,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 * Added lazy view accessors on `BlockLazyView`: `transactions()`, `receipts()`, `logs()`, `calls()` and `TransactionTraceLazyView::logs_with_calls()`.
 
-  A lazy view defers validation to field access, so each has a `try_` twin that surfaces decode errors where the plain one skips them. This is a real difference in behaviour, not just in error reporting: an owned `Block` containing a corrupt log fails to decode and the module aborts, while `BlockLazyView::logs()` yields the logs it could read and drops the rest silently. Use the `try_` accessor wherever a malformed block must not pass as a short one.
+  A lazy view defers validation to field access, so these report decode failures rather than hiding them: `transactions()`, `receipts()`, `logs()` and `calls()` each yield `Result` items. Each has a `_lossy` twin that drops undecodable entries instead.
 
-  A transaction carrying no receipt is skipped by `receipts()` and `try_receipts()`, matching the owned block's refusal to present one with no logs.
+  **Breaking**: the plain name is the reporting one. An owned `Block` containing a corrupt log fails to decode and the module aborts; `BlockLazyView::logs_lossy()` yields the logs it could read and drops the rest silently, so a malformed block passes as a short one. Reach for the `_lossy` twin only where that is what you want.
+
+  A transaction carrying no receipt is skipped by `receipts()` and `receipts_lossy()`, matching the owned block's refusal to present one with no logs.
+
+* Changed `LazyLogWithCall::call` to an `Rc<CallLazyView>`. `CallLazyView` owns a `Vec` per repeated field, so pairing each log with a cloned call allocated once per field per log.
 
 * Added `LogLike`, the log fields ABI decoding reads, implemented for the owned `Log`, `LogView` and buffa's `LogLazyView`.
 
@@ -34,7 +59,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 * Pinned the codegen plugin to `buf.build/anthropics/buffa:v0.9.2` in `buf.gen.yaml`, and enabled `idiomatic_field_names=true` so `Log.block_index` keeps the name `prost` gave it rather than the schema's `blockIndex` spelling.
 
-* Removed `pb::sf::ethereum::transform::v1`. Generation has always excluded that path, so the checked-in file was stale output.
+* **Breaking**: removed `pb::sf::ethereum::transform::v1`, and with it `CallToFilter`, `CombinedFilter`, `HeaderOnly`, `LogFilter`, `MultiCallToFilter` and `MultiLogFilter`. Generation has excluded that path for some time, so the checked-in file was stale, but it still compiled into the crate and was publicly re-exported. These are the client-side filter API and are not used by modules.
 
 * Fixed `cargo test`, which built a WASM test binary and then tried to run it as a native executable. `.cargo/config.toml` set `wasm32-unknown-unknown` as the default target for every cargo command, CI already named its targets explicitly and was unaffected.
 

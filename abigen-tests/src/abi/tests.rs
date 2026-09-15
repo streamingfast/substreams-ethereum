@@ -20,41 +20,38 @@ pub mod functions {
             if maybe_data.is_none() {
                 return Err("no data to decode".to_string());
             }
-            let mut values = ethabi::decode(
-                    &[
-                        ethabi::ParamType::FixedArray(
-                            Box::new(ethabi::ParamType::Address),
-                            2usize,
-                        ),
-                        ethabi::ParamType::Array(Box::new(ethabi::ParamType::Address)),
-                    ],
-                    maybe_data.unwrap(),
-                )
-                .map_err(|e| format!("unable to decode call.input: {:?}", e))?;
-            values.reverse();
+            let data = maybe_data.unwrap();
             Ok(Self {
                 param0: {
-                    let mut iter = values
-                        .pop()
-                        .expect(INTERNAL_ERR)
-                        .into_fixed_array()
-                        .expect(INTERNAL_ERR)
-                        .into_iter()
-                        .map(|inner| {
-                            inner.into_address().expect(INTERNAL_ERR).as_bytes().to_vec()
-                        });
-                    [iter.next().expect(INTERNAL_ERR), iter.next().expect(INTERNAL_ERR)]
+                    let base = data
+                        .get(0..)
+                        .ok_or_else(|| {
+                            format!(
+                                "unable to decode param '{}': need bytes at offset {}",
+                                "param0", 0
+                            )
+                        })?;
+                    [
+                        substreams_ethereum::abi::read_address(base, 0, "param0")?,
+                        substreams_ethereum::abi::read_address(base, 32, "param0")?,
+                    ]
                 },
-                param1: values
-                    .pop()
-                    .expect(INTERNAL_ERR)
-                    .into_array()
-                    .expect(INTERNAL_ERR)
-                    .into_iter()
-                    .map(|inner| {
-                        inner.into_address().expect(INTERNAL_ERR).as_bytes().to_vec()
-                    })
-                    .collect(),
+                param1: {
+                    let (tail, count) = substreams_ethereum::abi::read_array_tail(
+                        data,
+                        64,
+                        "param1",
+                    )?;
+                    let mut out = Vec::with_capacity(count.min(1024));
+                    let mut at = 0usize;
+                    for _ in 0..count {
+                        out.push(
+                            substreams_ethereum::abi::read_address(tail, at, "param1")?,
+                        );
+                        at += 32usize;
+                    }
+                    out
+                },
             })
         }
         pub fn encode(&self) -> Vec<u8> {
@@ -95,24 +92,9 @@ pub mod functions {
         pub fn output(
             data: &[u8],
         ) -> Result<(substreams::scalar::BigInt, String), String> {
-            let mut values = ethabi::decode(
-                    &[ethabi::ParamType::Uint(256usize), ethabi::ParamType::String],
-                    data.as_ref(),
-                )
-                .map_err(|e| format!("unable to decode output data: {:?}", e))?;
-            values.reverse();
             Ok((
-                {
-                    let mut v = [0 as u8; 32];
-                    values
-                        .pop()
-                        .expect(INTERNAL_ERR)
-                        .into_uint()
-                        .expect(INTERNAL_ERR)
-                        .to_big_endian(v.as_mut_slice());
-                    substreams::scalar::BigInt::from_unsigned_bytes_be(&v)
-                },
-                values.pop().expect(INTERNAL_ERR).into_string().expect(INTERNAL_ERR),
+                substreams_ethereum::abi::read_uint(data, 0, "output")?,
+                substreams_ethereum::abi::read_string(data, 32, "output")?,
             ))
         }
         pub fn match_call(call: &substreams_ethereum::pb::eth::v2::Call) -> bool {
@@ -182,48 +164,38 @@ pub mod functions {
             if maybe_data.is_none() {
                 return Err("no data to decode".to_string());
             }
-            let mut values = ethabi::decode(
-                    &[
-                        ethabi::ParamType::FixedArray(
-                            Box::new(ethabi::ParamType::Address),
-                            2usize,
-                        ),
-                        ethabi::ParamType::Array(
-                            Box::new(ethabi::ParamType::Uint(256usize)),
-                        ),
-                    ],
-                    maybe_data.unwrap(),
-                )
-                .map_err(|e| format!("unable to decode call.input: {:?}", e))?;
-            values.reverse();
+            let data = maybe_data.unwrap();
             Ok(Self {
                 param0: {
-                    let mut iter = values
-                        .pop()
-                        .expect(INTERNAL_ERR)
-                        .into_fixed_array()
-                        .expect(INTERNAL_ERR)
-                        .into_iter()
-                        .map(|inner| {
-                            inner.into_address().expect(INTERNAL_ERR).as_bytes().to_vec()
-                        });
-                    [iter.next().expect(INTERNAL_ERR), iter.next().expect(INTERNAL_ERR)]
+                    let base = data
+                        .get(0..)
+                        .ok_or_else(|| {
+                            format!(
+                                "unable to decode param '{}': need bytes at offset {}",
+                                "param0", 0
+                            )
+                        })?;
+                    [
+                        substreams_ethereum::abi::read_address(base, 0, "param0")?,
+                        substreams_ethereum::abi::read_address(base, 32, "param0")?,
+                    ]
                 },
-                param1: values
-                    .pop()
-                    .expect(INTERNAL_ERR)
-                    .into_array()
-                    .expect(INTERNAL_ERR)
-                    .into_iter()
-                    .map(|inner| {
-                        let mut v = [0 as u8; 32];
-                        inner
-                            .into_uint()
-                            .expect(INTERNAL_ERR)
-                            .to_big_endian(v.as_mut_slice());
-                        substreams::scalar::BigInt::from_unsigned_bytes_be(&v)
-                    })
-                    .collect(),
+                param1: {
+                    let (tail, count) = substreams_ethereum::abi::read_array_tail(
+                        data,
+                        64,
+                        "param1",
+                    )?;
+                    let mut out = Vec::with_capacity(count.min(1024));
+                    let mut at = 0usize;
+                    for _ in 0..count {
+                        out.push(
+                            substreams_ethereum::abi::read_uint(tail, at, "param1")?,
+                        );
+                        at += 32usize;
+                    }
+                    out
+                },
             })
         }
         pub fn encode(&self) -> Vec<u8> {
@@ -273,24 +245,9 @@ pub mod functions {
         pub fn output(
             data: &[u8],
         ) -> Result<(substreams::scalar::BigInt, String), String> {
-            let mut values = ethabi::decode(
-                    &[ethabi::ParamType::Uint(256usize), ethabi::ParamType::String],
-                    data.as_ref(),
-                )
-                .map_err(|e| format!("unable to decode output data: {:?}", e))?;
-            values.reverse();
             Ok((
-                {
-                    let mut v = [0 as u8; 32];
-                    values
-                        .pop()
-                        .expect(INTERNAL_ERR)
-                        .into_uint()
-                        .expect(INTERNAL_ERR)
-                        .to_big_endian(v.as_mut_slice());
-                    substreams::scalar::BigInt::from_unsigned_bytes_be(&v)
-                },
-                values.pop().expect(INTERNAL_ERR).into_string().expect(INTERNAL_ERR),
+                substreams_ethereum::abi::read_uint(data, 0, "output")?,
+                substreams_ethereum::abi::read_string(data, 32, "output")?,
             ))
         }
         pub fn match_call(call: &substreams_ethereum::pb::eth::v2::Call) -> bool {
@@ -368,111 +325,50 @@ pub mod functions {
             if maybe_data.is_none() {
                 return Err("no data to decode".to_string());
             }
-            let mut values = ethabi::decode(
-                    &[
-                        ethabi::ParamType::Address,
-                        ethabi::ParamType::Bytes,
-                        ethabi::ParamType::FixedBytes(8usize),
-                        ethabi::ParamType::FixedBytes(32usize),
-                        ethabi::ParamType::Int(256usize),
-                        ethabi::ParamType::Uint(256usize),
-                        ethabi::ParamType::Bool,
-                        ethabi::ParamType::String,
-                        ethabi::ParamType::FixedArray(
-                            Box::new(ethabi::ParamType::Address),
-                            2usize,
-                        ),
-                        ethabi::ParamType::Array(Box::new(ethabi::ParamType::Address)),
-                    ],
-                    maybe_data.unwrap(),
-                )
-                .map_err(|e| format!("unable to decode call.input: {:?}", e))?;
-            values.reverse();
+            let data = maybe_data.unwrap();
             Ok(Self {
-                param0: values
-                    .pop()
-                    .expect(INTERNAL_ERR)
-                    .into_address()
-                    .expect(INTERNAL_ERR)
-                    .as_bytes()
-                    .to_vec(),
-                param1: values
-                    .pop()
-                    .expect(INTERNAL_ERR)
-                    .into_bytes()
-                    .expect(INTERNAL_ERR),
-                param2: {
-                    let mut result = [0u8; 8];
-                    let v = values
-                        .pop()
-                        .expect(INTERNAL_ERR)
-                        .into_fixed_bytes()
-                        .expect(INTERNAL_ERR);
-                    result.copy_from_slice(&v);
-                    result
-                },
-                param3: {
-                    let mut result = [0u8; 32];
-                    let v = values
-                        .pop()
-                        .expect(INTERNAL_ERR)
-                        .into_fixed_bytes()
-                        .expect(INTERNAL_ERR);
-                    result.copy_from_slice(&v);
-                    result
-                },
-                param4: {
-                    let mut v = [0 as u8; 32];
-                    values
-                        .pop()
-                        .expect(INTERNAL_ERR)
-                        .into_int()
-                        .expect(INTERNAL_ERR)
-                        .to_big_endian(v.as_mut_slice());
-                    substreams::scalar::BigInt::from_signed_bytes_be(&v)
-                },
-                param5: {
-                    let mut v = [0 as u8; 32];
-                    values
-                        .pop()
-                        .expect(INTERNAL_ERR)
-                        .into_uint()
-                        .expect(INTERNAL_ERR)
-                        .to_big_endian(v.as_mut_slice());
-                    substreams::scalar::BigInt::from_unsigned_bytes_be(&v)
-                },
-                param6: values
-                    .pop()
-                    .expect(INTERNAL_ERR)
-                    .into_bool()
-                    .expect(INTERNAL_ERR),
-                param7: values
-                    .pop()
-                    .expect(INTERNAL_ERR)
-                    .into_string()
-                    .expect(INTERNAL_ERR),
+                param0: substreams_ethereum::abi::read_address(data, 0, "param0")?,
+                param1: substreams_ethereum::abi::read_bytes(data, 32, "param1")?,
+                param2: substreams_ethereum::abi::read_fixed_bytes::<
+                    8,
+                >(data, 64, "param2")?,
+                param3: substreams_ethereum::abi::read_fixed_bytes::<
+                    32,
+                >(data, 96, "param3")?,
+                param4: substreams_ethereum::abi::read_int(data, 128, "param4")?,
+                param5: substreams_ethereum::abi::read_uint(data, 160, "param5")?,
+                param6: substreams_ethereum::abi::read_bool(data, 192, "param6")?,
+                param7: substreams_ethereum::abi::read_string(data, 224, "param7")?,
                 param8: {
-                    let mut iter = values
-                        .pop()
-                        .expect(INTERNAL_ERR)
-                        .into_fixed_array()
-                        .expect(INTERNAL_ERR)
-                        .into_iter()
-                        .map(|inner| {
-                            inner.into_address().expect(INTERNAL_ERR).as_bytes().to_vec()
-                        });
-                    [iter.next().expect(INTERNAL_ERR), iter.next().expect(INTERNAL_ERR)]
+                    let base = data
+                        .get(256..)
+                        .ok_or_else(|| {
+                            format!(
+                                "unable to decode param '{}': need bytes at offset {}",
+                                "param8", 256
+                            )
+                        })?;
+                    [
+                        substreams_ethereum::abi::read_address(base, 0, "param8")?,
+                        substreams_ethereum::abi::read_address(base, 32, "param8")?,
+                    ]
                 },
-                param9: values
-                    .pop()
-                    .expect(INTERNAL_ERR)
-                    .into_array()
-                    .expect(INTERNAL_ERR)
-                    .into_iter()
-                    .map(|inner| {
-                        inner.into_address().expect(INTERNAL_ERR).as_bytes().to_vec()
-                    })
-                    .collect(),
+                param9: {
+                    let (tail, count) = substreams_ethereum::abi::read_array_tail(
+                        data,
+                        320,
+                        "param9",
+                    )?;
+                    let mut out = Vec::with_capacity(count.min(1024));
+                    let mut at = 0usize;
+                    for _ in 0..count {
+                        out.push(
+                            substreams_ethereum::abi::read_address(tail, at, "param9")?,
+                        );
+                        at += 32usize;
+                    }
+                    out
+                },
             })
         }
         pub fn encode(&self) -> Vec<u8> {
@@ -576,21 +472,24 @@ pub mod functions {
             if maybe_data.is_none() {
                 return Err("no data to decode".to_string());
             }
-            let mut values = ethabi::decode(
-                    &[ethabi::ParamType::Array(Box::new(ethabi::ParamType::Bool))],
-                    maybe_data.unwrap(),
-                )
-                .map_err(|e| format!("unable to decode call.input: {:?}", e))?;
-            values.reverse();
+            let data = maybe_data.unwrap();
             Ok(Self {
-                param0: values
-                    .pop()
-                    .expect(INTERNAL_ERR)
-                    .into_array()
-                    .expect(INTERNAL_ERR)
-                    .into_iter()
-                    .map(|inner| inner.into_bool().expect(INTERNAL_ERR))
-                    .collect(),
+                param0: {
+                    let (tail, count) = substreams_ethereum::abi::read_array_tail(
+                        data,
+                        0,
+                        "param0",
+                    )?;
+                    let mut out = Vec::with_capacity(count.min(1024));
+                    let mut at = 0usize;
+                    for _ in 0..count {
+                        out.push(
+                            substreams_ethereum::abi::read_bool(tail, at, "param0")?,
+                        );
+                        at += 32usize;
+                    }
+                    out
+                },
             })
         }
         pub fn encode(&self) -> Vec<u8> {
@@ -645,23 +544,9 @@ pub mod functions {
             if maybe_data.is_none() {
                 return Err("no data to decode".to_string());
             }
-            let mut values = ethabi::decode(
-                    &[ethabi::ParamType::Int(128usize)],
-                    maybe_data.unwrap(),
-                )
-                .map_err(|e| format!("unable to decode call.input: {:?}", e))?;
-            values.reverse();
+            let data = maybe_data.unwrap();
             Ok(Self {
-                arg0: {
-                    let mut v = [0 as u8; 32];
-                    values
-                        .pop()
-                        .expect(INTERNAL_ERR)
-                        .into_int()
-                        .expect(INTERNAL_ERR)
-                        .to_big_endian(v.as_mut_slice());
-                    substreams::scalar::BigInt::from_signed_bytes_be(&v)
-                },
+                arg0: substreams_ethereum::abi::read_int(data, 0, "arg0")?,
             })
         }
         pub fn encode(&self) -> Vec<u8> {
@@ -727,23 +612,9 @@ pub mod functions {
             if maybe_data.is_none() {
                 return Err("no data to decode".to_string());
             }
-            let mut values = ethabi::decode(
-                    &[ethabi::ParamType::Int(256usize)],
-                    maybe_data.unwrap(),
-                )
-                .map_err(|e| format!("unable to decode call.input: {:?}", e))?;
-            values.reverse();
+            let data = maybe_data.unwrap();
             Ok(Self {
-                param0: {
-                    let mut v = [0 as u8; 32];
-                    values
-                        .pop()
-                        .expect(INTERNAL_ERR)
-                        .into_int()
-                        .expect(INTERNAL_ERR)
-                        .to_big_endian(v.as_mut_slice());
-                    substreams::scalar::BigInt::from_signed_bytes_be(&v)
-                },
+                param0: substreams_ethereum::abi::read_int(data, 0, "param0")?,
             })
         }
         pub fn encode(&self) -> Vec<u8> {
@@ -809,23 +680,9 @@ pub mod functions {
             if maybe_data.is_none() {
                 return Err("no data to decode".to_string());
             }
-            let mut values = ethabi::decode(
-                    &[ethabi::ParamType::Int(32usize)],
-                    maybe_data.unwrap(),
-                )
-                .map_err(|e| format!("unable to decode call.input: {:?}", e))?;
-            values.reverse();
+            let data = maybe_data.unwrap();
             Ok(Self {
-                param0: {
-                    let mut v = [0 as u8; 32];
-                    values
-                        .pop()
-                        .expect(INTERNAL_ERR)
-                        .into_int()
-                        .expect(INTERNAL_ERR)
-                        .to_big_endian(v.as_mut_slice());
-                    substreams::scalar::BigInt::from_signed_bytes_be(&v)
-                },
+                param0: substreams_ethereum::abi::read_int(data, 0, "param0")?,
             })
         }
         pub fn encode(&self) -> Vec<u8> {
@@ -891,23 +748,9 @@ pub mod functions {
             if maybe_data.is_none() {
                 return Err("no data to decode".to_string());
             }
-            let mut values = ethabi::decode(
-                    &[ethabi::ParamType::Int(8usize)],
-                    maybe_data.unwrap(),
-                )
-                .map_err(|e| format!("unable to decode call.input: {:?}", e))?;
-            values.reverse();
+            let data = maybe_data.unwrap();
             Ok(Self {
-                param0: {
-                    let mut v = [0 as u8; 32];
-                    values
-                        .pop()
-                        .expect(INTERNAL_ERR)
-                        .into_int()
-                        .expect(INTERNAL_ERR)
-                        .to_big_endian(v.as_mut_slice());
-                    substreams::scalar::BigInt::from_signed_bytes_be(&v)
-                },
+                param0: substreams_ethereum::abi::read_int(data, 0, "param0")?,
             })
         }
         pub fn encode(&self) -> Vec<u8> {
@@ -976,58 +819,12 @@ pub mod functions {
             if maybe_data.is_none() {
                 return Err("no data to decode".to_string());
             }
-            let mut values = ethabi::decode(
-                    &[
-                        ethabi::ParamType::Int(8usize),
-                        ethabi::ParamType::Int(32usize),
-                        ethabi::ParamType::Int(64usize),
-                        ethabi::ParamType::Int(256usize),
-                    ],
-                    maybe_data.unwrap(),
-                )
-                .map_err(|e| format!("unable to decode call.input: {:?}", e))?;
-            values.reverse();
+            let data = maybe_data.unwrap();
             Ok(Self {
-                param0: {
-                    let mut v = [0 as u8; 32];
-                    values
-                        .pop()
-                        .expect(INTERNAL_ERR)
-                        .into_int()
-                        .expect(INTERNAL_ERR)
-                        .to_big_endian(v.as_mut_slice());
-                    substreams::scalar::BigInt::from_signed_bytes_be(&v)
-                },
-                param1: {
-                    let mut v = [0 as u8; 32];
-                    values
-                        .pop()
-                        .expect(INTERNAL_ERR)
-                        .into_int()
-                        .expect(INTERNAL_ERR)
-                        .to_big_endian(v.as_mut_slice());
-                    substreams::scalar::BigInt::from_signed_bytes_be(&v)
-                },
-                param2: {
-                    let mut v = [0 as u8; 32];
-                    values
-                        .pop()
-                        .expect(INTERNAL_ERR)
-                        .into_int()
-                        .expect(INTERNAL_ERR)
-                        .to_big_endian(v.as_mut_slice());
-                    substreams::scalar::BigInt::from_signed_bytes_be(&v)
-                },
-                param3: {
-                    let mut v = [0 as u8; 32];
-                    values
-                        .pop()
-                        .expect(INTERNAL_ERR)
-                        .into_int()
-                        .expect(INTERNAL_ERR)
-                        .to_big_endian(v.as_mut_slice());
-                    substreams::scalar::BigInt::from_signed_bytes_be(&v)
-                },
+                param0: substreams_ethereum::abi::read_int(data, 0, "param0")?,
+                param1: substreams_ethereum::abi::read_int(data, 32, "param1")?,
+                param2: substreams_ethereum::abi::read_int(data, 64, "param2")?,
+                param3: substreams_ethereum::abi::read_int(data, 96, "param3")?,
             })
         }
         pub fn encode(&self) -> Vec<u8> {
@@ -1159,15 +956,7 @@ pub mod functions {
             Self::output(call.return_data.as_ref())
         }
         pub fn output(data: &[u8]) -> Result<String, String> {
-            let mut values = ethabi::decode(&[ethabi::ParamType::String], data.as_ref())
-                .map_err(|e| format!("unable to decode output data: {:?}", e))?;
-            Ok(
-                values
-                    .pop()
-                    .expect("one output data should have existed")
-                    .into_string()
-                    .expect(INTERNAL_ERR),
-            )
+            Ok(substreams_ethereum::abi::read_string(data, 0, "output")?)
         }
         pub fn match_call(call: &substreams_ethereum::pb::eth::v2::Call) -> bool {
             match call.input.get(0..4) {
@@ -1239,15 +1028,7 @@ pub mod functions {
             Self::output(call.return_data.as_ref())
         }
         pub fn output(data: &[u8]) -> Result<String, String> {
-            let mut values = ethabi::decode(&[ethabi::ParamType::String], data.as_ref())
-                .map_err(|e| format!("unable to decode output data: {:?}", e))?;
-            Ok(
-                values
-                    .pop()
-                    .expect("one output data should have existed")
-                    .into_string()
-                    .expect(INTERNAL_ERR),
-            )
+            Ok(substreams_ethereum::abi::read_string(data, 0, "output")?)
         }
         pub fn match_call(call: &substreams_ethereum::pb::eth::v2::Call) -> bool {
             match call.input.get(0..4) {
@@ -1319,15 +1100,9 @@ pub mod functions {
             Self::output(call.return_data.as_ref())
         }
         pub fn output(data: &[u8]) -> Result<(String, String), String> {
-            let mut values = ethabi::decode(
-                    &[ethabi::ParamType::String, ethabi::ParamType::String],
-                    data.as_ref(),
-                )
-                .map_err(|e| format!("unable to decode output data: {:?}", e))?;
-            values.reverse();
             Ok((
-                values.pop().expect(INTERNAL_ERR).into_string().expect(INTERNAL_ERR),
-                values.pop().expect(INTERNAL_ERR).into_string().expect(INTERNAL_ERR),
+                substreams_ethereum::abi::read_string(data, 0, "output")?,
+                substreams_ethereum::abi::read_string(data, 32, "output")?,
             ))
         }
         pub fn match_call(call: &substreams_ethereum::pb::eth::v2::Call) -> bool {
@@ -1392,18 +1167,9 @@ pub mod functions {
             if maybe_data.is_none() {
                 return Err("no data to decode".to_string());
             }
-            let mut values = ethabi::decode(
-                    &[ethabi::ParamType::String],
-                    maybe_data.unwrap(),
-                )
-                .map_err(|e| format!("unable to decode call.input: {:?}", e))?;
-            values.reverse();
+            let data = maybe_data.unwrap();
             Ok(Self {
-                first: values
-                    .pop()
-                    .expect(INTERNAL_ERR)
-                    .into_string()
-                    .expect(INTERNAL_ERR),
+                first: substreams_ethereum::abi::read_string(data, 0, "first")?,
             })
         }
         pub fn encode(&self) -> Vec<u8> {
@@ -1448,23 +1214,10 @@ pub mod functions {
             if maybe_data.is_none() {
                 return Err("no data to decode".to_string());
             }
-            let mut values = ethabi::decode(
-                    &[ethabi::ParamType::String, ethabi::ParamType::String],
-                    maybe_data.unwrap(),
-                )
-                .map_err(|e| format!("unable to decode call.input: {:?}", e))?;
-            values.reverse();
+            let data = maybe_data.unwrap();
             Ok(Self {
-                first: values
-                    .pop()
-                    .expect(INTERNAL_ERR)
-                    .into_string()
-                    .expect(INTERNAL_ERR),
-                second: values
-                    .pop()
-                    .expect(INTERNAL_ERR)
-                    .into_string()
-                    .expect(INTERNAL_ERR),
+                first: substreams_ethereum::abi::read_string(data, 0, "first")?,
+                second: substreams_ethereum::abi::read_string(data, 32, "second")?,
             })
         }
         pub fn encode(&self) -> Vec<u8> {
@@ -1513,27 +1266,18 @@ pub mod functions {
             if maybe_data.is_none() {
                 return Err("no data to decode".to_string());
             }
-            let mut values = ethabi::decode(
-                    &[ethabi::ParamType::Tuple(vec![ethabi::ParamType::Address])],
-                    maybe_data.unwrap(),
-                )
-                .map_err(|e| format!("unable to decode call.input: {:?}", e))?;
-            values.reverse();
+            let data = maybe_data.unwrap();
             Ok(Self {
                 param0: {
-                    let tuple_elements = values
-                        .pop()
-                        .expect(INTERNAL_ERR)
-                        .into_tuple()
-                        .expect(INTERNAL_ERR);
-                    (
-                        tuple_elements[0usize]
-                            .clone()
-                            .into_address()
-                            .expect(INTERNAL_ERR)
-                            .as_bytes()
-                            .to_vec(),
-                    )
+                    let base = data
+                        .get(0..)
+                        .ok_or_else(|| {
+                            format!(
+                                "unable to decode param '{}': need bytes at offset {}",
+                                "param0", 0
+                            )
+                        })?;
+                    (substreams_ethereum::abi::read_address(base, 0, "param0")?,)
                 },
             })
         }
@@ -1601,110 +1345,31 @@ pub mod functions {
             if maybe_data.is_none() {
                 return Err("no data to decode".to_string());
             }
-            let mut values = ethabi::decode(
-                    &[
-                        ethabi::ParamType::Tuple(
-                            vec![
-                                ethabi::ParamType::Address, ethabi::ParamType::Address,
-                                ethabi::ParamType::Address, ethabi::ParamType::Address,
-                                ethabi::ParamType::Address, ethabi::ParamType::Address,
-                                ethabi::ParamType::Address, ethabi::ParamType::Address,
-                                ethabi::ParamType::Address, ethabi::ParamType::Address,
-                                ethabi::ParamType::Address, ethabi::ParamType::Address,
-                                ethabi::ParamType::Address
-                            ],
-                        ),
-                    ],
-                    maybe_data.unwrap(),
-                )
-                .map_err(|e| format!("unable to decode call.input: {:?}", e))?;
-            values.reverse();
+            let data = maybe_data.unwrap();
             Ok(Self {
                 arg0: {
-                    let tuple_elements = values
-                        .pop()
-                        .expect(INTERNAL_ERR)
-                        .into_tuple()
-                        .expect(INTERNAL_ERR);
+                    let base = data
+                        .get(0..)
+                        .ok_or_else(|| {
+                            format!(
+                                "unable to decode param '{}': need bytes at offset {}",
+                                "arg0", 0
+                            )
+                        })?;
                     (
-                        tuple_elements[0usize]
-                            .clone()
-                            .into_address()
-                            .expect(INTERNAL_ERR)
-                            .as_bytes()
-                            .to_vec(),
-                        tuple_elements[1usize]
-                            .clone()
-                            .into_address()
-                            .expect(INTERNAL_ERR)
-                            .as_bytes()
-                            .to_vec(),
-                        tuple_elements[2usize]
-                            .clone()
-                            .into_address()
-                            .expect(INTERNAL_ERR)
-                            .as_bytes()
-                            .to_vec(),
-                        tuple_elements[3usize]
-                            .clone()
-                            .into_address()
-                            .expect(INTERNAL_ERR)
-                            .as_bytes()
-                            .to_vec(),
-                        tuple_elements[4usize]
-                            .clone()
-                            .into_address()
-                            .expect(INTERNAL_ERR)
-                            .as_bytes()
-                            .to_vec(),
-                        tuple_elements[5usize]
-                            .clone()
-                            .into_address()
-                            .expect(INTERNAL_ERR)
-                            .as_bytes()
-                            .to_vec(),
-                        tuple_elements[6usize]
-                            .clone()
-                            .into_address()
-                            .expect(INTERNAL_ERR)
-                            .as_bytes()
-                            .to_vec(),
-                        tuple_elements[7usize]
-                            .clone()
-                            .into_address()
-                            .expect(INTERNAL_ERR)
-                            .as_bytes()
-                            .to_vec(),
-                        tuple_elements[8usize]
-                            .clone()
-                            .into_address()
-                            .expect(INTERNAL_ERR)
-                            .as_bytes()
-                            .to_vec(),
-                        tuple_elements[9usize]
-                            .clone()
-                            .into_address()
-                            .expect(INTERNAL_ERR)
-                            .as_bytes()
-                            .to_vec(),
-                        tuple_elements[10usize]
-                            .clone()
-                            .into_address()
-                            .expect(INTERNAL_ERR)
-                            .as_bytes()
-                            .to_vec(),
-                        tuple_elements[11usize]
-                            .clone()
-                            .into_address()
-                            .expect(INTERNAL_ERR)
-                            .as_bytes()
-                            .to_vec(),
-                        tuple_elements[12usize]
-                            .clone()
-                            .into_address()
-                            .expect(INTERNAL_ERR)
-                            .as_bytes()
-                            .to_vec(),
+                        substreams_ethereum::abi::read_address(base, 0, "arg0")?,
+                        substreams_ethereum::abi::read_address(base, 32, "arg0")?,
+                        substreams_ethereum::abi::read_address(base, 64, "arg0")?,
+                        substreams_ethereum::abi::read_address(base, 96, "arg0")?,
+                        substreams_ethereum::abi::read_address(base, 128, "arg0")?,
+                        substreams_ethereum::abi::read_address(base, 160, "arg0")?,
+                        substreams_ethereum::abi::read_address(base, 192, "arg0")?,
+                        substreams_ethereum::abi::read_address(base, 224, "arg0")?,
+                        substreams_ethereum::abi::read_address(base, 256, "arg0")?,
+                        substreams_ethereum::abi::read_address(base, 288, "arg0")?,
+                        substreams_ethereum::abi::read_address(base, 320, "arg0")?,
+                        substreams_ethereum::abi::read_address(base, 352, "arg0")?,
+                        substreams_ethereum::abi::read_address(base, 384, "arg0")?,
                     )
                 },
             })
@@ -1783,23 +1448,9 @@ pub mod functions {
             if maybe_data.is_none() {
                 return Err("no data to decode".to_string());
             }
-            let mut values = ethabi::decode(
-                    &[ethabi::ParamType::Uint(256usize)],
-                    maybe_data.unwrap(),
-                )
-                .map_err(|e| format!("unable to decode call.input: {:?}", e))?;
-            values.reverse();
+            let data = maybe_data.unwrap();
             Ok(Self {
-                param0: {
-                    let mut v = [0 as u8; 32];
-                    values
-                        .pop()
-                        .expect(INTERNAL_ERR)
-                        .into_uint()
-                        .expect(INTERNAL_ERR)
-                        .to_big_endian(v.as_mut_slice());
-                    substreams::scalar::BigInt::from_unsigned_bytes_be(&v)
-                },
+                param0: substreams_ethereum::abi::read_uint(data, 0, "param0")?,
             })
         }
         pub fn encode(&self) -> Vec<u8> {
@@ -1858,23 +1509,9 @@ pub mod functions {
             if maybe_data.is_none() {
                 return Err("no data to decode".to_string());
             }
-            let mut values = ethabi::decode(
-                    &[ethabi::ParamType::Int(128usize)],
-                    maybe_data.unwrap(),
-                )
-                .map_err(|e| format!("unable to decode call.input: {:?}", e))?;
-            values.reverse();
+            let data = maybe_data.unwrap();
             Ok(Self {
-                arg0: {
-                    let mut v = [0 as u8; 32];
-                    values
-                        .pop()
-                        .expect(INTERNAL_ERR)
-                        .into_int()
-                        .expect(INTERNAL_ERR)
-                        .to_big_endian(v.as_mut_slice());
-                    substreams::scalar::BigInt::from_signed_bytes_be(&v)
-                },
+                arg0: substreams_ethereum::abi::read_int(data, 0, "arg0")?,
             })
         }
         pub fn encode(&self) -> Vec<u8> {
@@ -1940,23 +1577,9 @@ pub mod functions {
             if maybe_data.is_none() {
                 return Err("no data to decode".to_string());
             }
-            let mut values = ethabi::decode(
-                    &[ethabi::ParamType::Uint(256usize)],
-                    maybe_data.unwrap(),
-                )
-                .map_err(|e| format!("unable to decode call.input: {:?}", e))?;
-            values.reverse();
+            let data = maybe_data.unwrap();
             Ok(Self {
-                arg0: {
-                    let mut v = [0 as u8; 32];
-                    values
-                        .pop()
-                        .expect(INTERNAL_ERR)
-                        .into_uint()
-                        .expect(INTERNAL_ERR)
-                        .to_big_endian(v.as_mut_slice());
-                    substreams::scalar::BigInt::from_unsigned_bytes_be(&v)
-                },
+                arg0: substreams_ethereum::abi::read_uint(data, 0, "arg0")?,
             })
         }
         pub fn encode(&self) -> Vec<u8> {
@@ -2015,23 +1638,9 @@ pub mod functions {
             if maybe_data.is_none() {
                 return Err("no data to decode".to_string());
             }
-            let mut values = ethabi::decode(
-                    &[ethabi::ParamType::Uint(256usize)],
-                    maybe_data.unwrap(),
-                )
-                .map_err(|e| format!("unable to decode call.input: {:?}", e))?;
-            values.reverse();
+            let data = maybe_data.unwrap();
             Ok(Self {
-                arg0: {
-                    let mut v = [0 as u8; 32];
-                    values
-                        .pop()
-                        .expect(INTERNAL_ERR)
-                        .into_uint()
-                        .expect(INTERNAL_ERR)
-                        .to_big_endian(v.as_mut_slice());
-                    substreams::scalar::BigInt::from_unsigned_bytes_be(&v)
-                },
+                arg0: substreams_ethereum::abi::read_uint(data, 0, "arg0")?,
             })
         }
         pub fn encode(&self) -> Vec<u8> {
@@ -2090,23 +1699,9 @@ pub mod functions {
             if maybe_data.is_none() {
                 return Err("no data to decode".to_string());
             }
-            let mut values = ethabi::decode(
-                    &[ethabi::ParamType::Int(128usize)],
-                    maybe_data.unwrap(),
-                )
-                .map_err(|e| format!("unable to decode call.input: {:?}", e))?;
-            values.reverse();
+            let data = maybe_data.unwrap();
             Ok(Self {
-                arg0: {
-                    let mut v = [0 as u8; 32];
-                    values
-                        .pop()
-                        .expect(INTERNAL_ERR)
-                        .into_int()
-                        .expect(INTERNAL_ERR)
-                        .to_big_endian(v.as_mut_slice());
-                    substreams::scalar::BigInt::from_signed_bytes_be(&v)
-                },
+                arg0: substreams_ethereum::abi::read_int(data, 0, "arg0")?,
             })
         }
         pub fn encode(&self) -> Vec<u8> {
@@ -2172,23 +1767,9 @@ pub mod functions {
             if maybe_data.is_none() {
                 return Err("no data to decode".to_string());
             }
-            let mut values = ethabi::decode(
-                    &[ethabi::ParamType::Uint(256usize)],
-                    maybe_data.unwrap(),
-                )
-                .map_err(|e| format!("unable to decode call.input: {:?}", e))?;
-            values.reverse();
+            let data = maybe_data.unwrap();
             Ok(Self {
-                arg0: {
-                    let mut v = [0 as u8; 32];
-                    values
-                        .pop()
-                        .expect(INTERNAL_ERR)
-                        .into_uint()
-                        .expect(INTERNAL_ERR)
-                        .to_big_endian(v.as_mut_slice());
-                    substreams::scalar::BigInt::from_unsigned_bytes_be(&v)
-                },
+                arg0: substreams_ethereum::abi::read_uint(data, 0, "arg0")?,
             })
         }
         pub fn encode(&self) -> Vec<u8> {
@@ -2247,23 +1828,9 @@ pub mod functions {
             if maybe_data.is_none() {
                 return Err("no data to decode".to_string());
             }
-            let mut values = ethabi::decode(
-                    &[ethabi::ParamType::Int(128usize)],
-                    maybe_data.unwrap(),
-                )
-                .map_err(|e| format!("unable to decode call.input: {:?}", e))?;
-            values.reverse();
+            let data = maybe_data.unwrap();
             Ok(Self {
-                arg0: {
-                    let mut v = [0 as u8; 32];
-                    values
-                        .pop()
-                        .expect(INTERNAL_ERR)
-                        .into_int()
-                        .expect(INTERNAL_ERR)
-                        .to_big_endian(v.as_mut_slice());
-                    substreams::scalar::BigInt::from_signed_bytes_be(&v)
-                },
+                arg0: substreams_ethereum::abi::read_int(data, 0, "arg0")?,
             })
         }
         pub fn encode(&self) -> Vec<u8> {
@@ -2371,31 +1938,29 @@ pub mod events {
             return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
         pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
-            let mut values = ethabi::decode(&[ethabi::ParamType::String], log.data())
-                .map_err(|e| format!("unable to decode log.data: {:?}", e))?;
-            values.reverse();
+            if log.topic_count() != 2usize {
+                return Err(
+                    format!(
+                        "unexpected topic count, expected {}, got {}", 2usize, log
+                        .topic_count()
+                    ),
+                );
+            }
+            if log.data().len() < 64usize {
+                return Err(
+                    format!(
+                        "data too short, expected at least {}, got {}", 64usize, log
+                        .data().len()
+                    ),
+                );
+            }
             Ok(Self {
-                first: ethabi::decode(
-                        &[ethabi::ParamType::Address],
-                        log.topic(1usize).expect("bounds already checked"),
-                    )
-                    .map_err(|e| {
-                        format!(
-                            "unable to decode param 'first' from topic of type 'address': {:?}",
-                            e
-                        )
-                    })?
-                    .pop()
-                    .expect(INTERNAL_ERR)
-                    .into_address()
-                    .expect(INTERNAL_ERR)
-                    .as_bytes()
-                    .to_vec(),
-                second: values
-                    .pop()
-                    .expect(INTERNAL_ERR)
-                    .into_string()
-                    .expect(INTERNAL_ERR),
+                first: substreams_ethereum::abi::read_address(
+                    log.topic(1usize).expect("bounds already checked"),
+                    0,
+                    "first",
+                )?,
+                second: substreams_ethereum::abi::read_string(log.data(), 0, "second")?,
             })
         }
     }
@@ -2460,63 +2025,127 @@ pub mod events {
             return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
         pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
-            let mut values = ethabi::decode(
-                    &[ethabi::ParamType::String, ethabi::ParamType::Bytes],
-                    log.data(),
-                )
-                .map_err(|e| format!("unable to decode log.data: {:?}", e))?;
-            values.reverse();
+            if log.topic_count() != 3usize {
+                return Err(
+                    format!(
+                        "unexpected topic count, expected {}, got {}", 3usize, log
+                        .topic_count()
+                    ),
+                );
+            }
+            if log.data().len() < 128usize {
+                return Err(
+                    format!(
+                        "data too short, expected at least {}, got {}", 128usize, log
+                        .data().len()
+                    ),
+                );
+            }
             Ok(Self {
-                first: ethabi::decode(
-                        &[ethabi::ParamType::Address],
-                        log.topic(1usize).expect("bounds already checked"),
-                    )
-                    .map_err(|e| {
-                        format!(
-                            "unable to decode param 'first' from topic of type 'address': {:?}",
-                            e
-                        )
-                    })?
-                    .pop()
-                    .expect(INTERNAL_ERR)
-                    .into_address()
-                    .expect(INTERNAL_ERR)
-                    .as_bytes()
-                    .to_vec(),
-                third: {
-                    let mut v = [0 as u8; 32];
-                    ethabi::decode(
-                            &[ethabi::ParamType::Uint(256usize)],
-                            log.topic(2usize).expect("bounds already checked"),
-                        )
-                        .map_err(|e| {
-                            format!(
-                                "unable to decode param 'third' from topic of type 'uint256': {:?}",
-                                e
-                            )
-                        })?
-                        .pop()
-                        .expect(INTERNAL_ERR)
-                        .into_uint()
-                        .expect(INTERNAL_ERR)
-                        .to_big_endian(v.as_mut_slice());
-                    substreams::scalar::BigInt::from_unsigned_bytes_be(&v)
-                },
-                second: values
-                    .pop()
-                    .expect(INTERNAL_ERR)
-                    .into_string()
-                    .expect(INTERNAL_ERR),
-                fourth: values
-                    .pop()
-                    .expect(INTERNAL_ERR)
-                    .into_bytes()
-                    .expect(INTERNAL_ERR),
+                first: substreams_ethereum::abi::read_address(
+                    log.topic(1usize).expect("bounds already checked"),
+                    0,
+                    "first",
+                )?,
+                third: substreams_ethereum::abi::read_uint(
+                    log.topic(2usize).expect("bounds already checked"),
+                    0,
+                    "third",
+                )?,
+                second: substreams_ethereum::abi::read_string(log.data(), 0, "second")?,
+                fourth: substreams_ethereum::abi::read_bytes(log.data(), 32, "fourth")?,
             })
         }
     }
     impl substreams_ethereum::Event for EventAddressIdxStringUint256IdxBytes {
         const NAME: &'static str = "EventAddressIdxStringUint256IdxBytes";
+        fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
+            Self::match_log(log)
+        }
+        fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+            Self::decode(log)
+        }
+    }
+    #[derive(Debug, Clone, PartialEq)]
+    pub struct EventAddressIdxUint256Bool {
+        pub first: Vec<u8>,
+        pub second: substreams::scalar::BigInt,
+        pub third: bool,
+    }
+    impl EventAddressIdxUint256Bool {
+        const TOPIC_ID: [u8; 32] = [
+            10u8,
+            184u8,
+            199u8,
+            97u8,
+            80u8,
+            62u8,
+            42u8,
+            71u8,
+            159u8,
+            9u8,
+            56u8,
+            15u8,
+            237u8,
+            156u8,
+            51u8,
+            199u8,
+            94u8,
+            32u8,
+            204u8,
+            252u8,
+            101u8,
+            235u8,
+            11u8,
+            6u8,
+            115u8,
+            25u8,
+            55u8,
+            163u8,
+            125u8,
+            198u8,
+            152u8,
+            237u8,
+        ];
+        pub fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
+            if log.topic_count() != 2usize {
+                return false;
+            }
+            if log.data().len() != 64usize {
+                return false;
+            }
+            return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
+        }
+        pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+            if log.topic_count() != 2usize {
+                return Err(
+                    format!(
+                        "unexpected topic count, expected {}, got {}", 2usize, log
+                        .topic_count()
+                    ),
+                );
+            }
+            if log.data().len() < 64usize {
+                return Err(
+                    format!(
+                        "data too short, expected at least {}, got {}", 64usize, log
+                        .data().len()
+                    ),
+                );
+            }
+            Ok(Self {
+                first: substreams_ethereum::abi::read_address(
+                    log.topic(1usize).expect("bounds already checked"),
+                    0,
+                    "first",
+                )?,
+                second: substreams_ethereum::abi::read_uint(log.data(), 0, "second")?,
+                third: substreams_ethereum::abi::read_bool(log.data(), 32, "third")?,
+            })
+        }
+    }
+    impl substreams_ethereum::Event for EventAddressIdxUint256Bool {
+        const NAME: &'static str = "EventAddressIdxUint256Bool";
         fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
             Self::match_log(log)
         }
@@ -2576,73 +2205,368 @@ pub mod events {
             return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
         pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
-            let mut values = ethabi::decode(
-                    &[
-                        ethabi::ParamType::Uint(256usize),
-                        ethabi::ParamType::Uint(256usize),
-                    ],
-                    log.data(),
-                )
-                .map_err(|e| format!("unable to decode log.data: {:?}", e))?;
-            values.reverse();
+            if log.topic_count() != 3usize {
+                return Err(
+                    format!(
+                        "unexpected topic count, expected {}, got {}", 3usize, log
+                        .topic_count()
+                    ),
+                );
+            }
+            if log.data().len() < 64usize {
+                return Err(
+                    format!(
+                        "data too short, expected at least {}, got {}", 64usize, log
+                        .data().len()
+                    ),
+                );
+            }
             Ok(Self {
-                first: ethabi::decode(
-                        &[ethabi::ParamType::Address],
-                        log.topic(1usize).expect("bounds already checked"),
-                    )
-                    .map_err(|e| {
-                        format!(
-                            "unable to decode param 'first' from topic of type 'address': {:?}",
-                            e
-                        )
-                    })?
-                    .pop()
-                    .expect(INTERNAL_ERR)
-                    .into_address()
-                    .expect(INTERNAL_ERR)
-                    .as_bytes()
-                    .to_vec(),
-                fourth: ethabi::decode(
-                        &[ethabi::ParamType::Address],
-                        log.topic(2usize).expect("bounds already checked"),
-                    )
-                    .map_err(|e| {
-                        format!(
-                            "unable to decode param 'fourth' from topic of type 'address': {:?}",
-                            e
-                        )
-                    })?
-                    .pop()
-                    .expect(INTERNAL_ERR)
-                    .into_address()
-                    .expect(INTERNAL_ERR)
-                    .as_bytes()
-                    .to_vec(),
-                second: {
-                    let mut v = [0 as u8; 32];
-                    values
-                        .pop()
-                        .expect(INTERNAL_ERR)
-                        .into_uint()
-                        .expect(INTERNAL_ERR)
-                        .to_big_endian(v.as_mut_slice());
-                    substreams::scalar::BigInt::from_unsigned_bytes_be(&v)
-                },
-                third: {
-                    let mut v = [0 as u8; 32];
-                    values
-                        .pop()
-                        .expect(INTERNAL_ERR)
-                        .into_uint()
-                        .expect(INTERNAL_ERR)
-                        .to_big_endian(v.as_mut_slice());
-                    substreams::scalar::BigInt::from_unsigned_bytes_be(&v)
-                },
+                first: substreams_ethereum::abi::read_address(
+                    log.topic(1usize).expect("bounds already checked"),
+                    0,
+                    "first",
+                )?,
+                fourth: substreams_ethereum::abi::read_address(
+                    log.topic(2usize).expect("bounds already checked"),
+                    0,
+                    "fourth",
+                )?,
+                second: substreams_ethereum::abi::read_uint(log.data(), 0, "second")?,
+                third: substreams_ethereum::abi::read_uint(log.data(), 32, "third")?,
             })
         }
     }
     impl substreams_ethereum::Event for EventAddressIdxUint256Uint256AddressIdx {
         const NAME: &'static str = "EventAddressIdxUint256Uint256AddressIdx";
+        fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
+            Self::match_log(log)
+        }
+        fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+            Self::decode(log)
+        }
+    }
+    #[derive(Debug, Clone, PartialEq)]
+    pub struct EventAddressUint64BoolBytes4 {
+        pub param0: Vec<u8>,
+        pub param1: substreams::scalar::BigInt,
+        pub param2: bool,
+        pub param3: [u8; 4usize],
+    }
+    impl EventAddressUint64BoolBytes4 {
+        const TOPIC_ID: [u8; 32] = [
+            94u8,
+            167u8,
+            242u8,
+            0u8,
+            1u8,
+            223u8,
+            168u8,
+            32u8,
+            202u8,
+            155u8,
+            28u8,
+            175u8,
+            137u8,
+            215u8,
+            6u8,
+            162u8,
+            134u8,
+            48u8,
+            39u8,
+            38u8,
+            54u8,
+            47u8,
+            102u8,
+            194u8,
+            120u8,
+            136u8,
+            247u8,
+            16u8,
+            121u8,
+            148u8,
+            69u8,
+            40u8,
+        ];
+        pub fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
+            if log.topic_count() != 1usize {
+                return false;
+            }
+            if log.data().len() != 128usize {
+                return false;
+            }
+            return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
+        }
+        pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+            if log.topic_count() != 1usize {
+                return Err(
+                    format!(
+                        "unexpected topic count, expected {}, got {}", 1usize, log
+                        .topic_count()
+                    ),
+                );
+            }
+            if log.data().len() < 128usize {
+                return Err(
+                    format!(
+                        "data too short, expected at least {}, got {}", 128usize, log
+                        .data().len()
+                    ),
+                );
+            }
+            Ok(Self {
+                param0: substreams_ethereum::abi::read_address(log.data(), 0, "param0")?,
+                param1: substreams_ethereum::abi::read_uint(log.data(), 32, "param1")?,
+                param2: substreams_ethereum::abi::read_bool(log.data(), 64, "param2")?,
+                param3: substreams_ethereum::abi::read_fixed_bytes::<
+                    4,
+                >(log.data(), 96, "param3")?,
+            })
+        }
+    }
+    impl substreams_ethereum::Event for EventAddressUint64BoolBytes4 {
+        const NAME: &'static str = "EventAddressUint64BoolBytes4";
+        fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
+            Self::match_log(log)
+        }
+        fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+            Self::decode(log)
+        }
+    }
+    #[derive(Debug, Clone, PartialEq)]
+    pub struct EventBool {
+        pub param0: bool,
+    }
+    impl EventBool {
+        const TOPIC_ID: [u8; 32] = [
+            51u8,
+            61u8,
+            216u8,
+            157u8,
+            156u8,
+            112u8,
+            47u8,
+            77u8,
+            70u8,
+            143u8,
+            208u8,
+            46u8,
+            102u8,
+            70u8,
+            32u8,
+            250u8,
+            52u8,
+            168u8,
+            20u8,
+            86u8,
+            86u8,
+            211u8,
+            42u8,
+            199u8,
+            80u8,
+            145u8,
+            177u8,
+            5u8,
+            216u8,
+            190u8,
+            195u8,
+            49u8,
+        ];
+        pub fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
+            if log.topic_count() != 1usize {
+                return false;
+            }
+            if log.data().len() != 32usize {
+                return false;
+            }
+            return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
+        }
+        pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+            if log.topic_count() != 1usize {
+                return Err(
+                    format!(
+                        "unexpected topic count, expected {}, got {}", 1usize, log
+                        .topic_count()
+                    ),
+                );
+            }
+            if log.data().len() < 32usize {
+                return Err(
+                    format!(
+                        "data too short, expected at least {}, got {}", 32usize, log
+                        .data().len()
+                    ),
+                );
+            }
+            Ok(Self {
+                param0: substreams_ethereum::abi::read_bool(log.data(), 0, "param0")?,
+            })
+        }
+    }
+    impl substreams_ethereum::Event for EventBool {
+        const NAME: &'static str = "EventBool";
+        fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
+            Self::match_log(log)
+        }
+        fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+            Self::decode(log)
+        }
+    }
+    #[derive(Debug, Clone, PartialEq)]
+    pub struct EventBoolBool {
+        pub param0: bool,
+        pub param1: bool,
+    }
+    impl EventBoolBool {
+        const TOPIC_ID: [u8; 32] = [
+            42u8,
+            249u8,
+            132u8,
+            137u8,
+            7u8,
+            184u8,
+            137u8,
+            70u8,
+            159u8,
+            27u8,
+            249u8,
+            190u8,
+            154u8,
+            154u8,
+            45u8,
+            78u8,
+            48u8,
+            77u8,
+            143u8,
+            100u8,
+            114u8,
+            46u8,
+            97u8,
+            44u8,
+            219u8,
+            222u8,
+            25u8,
+            167u8,
+            96u8,
+            120u8,
+            27u8,
+            189u8,
+        ];
+        pub fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
+            if log.topic_count() != 1usize {
+                return false;
+            }
+            if log.data().len() != 64usize {
+                return false;
+            }
+            return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
+        }
+        pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+            if log.topic_count() != 1usize {
+                return Err(
+                    format!(
+                        "unexpected topic count, expected {}, got {}", 1usize, log
+                        .topic_count()
+                    ),
+                );
+            }
+            if log.data().len() < 64usize {
+                return Err(
+                    format!(
+                        "data too short, expected at least {}, got {}", 64usize, log
+                        .data().len()
+                    ),
+                );
+            }
+            Ok(Self {
+                param0: substreams_ethereum::abi::read_bool(log.data(), 0, "param0")?,
+                param1: substreams_ethereum::abi::read_bool(log.data(), 32, "param1")?,
+            })
+        }
+    }
+    impl substreams_ethereum::Event for EventBoolBool {
+        const NAME: &'static str = "EventBoolBool";
+        fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
+            Self::match_log(log)
+        }
+        fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+            Self::decode(log)
+        }
+    }
+    #[derive(Debug, Clone, PartialEq)]
+    pub struct EventBytes1 {
+        pub param0: [u8; 1usize],
+    }
+    impl EventBytes1 {
+        const TOPIC_ID: [u8; 32] = [
+            201u8,
+            204u8,
+            207u8,
+            171u8,
+            225u8,
+            253u8,
+            83u8,
+            15u8,
+            189u8,
+            50u8,
+            250u8,
+            140u8,
+            46u8,
+            157u8,
+            88u8,
+            100u8,
+            239u8,
+            237u8,
+            207u8,
+            203u8,
+            241u8,
+            7u8,
+            154u8,
+            155u8,
+            247u8,
+            230u8,
+            17u8,
+            164u8,
+            44u8,
+            34u8,
+            121u8,
+            155u8,
+        ];
+        pub fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
+            if log.topic_count() != 1usize {
+                return false;
+            }
+            if log.data().len() != 32usize {
+                return false;
+            }
+            return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
+        }
+        pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+            if log.topic_count() != 1usize {
+                return Err(
+                    format!(
+                        "unexpected topic count, expected {}, got {}", 1usize, log
+                        .topic_count()
+                    ),
+                );
+            }
+            if log.data().len() < 32usize {
+                return Err(
+                    format!(
+                        "data too short, expected at least {}, got {}", 32usize, log
+                        .data().len()
+                    ),
+                );
+            }
+            Ok(Self {
+                param0: substreams_ethereum::abi::read_fixed_bytes::<
+                    1,
+                >(log.data(), 0, "param0")?,
+            })
+        }
+    }
+    impl substreams_ethereum::Event for EventBytes1 {
+        const NAME: &'static str = "EventBytes1";
         fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
             Self::match_log(log)
         }
@@ -2701,57 +2625,118 @@ pub mod events {
             return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
         pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
-            let mut values = ethabi::decode(
-                    &[
-                        ethabi::ParamType::FixedBytes(20usize),
-                        ethabi::ParamType::Uint(256usize),
-                    ],
-                    log.data(),
-                )
-                .map_err(|e| format!("unable to decode log.data: {:?}", e))?;
-            values.reverse();
+            if log.topic_count() != 2usize {
+                return Err(
+                    format!(
+                        "unexpected topic count, expected {}, got {}", 2usize, log
+                        .topic_count()
+                    ),
+                );
+            }
+            if log.data().len() < 64usize {
+                return Err(
+                    format!(
+                        "data too short, expected at least {}, got {}", 64usize, log
+                        .data().len()
+                    ),
+                );
+            }
             Ok(Self {
-                third: ethabi::decode(
-                        &[ethabi::ParamType::Address],
-                        log.topic(1usize).expect("bounds already checked"),
-                    )
-                    .map_err(|e| {
-                        format!(
-                            "unable to decode param 'third' from topic of type 'address': {:?}",
-                            e
-                        )
-                    })?
-                    .pop()
-                    .expect(INTERNAL_ERR)
-                    .into_address()
-                    .expect(INTERNAL_ERR)
-                    .as_bytes()
-                    .to_vec(),
-                first: {
-                    let mut result = [0u8; 20];
-                    let v = values
-                        .pop()
-                        .expect(INTERNAL_ERR)
-                        .into_fixed_bytes()
-                        .expect(INTERNAL_ERR);
-                    result.copy_from_slice(&v);
-                    result
-                },
-                second: {
-                    let mut v = [0 as u8; 32];
-                    values
-                        .pop()
-                        .expect(INTERNAL_ERR)
-                        .into_uint()
-                        .expect(INTERNAL_ERR)
-                        .to_big_endian(v.as_mut_slice());
-                    substreams::scalar::BigInt::from_unsigned_bytes_be(&v)
-                },
+                third: substreams_ethereum::abi::read_address(
+                    log.topic(1usize).expect("bounds already checked"),
+                    0,
+                    "third",
+                )?,
+                first: substreams_ethereum::abi::read_fixed_bytes::<
+                    20,
+                >(log.data(), 0, "first")?,
+                second: substreams_ethereum::abi::read_uint(log.data(), 32, "second")?,
             })
         }
     }
     impl substreams_ethereum::Event for EventBytes20UintAddressIdx {
         const NAME: &'static str = "EventBytes20UintAddressIdx";
+        fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
+            Self::match_log(log)
+        }
+        fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+            Self::decode(log)
+        }
+    }
+    #[derive(Debug, Clone, PartialEq)]
+    pub struct EventBytes32 {
+        pub param0: [u8; 32usize],
+    }
+    impl EventBytes32 {
+        const TOPIC_ID: [u8; 32] = [
+            247u8,
+            199u8,
+            216u8,
+            101u8,
+            160u8,
+            168u8,
+            175u8,
+            219u8,
+            201u8,
+            177u8,
+            2u8,
+            129u8,
+            138u8,
+            133u8,
+            42u8,
+            223u8,
+            228u8,
+            175u8,
+            155u8,
+            125u8,
+            128u8,
+            184u8,
+            182u8,
+            73u8,
+            107u8,
+            151u8,
+            37u8,
+            82u8,
+            139u8,
+            109u8,
+            90u8,
+            114u8,
+        ];
+        pub fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
+            if log.topic_count() != 1usize {
+                return false;
+            }
+            if log.data().len() != 32usize {
+                return false;
+            }
+            return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
+        }
+        pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+            if log.topic_count() != 1usize {
+                return Err(
+                    format!(
+                        "unexpected topic count, expected {}, got {}", 1usize, log
+                        .topic_count()
+                    ),
+                );
+            }
+            if log.data().len() < 32usize {
+                return Err(
+                    format!(
+                        "data too short, expected at least {}, got {}", 32usize, log
+                        .data().len()
+                    ),
+                );
+            }
+            Ok(Self {
+                param0: substreams_ethereum::abi::read_fixed_bytes::<
+                    32,
+                >(log.data(), 0, "param0")?,
+            })
+        }
+    }
+    impl substreams_ethereum::Event for EventBytes32 {
+        const NAME: &'static str = "EventBytes32";
         fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
             Self::match_log(log)
         }
@@ -2810,57 +2795,197 @@ pub mod events {
             return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
         pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
-            let mut values = ethabi::decode(
-                    &[
-                        ethabi::ParamType::FixedBytes(32usize),
-                        ethabi::ParamType::Uint(256usize),
-                    ],
-                    log.data(),
-                )
-                .map_err(|e| format!("unable to decode log.data: {:?}", e))?;
-            values.reverse();
+            if log.topic_count() != 2usize {
+                return Err(
+                    format!(
+                        "unexpected topic count, expected {}, got {}", 2usize, log
+                        .topic_count()
+                    ),
+                );
+            }
+            if log.data().len() < 64usize {
+                return Err(
+                    format!(
+                        "data too short, expected at least {}, got {}", 64usize, log
+                        .data().len()
+                    ),
+                );
+            }
             Ok(Self {
-                third: ethabi::decode(
-                        &[ethabi::ParamType::Address],
-                        log.topic(1usize).expect("bounds already checked"),
-                    )
-                    .map_err(|e| {
-                        format!(
-                            "unable to decode param 'third' from topic of type 'address': {:?}",
-                            e
-                        )
-                    })?
-                    .pop()
-                    .expect(INTERNAL_ERR)
-                    .into_address()
-                    .expect(INTERNAL_ERR)
-                    .as_bytes()
-                    .to_vec(),
-                first: {
-                    let mut result = [0u8; 32];
-                    let v = values
-                        .pop()
-                        .expect(INTERNAL_ERR)
-                        .into_fixed_bytes()
-                        .expect(INTERNAL_ERR);
-                    result.copy_from_slice(&v);
-                    result
-                },
-                second: {
-                    let mut v = [0 as u8; 32];
-                    values
-                        .pop()
-                        .expect(INTERNAL_ERR)
-                        .into_uint()
-                        .expect(INTERNAL_ERR)
-                        .to_big_endian(v.as_mut_slice());
-                    substreams::scalar::BigInt::from_unsigned_bytes_be(&v)
-                },
+                third: substreams_ethereum::abi::read_address(
+                    log.topic(1usize).expect("bounds already checked"),
+                    0,
+                    "third",
+                )?,
+                first: substreams_ethereum::abi::read_fixed_bytes::<
+                    32,
+                >(log.data(), 0, "first")?,
+                second: substreams_ethereum::abi::read_uint(log.data(), 32, "second")?,
             })
         }
     }
     impl substreams_ethereum::Event for EventBytes32UintAddressIdx {
         const NAME: &'static str = "EventBytes32UintAddressIdx";
+        fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
+            Self::match_log(log)
+        }
+        fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+            Self::decode(log)
+        }
+    }
+    #[derive(Debug, Clone, PartialEq)]
+    pub struct EventBytes4 {
+        pub param0: [u8; 4usize],
+    }
+    impl EventBytes4 {
+        const TOPIC_ID: [u8; 32] = [
+            119u8,
+            254u8,
+            159u8,
+            51u8,
+            175u8,
+            231u8,
+            211u8,
+            103u8,
+            12u8,
+            227u8,
+            231u8,
+            88u8,
+            4u8,
+            3u8,
+            54u8,
+            130u8,
+            77u8,
+            196u8,
+            10u8,
+            20u8,
+            85u8,
+            162u8,
+            157u8,
+            240u8,
+            154u8,
+            176u8,
+            247u8,
+            253u8,
+            243u8,
+            101u8,
+            102u8,
+            11u8,
+        ];
+        pub fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
+            if log.topic_count() != 1usize {
+                return false;
+            }
+            if log.data().len() != 32usize {
+                return false;
+            }
+            return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
+        }
+        pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+            if log.topic_count() != 1usize {
+                return Err(
+                    format!(
+                        "unexpected topic count, expected {}, got {}", 1usize, log
+                        .topic_count()
+                    ),
+                );
+            }
+            if log.data().len() < 32usize {
+                return Err(
+                    format!(
+                        "data too short, expected at least {}, got {}", 32usize, log
+                        .data().len()
+                    ),
+                );
+            }
+            Ok(Self {
+                param0: substreams_ethereum::abi::read_fixed_bytes::<
+                    4,
+                >(log.data(), 0, "param0")?,
+            })
+        }
+    }
+    impl substreams_ethereum::Event for EventBytes4 {
+        const NAME: &'static str = "EventBytes4";
+        fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
+            Self::match_log(log)
+        }
+        fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+            Self::decode(log)
+        }
+    }
+    #[derive(Debug, Clone, PartialEq)]
+    pub struct EventInt128 {
+        pub param0: substreams::scalar::BigInt,
+    }
+    impl EventInt128 {
+        const TOPIC_ID: [u8; 32] = [
+            107u8,
+            224u8,
+            91u8,
+            33u8,
+            178u8,
+            0u8,
+            145u8,
+            146u8,
+            174u8,
+            205u8,
+            212u8,
+            38u8,
+            34u8,
+            146u8,
+            252u8,
+            157u8,
+            9u8,
+            65u8,
+            26u8,
+            249u8,
+            170u8,
+            30u8,
+            157u8,
+            253u8,
+            215u8,
+            48u8,
+            48u8,
+            197u8,
+            142u8,
+            55u8,
+            14u8,
+            38u8,
+        ];
+        pub fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
+            if log.topic_count() != 1usize {
+                return false;
+            }
+            if log.data().len() != 32usize {
+                return false;
+            }
+            return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
+        }
+        pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+            if log.topic_count() != 1usize {
+                return Err(
+                    format!(
+                        "unexpected topic count, expected {}, got {}", 1usize, log
+                        .topic_count()
+                    ),
+                );
+            }
+            if log.data().len() < 32usize {
+                return Err(
+                    format!(
+                        "data too short, expected at least {}, got {}", 32usize, log
+                        .data().len()
+                    ),
+                );
+            }
+            Ok(Self {
+                param0: substreams_ethereum::abi::read_int(log.data(), 0, "param0")?,
+            })
+        }
+    }
+    impl substreams_ethereum::Event for EventInt128 {
+        const NAME: &'static str = "EventInt128";
         fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
             Self::match_log(log)
         }
@@ -2917,23 +3042,24 @@ pub mod events {
             return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
         pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
-            let mut values = ethabi::decode(
-                    &[ethabi::ParamType::Int(256usize)],
-                    log.data(),
-                )
-                .map_err(|e| format!("unable to decode log.data: {:?}", e))?;
-            values.reverse();
+            if log.topic_count() != 1usize {
+                return Err(
+                    format!(
+                        "unexpected topic count, expected {}, got {}", 1usize, log
+                        .topic_count()
+                    ),
+                );
+            }
+            if log.data().len() < 32usize {
+                return Err(
+                    format!(
+                        "data too short, expected at least {}, got {}", 32usize, log
+                        .data().len()
+                    ),
+                );
+            }
             Ok(Self {
-                param0: {
-                    let mut v = [0 as u8; 32];
-                    values
-                        .pop()
-                        .expect(INTERNAL_ERR)
-                        .into_int()
-                        .expect(INTERNAL_ERR)
-                        .to_big_endian(v.as_mut_slice());
-                    substreams::scalar::BigInt::from_signed_bytes_be(&v)
-                },
+                param0: substreams_ethereum::abi::read_int(log.data(), 0, "param0")?,
             })
         }
     }
@@ -2995,6 +3121,14 @@ pub mod events {
             return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
         pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+            if log.topic_count() != 2usize {
+                return Err(
+                    format!(
+                        "unexpected topic count, expected {}, got {}", 2usize, log
+                        .topic_count()
+                    ),
+                );
+            }
             Ok(Self {
                 param0: substreams::scalar::BigInt::from_signed_bytes_be(
                     log.topic(1usize).expect("bounds already checked"),
@@ -3004,6 +3138,255 @@ pub mod events {
     }
     impl substreams_ethereum::Event for EventInt256Idx {
         const NAME: &'static str = "EventInt256Idx";
+        fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
+            Self::match_log(log)
+        }
+        fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+            Self::decode(log)
+        }
+    }
+    #[derive(Debug, Clone, PartialEq)]
+    pub struct EventInt32 {
+        pub param0: substreams::scalar::BigInt,
+    }
+    impl EventInt32 {
+        const TOPIC_ID: [u8; 32] = [
+            176u8,
+            13u8,
+            61u8,
+            13u8,
+            253u8,
+            7u8,
+            114u8,
+            112u8,
+            222u8,
+            169u8,
+            99u8,
+            163u8,
+            23u8,
+            24u8,
+            146u8,
+            173u8,
+            254u8,
+            52u8,
+            56u8,
+            190u8,
+            67u8,
+            155u8,
+            8u8,
+            209u8,
+            224u8,
+            102u8,
+            125u8,
+            33u8,
+            136u8,
+            119u8,
+            69u8,
+            162u8,
+        ];
+        pub fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
+            if log.topic_count() != 1usize {
+                return false;
+            }
+            if log.data().len() != 32usize {
+                return false;
+            }
+            return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
+        }
+        pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+            if log.topic_count() != 1usize {
+                return Err(
+                    format!(
+                        "unexpected topic count, expected {}, got {}", 1usize, log
+                        .topic_count()
+                    ),
+                );
+            }
+            if log.data().len() < 32usize {
+                return Err(
+                    format!(
+                        "data too short, expected at least {}, got {}", 32usize, log
+                        .data().len()
+                    ),
+                );
+            }
+            Ok(Self {
+                param0: substreams_ethereum::abi::read_int(log.data(), 0, "param0")?,
+            })
+        }
+    }
+    impl substreams_ethereum::Event for EventInt32 {
+        const NAME: &'static str = "EventInt32";
+        fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
+            Self::match_log(log)
+        }
+        fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+            Self::decode(log)
+        }
+    }
+    #[derive(Debug, Clone, PartialEq)]
+    pub struct EventInt8 {
+        pub param0: substreams::scalar::BigInt,
+    }
+    impl EventInt8 {
+        const TOPIC_ID: [u8; 32] = [
+            111u8,
+            181u8,
+            6u8,
+            26u8,
+            79u8,
+            153u8,
+            241u8,
+            144u8,
+            64u8,
+            203u8,
+            158u8,
+            132u8,
+            131u8,
+            25u8,
+            101u8,
+            218u8,
+            53u8,
+            213u8,
+            63u8,
+            113u8,
+            245u8,
+            135u8,
+            136u8,
+            163u8,
+            161u8,
+            80u8,
+            183u8,
+            196u8,
+            168u8,
+            235u8,
+            214u8,
+            29u8,
+        ];
+        pub fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
+            if log.topic_count() != 1usize {
+                return false;
+            }
+            if log.data().len() != 32usize {
+                return false;
+            }
+            return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
+        }
+        pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+            if log.topic_count() != 1usize {
+                return Err(
+                    format!(
+                        "unexpected topic count, expected {}, got {}", 1usize, log
+                        .topic_count()
+                    ),
+                );
+            }
+            if log.data().len() < 32usize {
+                return Err(
+                    format!(
+                        "data too short, expected at least {}, got {}", 32usize, log
+                        .data().len()
+                    ),
+                );
+            }
+            Ok(Self {
+                param0: substreams_ethereum::abi::read_int(log.data(), 0, "param0")?,
+            })
+        }
+    }
+    impl substreams_ethereum::Event for EventInt8 {
+        const NAME: &'static str = "EventInt8";
+        fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
+            Self::match_log(log)
+        }
+        fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+            Self::decode(log)
+        }
+    }
+    #[derive(Debug, Clone, PartialEq)]
+    pub struct EventSixWords {
+        pub p0: Vec<u8>,
+        pub p1: substreams::scalar::BigInt,
+        pub p2: substreams::scalar::BigInt,
+        pub p3: bool,
+        pub p4: [u8; 32usize],
+        pub p5: substreams::scalar::BigInt,
+    }
+    impl EventSixWords {
+        const TOPIC_ID: [u8; 32] = [
+            187u8,
+            227u8,
+            43u8,
+            61u8,
+            187u8,
+            117u8,
+            250u8,
+            108u8,
+            7u8,
+            166u8,
+            250u8,
+            69u8,
+            134u8,
+            81u8,
+            219u8,
+            239u8,
+            184u8,
+            200u8,
+            108u8,
+            203u8,
+            98u8,
+            111u8,
+            14u8,
+            158u8,
+            108u8,
+            218u8,
+            181u8,
+            143u8,
+            175u8,
+            230u8,
+            151u8,
+            52u8,
+        ];
+        pub fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
+            if log.topic_count() != 1usize {
+                return false;
+            }
+            if log.data().len() != 192usize {
+                return false;
+            }
+            return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
+        }
+        pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+            if log.topic_count() != 1usize {
+                return Err(
+                    format!(
+                        "unexpected topic count, expected {}, got {}", 1usize, log
+                        .topic_count()
+                    ),
+                );
+            }
+            if log.data().len() < 192usize {
+                return Err(
+                    format!(
+                        "data too short, expected at least {}, got {}", 192usize, log
+                        .data().len()
+                    ),
+                );
+            }
+            Ok(Self {
+                p0: substreams_ethereum::abi::read_address(log.data(), 0, "p0")?,
+                p1: substreams_ethereum::abi::read_uint(log.data(), 32, "p1")?,
+                p2: substreams_ethereum::abi::read_int(log.data(), 64, "p2")?,
+                p3: substreams_ethereum::abi::read_bool(log.data(), 96, "p3")?,
+                p4: substreams_ethereum::abi::read_fixed_bytes::<
+                    32,
+                >(log.data(), 128, "p4")?,
+                p5: substreams_ethereum::abi::read_uint(log.data(), 160, "p5")?,
+            })
+        }
+    }
+    impl substreams_ethereum::Event for EventSixWords {
+        const NAME: &'static str = "EventSixWords";
         fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
             Self::match_log(log)
         }
@@ -3060,21 +3443,19 @@ pub mod events {
             return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
         pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+            if log.topic_count() != 2usize {
+                return Err(
+                    format!(
+                        "unexpected topic count, expected {}, got {}", 2usize, log
+                        .topic_count()
+                    ),
+                );
+            }
             Ok(Self {
-                param0: ethabi::decode(
-                        &[ethabi::ParamType::FixedBytes(32)],
-                        log.topic(1usize).expect("bounds already checked"),
-                    )
-                    .map_err(|e| {
-                        format!(
-                            "unable to decode param 'param0' from topic of type 'string': {:?}",
-                            e
-                        )
-                    })?
-                    .pop()
-                    .expect(INTERNAL_ERR)
-                    .into_fixed_bytes()
-                    .expect(INTERNAL_ERR)
+                param0: substreams_ethereum::abi::read_fixed_bytes::<
+                    32,
+                >(log.topic(1usize).expect("bounds already checked"), 0, "param0")?
+                    .to_vec()
                     .into(),
             })
         }
@@ -3151,110 +3532,47 @@ pub mod events {
             return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
         pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
-            let mut values = ethabi::decode(
-                    &[
-                        ethabi::ParamType::Tuple(
-                            vec![
-                                ethabi::ParamType::Address, ethabi::ParamType::Address,
-                                ethabi::ParamType::Address, ethabi::ParamType::Address,
-                                ethabi::ParamType::Address, ethabi::ParamType::Address,
-                                ethabi::ParamType::Address, ethabi::ParamType::Address,
-                                ethabi::ParamType::Address, ethabi::ParamType::Address,
-                                ethabi::ParamType::Address, ethabi::ParamType::Address,
-                                ethabi::ParamType::Address
-                            ],
-                        ),
-                    ],
-                    log.data(),
-                )
-                .map_err(|e| format!("unable to decode log.data: {:?}", e))?;
-            values.reverse();
+            if log.topic_count() != 1usize {
+                return Err(
+                    format!(
+                        "unexpected topic count, expected {}, got {}", 1usize, log
+                        .topic_count()
+                    ),
+                );
+            }
+            if log.data().len() < 416usize {
+                return Err(
+                    format!(
+                        "data too short, expected at least {}, got {}", 416usize, log
+                        .data().len()
+                    ),
+                );
+            }
             Ok(Self {
                 param0: {
-                    let tuple_elements = values
-                        .pop()
-                        .expect(INTERNAL_ERR)
-                        .into_tuple()
-                        .expect(INTERNAL_ERR);
+                    let base = log
+                        .data()
+                        .get(0..)
+                        .ok_or_else(|| {
+                            format!(
+                                "unable to decode param '{}': need bytes at offset {}",
+                                "param0", 0
+                            )
+                        })?;
                     (
-                        tuple_elements[0usize]
-                            .clone()
-                            .into_address()
-                            .expect(INTERNAL_ERR)
-                            .as_bytes()
-                            .to_vec(),
-                        tuple_elements[1usize]
-                            .clone()
-                            .into_address()
-                            .expect(INTERNAL_ERR)
-                            .as_bytes()
-                            .to_vec(),
-                        tuple_elements[2usize]
-                            .clone()
-                            .into_address()
-                            .expect(INTERNAL_ERR)
-                            .as_bytes()
-                            .to_vec(),
-                        tuple_elements[3usize]
-                            .clone()
-                            .into_address()
-                            .expect(INTERNAL_ERR)
-                            .as_bytes()
-                            .to_vec(),
-                        tuple_elements[4usize]
-                            .clone()
-                            .into_address()
-                            .expect(INTERNAL_ERR)
-                            .as_bytes()
-                            .to_vec(),
-                        tuple_elements[5usize]
-                            .clone()
-                            .into_address()
-                            .expect(INTERNAL_ERR)
-                            .as_bytes()
-                            .to_vec(),
-                        tuple_elements[6usize]
-                            .clone()
-                            .into_address()
-                            .expect(INTERNAL_ERR)
-                            .as_bytes()
-                            .to_vec(),
-                        tuple_elements[7usize]
-                            .clone()
-                            .into_address()
-                            .expect(INTERNAL_ERR)
-                            .as_bytes()
-                            .to_vec(),
-                        tuple_elements[8usize]
-                            .clone()
-                            .into_address()
-                            .expect(INTERNAL_ERR)
-                            .as_bytes()
-                            .to_vec(),
-                        tuple_elements[9usize]
-                            .clone()
-                            .into_address()
-                            .expect(INTERNAL_ERR)
-                            .as_bytes()
-                            .to_vec(),
-                        tuple_elements[10usize]
-                            .clone()
-                            .into_address()
-                            .expect(INTERNAL_ERR)
-                            .as_bytes()
-                            .to_vec(),
-                        tuple_elements[11usize]
-                            .clone()
-                            .into_address()
-                            .expect(INTERNAL_ERR)
-                            .as_bytes()
-                            .to_vec(),
-                        tuple_elements[12usize]
-                            .clone()
-                            .into_address()
-                            .expect(INTERNAL_ERR)
-                            .as_bytes()
-                            .to_vec(),
+                        substreams_ethereum::abi::read_address(base, 0, "param0")?,
+                        substreams_ethereum::abi::read_address(base, 32, "param0")?,
+                        substreams_ethereum::abi::read_address(base, 64, "param0")?,
+                        substreams_ethereum::abi::read_address(base, 96, "param0")?,
+                        substreams_ethereum::abi::read_address(base, 128, "param0")?,
+                        substreams_ethereum::abi::read_address(base, 160, "param0")?,
+                        substreams_ethereum::abi::read_address(base, 192, "param0")?,
+                        substreams_ethereum::abi::read_address(base, 224, "param0")?,
+                        substreams_ethereum::abi::read_address(base, 256, "param0")?,
+                        substreams_ethereum::abi::read_address(base, 288, "param0")?,
+                        substreams_ethereum::abi::read_address(base, 320, "param0")?,
+                        substreams_ethereum::abi::read_address(base, 352, "param0")?,
+                        substreams_ethereum::abi::read_address(base, 384, "param0")?,
                     )
                 },
             })
@@ -3318,21 +3636,39 @@ pub mod events {
             return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
         pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
-            let mut values = ethabi::decode(
-                    &[ethabi::ParamType::Array(Box::new(ethabi::ParamType::Bool))],
-                    log.data(),
-                )
-                .map_err(|e| format!("unable to decode log.data: {:?}", e))?;
-            values.reverse();
+            if log.topic_count() != 1usize {
+                return Err(
+                    format!(
+                        "unexpected topic count, expected {}, got {}", 1usize, log
+                        .topic_count()
+                    ),
+                );
+            }
+            if log.data().len() < 64usize {
+                return Err(
+                    format!(
+                        "data too short, expected at least {}, got {}", 64usize, log
+                        .data().len()
+                    ),
+                );
+            }
             Ok(Self {
-                param0: values
-                    .pop()
-                    .expect(INTERNAL_ERR)
-                    .into_array()
-                    .expect(INTERNAL_ERR)
-                    .into_iter()
-                    .map(|inner| inner.into_bool().expect(INTERNAL_ERR))
-                    .collect(),
+                param0: {
+                    let (tail, count) = substreams_ethereum::abi::read_array_tail(
+                        log.data(),
+                        0,
+                        "param0",
+                    )?;
+                    let mut out = Vec::with_capacity(count.min(1024));
+                    let mut at = 0usize;
+                    for _ in 0..count {
+                        out.push(
+                            substreams_ethereum::abi::read_bool(tail, at, "param0")?,
+                        );
+                        at += 32usize;
+                    }
+                    out
+                },
             })
         }
     }
@@ -3397,58 +3733,35 @@ pub mod events {
             return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
         pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
-            let mut values = ethabi::decode(
-                    &[
-                        ethabi::ParamType::FixedBytes(8usize),
-                        ethabi::ParamType::FixedBytes(16usize),
-                        ethabi::ParamType::FixedBytes(24usize),
-                        ethabi::ParamType::FixedBytes(32usize),
-                    ],
-                    log.data(),
-                )
-                .map_err(|e| format!("unable to decode log.data: {:?}", e))?;
-            values.reverse();
+            if log.topic_count() != 1usize {
+                return Err(
+                    format!(
+                        "unexpected topic count, expected {}, got {}", 1usize, log
+                        .topic_count()
+                    ),
+                );
+            }
+            if log.data().len() < 128usize {
+                return Err(
+                    format!(
+                        "data too short, expected at least {}, got {}", 128usize, log
+                        .data().len()
+                    ),
+                );
+            }
             Ok(Self {
-                param0: {
-                    let mut result = [0u8; 8];
-                    let v = values
-                        .pop()
-                        .expect(INTERNAL_ERR)
-                        .into_fixed_bytes()
-                        .expect(INTERNAL_ERR);
-                    result.copy_from_slice(&v);
-                    result
-                },
-                param1: {
-                    let mut result = [0u8; 16];
-                    let v = values
-                        .pop()
-                        .expect(INTERNAL_ERR)
-                        .into_fixed_bytes()
-                        .expect(INTERNAL_ERR);
-                    result.copy_from_slice(&v);
-                    result
-                },
-                param2: {
-                    let mut result = [0u8; 24];
-                    let v = values
-                        .pop()
-                        .expect(INTERNAL_ERR)
-                        .into_fixed_bytes()
-                        .expect(INTERNAL_ERR);
-                    result.copy_from_slice(&v);
-                    result
-                },
-                param3: {
-                    let mut result = [0u8; 32];
-                    let v = values
-                        .pop()
-                        .expect(INTERNAL_ERR)
-                        .into_fixed_bytes()
-                        .expect(INTERNAL_ERR);
-                    result.copy_from_slice(&v);
-                    result
-                },
+                param0: substreams_ethereum::abi::read_fixed_bytes::<
+                    8,
+                >(log.data(), 0, "param0")?,
+                param1: substreams_ethereum::abi::read_fixed_bytes::<
+                    16,
+                >(log.data(), 32, "param1")?,
+                param2: substreams_ethereum::abi::read_fixed_bytes::<
+                    24,
+                >(log.data(), 64, "param2")?,
+                param3: substreams_ethereum::abi::read_fixed_bytes::<
+                    32,
+                >(log.data(), 96, "param3")?,
             })
         }
     }
@@ -3510,27 +3823,33 @@ pub mod events {
             return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
         pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
-            let mut values = ethabi::decode(
-                    &[
-                        ethabi::ParamType::FixedArray(
-                            Box::new(ethabi::ParamType::String),
-                            2usize,
-                        ),
-                    ],
-                    log.data(),
-                )
-                .map_err(|e| format!("unable to decode log.data: {:?}", e))?;
-            values.reverse();
+            if log.topic_count() != 1usize {
+                return Err(
+                    format!(
+                        "unexpected topic count, expected {}, got {}", 1usize, log
+                        .topic_count()
+                    ),
+                );
+            }
+            if log.data().len() < 160usize {
+                return Err(
+                    format!(
+                        "data too short, expected at least {}, got {}", 160usize, log
+                        .data().len()
+                    ),
+                );
+            }
             Ok(Self {
                 param0: {
-                    let mut iter = values
-                        .pop()
-                        .expect(INTERNAL_ERR)
-                        .into_fixed_array()
-                        .expect(INTERNAL_ERR)
-                        .into_iter()
-                        .map(|inner| inner.into_string().expect(INTERNAL_ERR));
-                    [iter.next().expect(INTERNAL_ERR), iter.next().expect(INTERNAL_ERR)]
+                    let base = substreams_ethereum::abi::read_dynamic_tail(
+                        log.data(),
+                        0,
+                        "param0",
+                    )?;
+                    [
+                        substreams_ethereum::abi::read_string(base, 0, "param0")?,
+                        substreams_ethereum::abi::read_string(base, 32, "param0")?,
+                    ]
                 },
             })
         }
@@ -3593,27 +3912,33 @@ pub mod events {
             return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
         pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
-            let mut values = ethabi::decode(
-                    &[
-                        ethabi::ParamType::FixedArray(
-                            Box::new(ethabi::ParamType::Bytes),
-                            2usize,
-                        ),
-                    ],
-                    log.data(),
-                )
-                .map_err(|e| format!("unable to decode log.data: {:?}", e))?;
-            values.reverse();
+            if log.topic_count() != 1usize {
+                return Err(
+                    format!(
+                        "unexpected topic count, expected {}, got {}", 1usize, log
+                        .topic_count()
+                    ),
+                );
+            }
+            if log.data().len() < 160usize {
+                return Err(
+                    format!(
+                        "data too short, expected at least {}, got {}", 160usize, log
+                        .data().len()
+                    ),
+                );
+            }
             Ok(Self {
                 param0: {
-                    let mut iter = values
-                        .pop()
-                        .expect(INTERNAL_ERR)
-                        .into_fixed_array()
-                        .expect(INTERNAL_ERR)
-                        .into_iter()
-                        .map(|inner| inner.into_bytes().expect(INTERNAL_ERR));
-                    [iter.next().expect(INTERNAL_ERR), iter.next().expect(INTERNAL_ERR)]
+                    let base = substreams_ethereum::abi::read_dynamic_tail(
+                        log.data(),
+                        0,
+                        "param0",
+                    )?;
+                    [
+                        substreams_ethereum::abi::read_bytes(base, 0, "param0")?,
+                        substreams_ethereum::abi::read_bytes(base, 32, "param0")?,
+                    ]
                 },
             })
         }
@@ -3676,35 +4001,137 @@ pub mod events {
             return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
         pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
-            let mut values = ethabi::decode(
-                    &[
-                        ethabi::ParamType::FixedArray(
-                            Box::new(ethabi::ParamType::Address),
-                            2usize,
-                        ),
-                    ],
-                    log.data(),
-                )
-                .map_err(|e| format!("unable to decode log.data: {:?}", e))?;
-            values.reverse();
+            if log.topic_count() != 1usize {
+                return Err(
+                    format!(
+                        "unexpected topic count, expected {}, got {}", 1usize, log
+                        .topic_count()
+                    ),
+                );
+            }
+            if log.data().len() < 64usize {
+                return Err(
+                    format!(
+                        "data too short, expected at least {}, got {}", 64usize, log
+                        .data().len()
+                    ),
+                );
+            }
             Ok(Self {
                 param0: {
-                    let mut iter = values
-                        .pop()
-                        .expect(INTERNAL_ERR)
-                        .into_fixed_array()
-                        .expect(INTERNAL_ERR)
-                        .into_iter()
-                        .map(|inner| {
-                            inner.into_address().expect(INTERNAL_ERR).as_bytes().to_vec()
-                        });
-                    [iter.next().expect(INTERNAL_ERR), iter.next().expect(INTERNAL_ERR)]
+                    let base = log
+                        .data()
+                        .get(0..)
+                        .ok_or_else(|| {
+                            format!(
+                                "unable to decode param '{}': need bytes at offset {}",
+                                "param0", 0
+                            )
+                        })?;
+                    [
+                        substreams_ethereum::abi::read_address(base, 0, "param0")?,
+                        substreams_ethereum::abi::read_address(base, 32, "param0")?,
+                    ]
                 },
             })
         }
     }
     impl substreams_ethereum::Event for EventUFixedArraySubFixed {
         const NAME: &'static str = "EventUFixedArraySubFixed";
+        fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
+            Self::match_log(log)
+        }
+        fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+            Self::decode(log)
+        }
+    }
+    #[derive(Debug, Clone, PartialEq)]
+    pub struct EventUFixedArrayUint2563 {
+        pub param0: [substreams::scalar::BigInt; 3usize],
+    }
+    impl EventUFixedArrayUint2563 {
+        const TOPIC_ID: [u8; 32] = [
+            119u8,
+            200u8,
+            73u8,
+            94u8,
+            147u8,
+            28u8,
+            86u8,
+            200u8,
+            248u8,
+            255u8,
+            17u8,
+            236u8,
+            57u8,
+            93u8,
+            99u8,
+            250u8,
+            158u8,
+            134u8,
+            74u8,
+            91u8,
+            42u8,
+            63u8,
+            245u8,
+            24u8,
+            40u8,
+            207u8,
+            252u8,
+            230u8,
+            56u8,
+            125u8,
+            84u8,
+            247u8,
+        ];
+        pub fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
+            if log.topic_count() != 1usize {
+                return false;
+            }
+            if log.data().len() != 96usize {
+                return false;
+            }
+            return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
+        }
+        pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+            if log.topic_count() != 1usize {
+                return Err(
+                    format!(
+                        "unexpected topic count, expected {}, got {}", 1usize, log
+                        .topic_count()
+                    ),
+                );
+            }
+            if log.data().len() < 96usize {
+                return Err(
+                    format!(
+                        "data too short, expected at least {}, got {}", 96usize, log
+                        .data().len()
+                    ),
+                );
+            }
+            Ok(Self {
+                param0: {
+                    let base = log
+                        .data()
+                        .get(0..)
+                        .ok_or_else(|| {
+                            format!(
+                                "unable to decode param '{}': need bytes at offset {}",
+                                "param0", 0
+                            )
+                        })?;
+                    [
+                        substreams_ethereum::abi::read_uint(base, 0, "param0")?,
+                        substreams_ethereum::abi::read_uint(base, 32, "param0")?,
+                        substreams_ethereum::abi::read_uint(base, 64, "param0")?,
+                    ]
+                },
+            })
+        }
+    }
+    impl substreams_ethereum::Event for EventUFixedArrayUint2563 {
+        const NAME: &'static str = "EventUFixedArrayUint256_3";
         fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
             Self::match_log(log)
         }
@@ -3761,33 +4188,134 @@ pub mod events {
             return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
         pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
-            let mut values = ethabi::decode(
-                    &[ethabi::ParamType::Tuple(vec![ethabi::ParamType::Address])],
-                    log.data(),
-                )
-                .map_err(|e| format!("unable to decode log.data: {:?}", e))?;
-            values.reverse();
+            if log.topic_count() != 1usize {
+                return Err(
+                    format!(
+                        "unexpected topic count, expected {}, got {}", 1usize, log
+                        .topic_count()
+                    ),
+                );
+            }
+            if log.data().len() < 32usize {
+                return Err(
+                    format!(
+                        "data too short, expected at least {}, got {}", 32usize, log
+                        .data().len()
+                    ),
+                );
+            }
             Ok(Self {
                 param0: {
-                    let tuple_elements = values
-                        .pop()
-                        .expect(INTERNAL_ERR)
-                        .into_tuple()
-                        .expect(INTERNAL_ERR);
-                    (
-                        tuple_elements[0usize]
-                            .clone()
-                            .into_address()
-                            .expect(INTERNAL_ERR)
-                            .as_bytes()
-                            .to_vec(),
-                    )
+                    let base = log
+                        .data()
+                        .get(0..)
+                        .ok_or_else(|| {
+                            format!(
+                                "unable to decode param '{}': need bytes at offset {}",
+                                "param0", 0
+                            )
+                        })?;
+                    (substreams_ethereum::abi::read_address(base, 0, "param0")?,)
                 },
             })
         }
     }
     impl substreams_ethereum::Event for EventUTupleAddress {
         const NAME: &'static str = "EventUTupleAddress";
+        fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
+            Self::match_log(log)
+        }
+        fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+            Self::decode(log)
+        }
+    }
+    #[derive(Debug, Clone, PartialEq)]
+    pub struct EventUTupleAllFixed {
+        pub param0: (Vec<u8>, substreams::scalar::BigInt, bool),
+    }
+    impl EventUTupleAllFixed {
+        const TOPIC_ID: [u8; 32] = [
+            138u8,
+            84u8,
+            103u8,
+            84u8,
+            210u8,
+            132u8,
+            117u8,
+            189u8,
+            162u8,
+            243u8,
+            73u8,
+            77u8,
+            238u8,
+            82u8,
+            74u8,
+            201u8,
+            206u8,
+            16u8,
+            222u8,
+            150u8,
+            126u8,
+            219u8,
+            138u8,
+            27u8,
+            44u8,
+            157u8,
+            109u8,
+            110u8,
+            151u8,
+            48u8,
+            127u8,
+            233u8,
+        ];
+        pub fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
+            if log.topic_count() != 1usize {
+                return false;
+            }
+            if log.data().len() != 96usize {
+                return false;
+            }
+            return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
+        }
+        pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+            if log.topic_count() != 1usize {
+                return Err(
+                    format!(
+                        "unexpected topic count, expected {}, got {}", 1usize, log
+                        .topic_count()
+                    ),
+                );
+            }
+            if log.data().len() < 96usize {
+                return Err(
+                    format!(
+                        "data too short, expected at least {}, got {}", 96usize, log
+                        .data().len()
+                    ),
+                );
+            }
+            Ok(Self {
+                param0: {
+                    let base = log
+                        .data()
+                        .get(0..)
+                        .ok_or_else(|| {
+                            format!(
+                                "unable to decode param '{}': need bytes at offset {}",
+                                "param0", 0
+                            )
+                        })?;
+                    (
+                        substreams_ethereum::abi::read_address(base, 0, "param0")?,
+                        substreams_ethereum::abi::read_uint(base, 32, "param0")?,
+                        substreams_ethereum::abi::read_bool(base, 64, "param0")?,
+                    )
+                },
+            })
+        }
+    }
+    impl substreams_ethereum::Event for EventUTupleAllFixed {
+        const NAME: &'static str = "EventUTupleAllFixed";
         fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
             Self::match_log(log)
         }
@@ -3844,26 +4372,362 @@ pub mod events {
             return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
         pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
-            let mut values = ethabi::decode(
-                    &[ethabi::ParamType::Tuple(vec![ethabi::ParamType::Bool])],
-                    log.data(),
-                )
-                .map_err(|e| format!("unable to decode log.data: {:?}", e))?;
-            values.reverse();
+            if log.topic_count() != 1usize {
+                return Err(
+                    format!(
+                        "unexpected topic count, expected {}, got {}", 1usize, log
+                        .topic_count()
+                    ),
+                );
+            }
+            if log.data().len() < 32usize {
+                return Err(
+                    format!(
+                        "data too short, expected at least {}, got {}", 32usize, log
+                        .data().len()
+                    ),
+                );
+            }
             Ok(Self {
                 param0: {
-                    let tuple_elements = values
-                        .pop()
-                        .expect(INTERNAL_ERR)
-                        .into_tuple()
-                        .expect(INTERNAL_ERR);
-                    (tuple_elements[0usize].clone().into_bool().expect(INTERNAL_ERR),)
+                    let base = log
+                        .data()
+                        .get(0..)
+                        .ok_or_else(|| {
+                            format!(
+                                "unable to decode param '{}': need bytes at offset {}",
+                                "param0", 0
+                            )
+                        })?;
+                    (substreams_ethereum::abi::read_bool(base, 0, "param0")?,)
                 },
             })
         }
     }
     impl substreams_ethereum::Event for EventUTupleBool {
         const NAME: &'static str = "EventUTupleBool";
+        fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
+            Self::match_log(log)
+        }
+        fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+            Self::decode(log)
+        }
+    }
+    #[derive(Debug, Clone, PartialEq)]
+    pub struct EventUint32 {
+        pub param0: substreams::scalar::BigInt,
+    }
+    impl EventUint32 {
+        const TOPIC_ID: [u8; 32] = [
+            73u8,
+            71u8,
+            215u8,
+            106u8,
+            199u8,
+            17u8,
+            157u8,
+            196u8,
+            232u8,
+            89u8,
+            215u8,
+            181u8,
+            164u8,
+            57u8,
+            195u8,
+            171u8,
+            189u8,
+            191u8,
+            141u8,
+            227u8,
+            201u8,
+            158u8,
+            230u8,
+            170u8,
+            133u8,
+            65u8,
+            76u8,
+            59u8,
+            25u8,
+            213u8,
+            60u8,
+            247u8,
+        ];
+        pub fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
+            if log.topic_count() != 1usize {
+                return false;
+            }
+            if log.data().len() != 32usize {
+                return false;
+            }
+            return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
+        }
+        pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+            if log.topic_count() != 1usize {
+                return Err(
+                    format!(
+                        "unexpected topic count, expected {}, got {}", 1usize, log
+                        .topic_count()
+                    ),
+                );
+            }
+            if log.data().len() < 32usize {
+                return Err(
+                    format!(
+                        "data too short, expected at least {}, got {}", 32usize, log
+                        .data().len()
+                    ),
+                );
+            }
+            Ok(Self {
+                param0: substreams_ethereum::abi::read_uint(log.data(), 0, "param0")?,
+            })
+        }
+    }
+    impl substreams_ethereum::Event for EventUint32 {
+        const NAME: &'static str = "EventUint32";
+        fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
+            Self::match_log(log)
+        }
+        fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+            Self::decode(log)
+        }
+    }
+    #[derive(Debug, Clone, PartialEq)]
+    pub struct EventUint64 {
+        pub param0: substreams::scalar::BigInt,
+    }
+    impl EventUint64 {
+        const TOPIC_ID: [u8; 32] = [
+            238u8,
+            166u8,
+            25u8,
+            207u8,
+            118u8,
+            220u8,
+            249u8,
+            214u8,
+            79u8,
+            148u8,
+            120u8,
+            201u8,
+            65u8,
+            6u8,
+            216u8,
+            114u8,
+            160u8,
+            53u8,
+            49u8,
+            206u8,
+            254u8,
+            89u8,
+            185u8,
+            37u8,
+            238u8,
+            47u8,
+            128u8,
+            248u8,
+            157u8,
+            50u8,
+            68u8,
+            73u8,
+        ];
+        pub fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
+            if log.topic_count() != 1usize {
+                return false;
+            }
+            if log.data().len() != 32usize {
+                return false;
+            }
+            return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
+        }
+        pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+            if log.topic_count() != 1usize {
+                return Err(
+                    format!(
+                        "unexpected topic count, expected {}, got {}", 1usize, log
+                        .topic_count()
+                    ),
+                );
+            }
+            if log.data().len() < 32usize {
+                return Err(
+                    format!(
+                        "data too short, expected at least {}, got {}", 32usize, log
+                        .data().len()
+                    ),
+                );
+            }
+            Ok(Self {
+                param0: substreams_ethereum::abi::read_uint(log.data(), 0, "param0")?,
+            })
+        }
+    }
+    impl substreams_ethereum::Event for EventUint64 {
+        const NAME: &'static str = "EventUint64";
+        fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
+            Self::match_log(log)
+        }
+        fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+            Self::decode(log)
+        }
+    }
+    #[derive(Debug, Clone, PartialEq)]
+    pub struct EventUint8 {
+        pub param0: substreams::scalar::BigInt,
+    }
+    impl EventUint8 {
+        const TOPIC_ID: [u8; 32] = [
+            72u8,
+            39u8,
+            199u8,
+            233u8,
+            38u8,
+            203u8,
+            107u8,
+            237u8,
+            93u8,
+            99u8,
+            179u8,
+            27u8,
+            168u8,
+            27u8,
+            210u8,
+            191u8,
+            213u8,
+            146u8,
+            182u8,
+            199u8,
+            217u8,
+            119u8,
+            201u8,
+            24u8,
+            54u8,
+            52u8,
+            66u8,
+            129u8,
+            105u8,
+            247u8,
+            125u8,
+            255u8,
+        ];
+        pub fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
+            if log.topic_count() != 1usize {
+                return false;
+            }
+            if log.data().len() != 32usize {
+                return false;
+            }
+            return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
+        }
+        pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+            if log.topic_count() != 1usize {
+                return Err(
+                    format!(
+                        "unexpected topic count, expected {}, got {}", 1usize, log
+                        .topic_count()
+                    ),
+                );
+            }
+            if log.data().len() < 32usize {
+                return Err(
+                    format!(
+                        "data too short, expected at least {}, got {}", 32usize, log
+                        .data().len()
+                    ),
+                );
+            }
+            Ok(Self {
+                param0: substreams_ethereum::abi::read_uint(log.data(), 0, "param0")?,
+            })
+        }
+    }
+    impl substreams_ethereum::Event for EventUint8 {
+        const NAME: &'static str = "EventUint8";
+        fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
+            Self::match_log(log)
+        }
+        fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+            Self::decode(log)
+        }
+    }
+    #[derive(Debug, Clone, PartialEq)]
+    pub struct EventUint8Uint16Uint32Uint64 {
+        pub param0: substreams::scalar::BigInt,
+        pub param1: substreams::scalar::BigInt,
+        pub param2: substreams::scalar::BigInt,
+        pub param3: substreams::scalar::BigInt,
+    }
+    impl EventUint8Uint16Uint32Uint64 {
+        const TOPIC_ID: [u8; 32] = [
+            250u8,
+            180u8,
+            94u8,
+            214u8,
+            102u8,
+            121u8,
+            191u8,
+            32u8,
+            239u8,
+            39u8,
+            139u8,
+            182u8,
+            94u8,
+            22u8,
+            180u8,
+            188u8,
+            54u8,
+            24u8,
+            38u8,
+            106u8,
+            109u8,
+            98u8,
+            240u8,
+            140u8,
+            119u8,
+            192u8,
+            202u8,
+            80u8,
+            100u8,
+            67u8,
+            87u8,
+            209u8,
+        ];
+        pub fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
+            if log.topic_count() != 1usize {
+                return false;
+            }
+            if log.data().len() != 128usize {
+                return false;
+            }
+            return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
+        }
+        pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+            if log.topic_count() != 1usize {
+                return Err(
+                    format!(
+                        "unexpected topic count, expected {}, got {}", 1usize, log
+                        .topic_count()
+                    ),
+                );
+            }
+            if log.data().len() < 128usize {
+                return Err(
+                    format!(
+                        "data too short, expected at least {}, got {}", 128usize, log
+                        .data().len()
+                    ),
+                );
+            }
+            Ok(Self {
+                param0: substreams_ethereum::abi::read_uint(log.data(), 0, "param0")?,
+                param1: substreams_ethereum::abi::read_uint(log.data(), 32, "param1")?,
+                param2: substreams_ethereum::abi::read_uint(log.data(), 64, "param2")?,
+                param3: substreams_ethereum::abi::read_uint(log.data(), 96, "param3")?,
+            })
+        }
+    }
+    impl substreams_ethereum::Event for EventUint8Uint16Uint32Uint64 {
+        const NAME: &'static str = "EventUint8Uint16Uint32Uint64";
         fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
             Self::match_log(log)
         }
@@ -3920,23 +4784,20 @@ pub mod events {
             return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
         pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+            if log.topic_count() != 2usize {
+                return Err(
+                    format!(
+                        "unexpected topic count, expected {}, got {}", 2usize, log
+                        .topic_count()
+                    ),
+                );
+            }
             Ok(Self {
-                first: ethabi::decode(
-                        &[ethabi::ParamType::Address],
-                        log.topic(1usize).expect("bounds already checked"),
-                    )
-                    .map_err(|e| {
-                        format!(
-                            "unable to decode param 'first' from topic of type 'address': {:?}",
-                            e
-                        )
-                    })?
-                    .pop()
-                    .expect(INTERNAL_ERR)
-                    .into_address()
-                    .expect(INTERNAL_ERR)
-                    .as_bytes()
-                    .to_vec(),
+                first: substreams_ethereum::abi::read_address(
+                    log.topic(1usize).expect("bounds already checked"),
+                    0,
+                    "first",
+                )?,
             })
         }
     }
@@ -3998,21 +4859,19 @@ pub mod events {
             return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
         pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+            if log.topic_count() != 2usize {
+                return Err(
+                    format!(
+                        "unexpected topic count, expected {}, got {}", 2usize, log
+                        .topic_count()
+                    ),
+                );
+            }
             Ok(Self {
-                second: ethabi::decode(
-                        &[ethabi::ParamType::FixedBytes(32)],
-                        log.topic(1usize).expect("bounds already checked"),
-                    )
-                    .map_err(|e| {
-                        format!(
-                            "unable to decode param 'second' from topic of type 'string': {:?}",
-                            e
-                        )
-                    })?
-                    .pop()
-                    .expect(INTERNAL_ERR)
-                    .into_fixed_bytes()
-                    .expect(INTERNAL_ERR)
+                second: substreams_ethereum::abi::read_fixed_bytes::<
+                    32,
+                >(log.topic(1usize).expect("bounds already checked"), 0, "second")?
+                    .to_vec()
                     .into(),
             })
         }
@@ -4075,26 +4934,20 @@ pub mod events {
             return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
         pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+            if log.topic_count() != 2usize {
+                return Err(
+                    format!(
+                        "unexpected topic count, expected {}, got {}", 2usize, log
+                        .topic_count()
+                    ),
+                );
+            }
             Ok(Self {
-                third: {
-                    let mut v = [0 as u8; 32];
-                    ethabi::decode(
-                            &[ethabi::ParamType::Uint(256usize)],
-                            log.topic(1usize).expect("bounds already checked"),
-                        )
-                        .map_err(|e| {
-                            format!(
-                                "unable to decode param 'third' from topic of type 'uint256': {:?}",
-                                e
-                            )
-                        })?
-                        .pop()
-                        .expect(INTERNAL_ERR)
-                        .into_uint()
-                        .expect(INTERNAL_ERR)
-                        .to_big_endian(v.as_mut_slice());
-                    substreams::scalar::BigInt::from_unsigned_bytes_be(&v)
-                },
+                third: substreams_ethereum::abi::read_uint(
+                    log.topic(1usize).expect("bounds already checked"),
+                    0,
+                    "third",
+                )?,
             })
         }
     }

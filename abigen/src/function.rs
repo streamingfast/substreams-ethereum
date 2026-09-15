@@ -10,9 +10,9 @@ use heck::ToUpperCamelCase;
 use proc_macro2::{Span, TokenStream};
 use quote::quote;
 
-use crate::{is_long_tuple, to_syntax_string};
+use crate::{element_stride, is_long_tuple, read_at};
 
-use super::{from_token, get_output_kinds, param_names, rust_type, to_token};
+use super::{get_output_kinds, param_names, rust_type, to_token};
 
 struct Inputs {
     tokenize: Vec<TokenStream>,
@@ -63,36 +63,36 @@ impl<'a> From<(String, &'a ethabi::Function)> for Function {
             .map(|(param_name, kind)| quote! { pub #param_name: #kind })
             .collect();
 
+        // The four selector bytes sit ahead of the parameter list, so every head
+        // offset is measured from the input past them.
         let input_ethabi_param_types = if !f.inputs.is_empty() {
-            let params: Vec<_> = f
-                .inputs
-                .iter()
-                .map(|input| to_syntax_string(&input.kind))
-                .collect();
-
             quote! {
                 let maybe_data = call.input.get(4..);
                 if maybe_data.is_none() {
                     return Err("no data to decode".to_string());
                 }
-
-                let mut values = ethabi::decode(&[#(#params),*], maybe_data.unwrap())
-                        .map_err(|e| format!("unable to decode call.input: {:?}", e))?;
-                values.reverse();
+                let data = maybe_data.unwrap();
             }
         } else {
             quote! {}
         };
 
-        // We go reverse in the iteration because we use a series of `.pop()` to correctly
-        // extract elements and put them in the good fields.
+        let data_token = quote! { data };
+        let mut head_offset = 0usize;
         let input_struct_decoded_fields = f
             .inputs
             .iter()
             .zip(input_names.iter())
             .map(|(param, name)| {
-                let data_access = quote! { values.pop().expect(INTERNAL_ERR) };
-                let decode_input = from_token(&param.kind, &data_access);
+                let offset = syn::Index::from(head_offset);
+                let decode_input = read_at(
+                    &param.kind,
+                    &name.to_string(),
+                    &data_token,
+                    &quote! { #offset },
+                );
+                head_offset += element_stride(&param.kind);
+
                 quote! {
                    #name: #decode_input
                 }
@@ -108,19 +108,15 @@ impl<'a> From<(String, &'a ethabi::Function)> for Function {
 
         let output_result = get_output_kinds(&f.outputs);
 
-        let output_param_types: Vec<_> = f
-            .outputs
-            .iter()
-            .map(|output| to_syntax_string(&output.kind))
-            .collect();
-
         let output_implementation = match f.outputs.len() {
             0 => quote! {},
             1 => {
-                let decode_param_type = &output_param_types[0];
-                let data_access =
-                    quote! { values.pop().expect("one output data should have existed") };
-                let decode_input = from_token(&f.outputs[0].kind, &data_access);
+                let decode_input = read_at(
+                    &f.outputs[0].kind,
+                    "output",
+                    &quote! { data },
+                    &quote! { 0 },
+                );
 
                 quote! {
                     pub fn output_call(call: &substreams_ethereum::pb::eth::v2::Call) -> Result<#output_result, String> {
@@ -128,37 +124,22 @@ impl<'a> From<(String, &'a ethabi::Function)> for Function {
                     }
 
                     pub fn output(data: &[u8]) -> Result<#output_result, String> {
-                        let mut values = ethabi::decode(&[#decode_param_type], data.as_ref())
-                        .map_err(|e| format!("unable to decode output data: {:?}", e))?;
-
                         Ok(#decode_input)
                     }
                 }
             }
             _ => {
-                let output_tuple_fields: Vec<_> = f
-                    .outputs
-                    .iter()
-                    .map(|input| to_syntax_string(&input.kind))
-                    .collect();
-
-                let output_ethabi_decoded_values = quote! {
-                    let mut values = ethabi::decode(&[#(#output_tuple_fields),*], data.as_ref())
-                            .map_err(|e| format!("unable to decode output data: {:?}", e))?;
-                    values.reverse();
-                };
-
-                // We go reverse in the iteration because we use a series of `.pop()` to correctly
-                // extract elements and put them in the good fields.
+                let mut head_offset = 0usize;
                 let output_tuple_decoded_fields: Vec<TokenStream> = f
                     .outputs
                     .iter()
                     .map(|param| {
-                        let data_access = quote! { values.pop().expect(INTERNAL_ERR) };
-                        let decode_input = from_token(&param.kind, &data_access);
-                        quote! {
-                           #decode_input
-                        }
+                        let offset = syn::Index::from(head_offset);
+                        let decode_input =
+                            read_at(&param.kind, "output", &quote! { data }, &quote! { #offset });
+                        head_offset += element_stride(&param.kind);
+
+                        decode_input
                     })
                     .collect();
 
@@ -168,8 +149,6 @@ impl<'a> From<(String, &'a ethabi::Function)> for Function {
                     }
 
                     pub fn output(data: &[u8]) -> Result<#output_result, String> {
-                        #output_ethabi_decoded_values
-
                         Ok((#(#output_tuple_decoded_fields),*))
                     }
                 }

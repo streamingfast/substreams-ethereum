@@ -850,5 +850,327 @@
       }
     ],
     "outputs": []
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint8",
+        "name": "param0",
+        "type": "uint8"
+      }
+    ],
+    "name": "EventUint8",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint32",
+        "name": "param0",
+        "type": "uint32"
+      }
+    ],
+    "name": "EventUint32",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint64",
+        "name": "param0",
+        "type": "uint64"
+      }
+    ],
+    "name": "EventUint64",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "int8",
+        "name": "param0",
+        "type": "int8"
+      }
+    ],
+    "name": "EventInt8",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "int32",
+        "name": "param0",
+        "type": "int32"
+      }
+    ],
+    "name": "EventInt32",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "bytes1",
+        "name": "param0",
+        "type": "bytes1"
+      }
+    ],
+    "name": "EventBytes1",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "bytes4",
+        "name": "param0",
+        "type": "bytes4"
+      }
+    ],
+    "name": "EventBytes4",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "param0",
+        "type": "bool"
+      }
+    ],
+    "name": "EventBool",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "param0",
+        "type": "bool"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "param1",
+        "type": "bool"
+      }
+    ],
+    "name": "EventBoolBool",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "param0",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint64",
+        "name": "param1",
+        "type": "uint64"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "param2",
+        "type": "bool"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes4",
+        "name": "param3",
+        "type": "bytes4"
+      }
+    ],
+    "name": "EventAddressUint64BoolBytes4",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint8",
+        "name": "param0",
+        "type": "uint8"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint16",
+        "name": "param1",
+        "type": "uint16"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint32",
+        "name": "param2",
+        "type": "uint32"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint64",
+        "name": "param3",
+        "type": "uint64"
+      }
+    ],
+    "name": "EventUint8Uint16Uint32Uint64",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "first",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "second",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "third",
+        "type": "bool"
+      }
+    ],
+    "name": "EventAddressIdxUint256Bool",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256[3]",
+        "name": "param0",
+        "type": "uint256[3]"
+      }
+    ],
+    "name": "EventUFixedArrayUint256_3",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "a",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "b",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "c",
+            "type": "bool"
+          }
+        ],
+        "indexed": false,
+        "internalType": "struct AllFixed",
+        "name": "param0",
+        "type": "tuple"
+      }
+    ],
+    "name": "EventUTupleAllFixed",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "param0",
+        "type": "bytes32"
+      }
+    ],
+    "name": "EventBytes32",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "p0",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "p1",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "int256",
+        "name": "p2",
+        "type": "int256"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "p3",
+        "type": "bool"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "p4",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint8",
+        "name": "p5",
+        "type": "uint8"
+      }
+    ],
+    "name": "EventSixWords",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "int128",
+        "name": "param0",
+        "type": "int128"
+      }
+    ],
+    "name": "EventInt128",
+    "type": "event"
   }
 ]

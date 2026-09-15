@@ -2,9 +2,12 @@ use heck::{ToSnakeCase, ToUpperCamelCase};
 use proc_macro2::{Span, TokenStream};
 use quote::quote;
 
-use crate::{decode_topic, fixed_data_size, is_long_tuple, min_data_size, rust_type_indexed};
+use crate::{
+    decode_topic, element_stride, fixed_data_size, is_long_tuple, min_data_size, read_at,
+    rust_type_indexed,
+};
 
-use super::{from_token, rust_type, to_syntax_string};
+use super::rust_type;
 
 /// Structure used to generate contract's event interface.
 pub struct Event {
@@ -95,39 +98,39 @@ impl<'a> From<(&'a String, &'a ethabi::Event)> for Event {
             })
             .collect();
 
-        let decode_data = if e.inputs.iter().any(|input| !input.indexed) {
-            let params: Vec<_> = e
-                .inputs
-                .iter()
-                .filter(|input| !input.indexed)
-                .map(|input| to_syntax_string(&input.kind))
-                .collect();
-
-            quote! {
-                let mut values = ethabi::decode(&[#(#params),*], log.data())
-                        .map_err(|e| format!("unable to decode log.data: {:?}", e))?;
-                values.reverse();
-            }
-        } else {
-            TokenStream::new()
-        };
-
-        // We go reverse in the iteration because we use a series of `.pop()` to correctly
-        // extract elements.
-        let decode_unindexed_fields = e
+        // Pair each unindexed parameter with its own name: `names` covers every
+        // input, so an indexed parameter ahead of an unindexed one would otherwise
+        // shift the pairing.
+        let unindexed: Vec<_> = e
             .inputs
             .iter()
             .zip(names.iter())
             .filter(|(param, _)| !param.indexed)
-            .map(|(param, name)| {
-                let data_access = quote! { values.pop().expect(INTERNAL_ERR) };
-                let decode_topic = from_token(&param.kind, &data_access);
+            .collect();
 
-                quote! {
-                   #name: #decode_topic
-                }
+        // Each parameter's head word sits at an offset known once the ABI is read, so
+        // every read is emitted against `log.data()` directly. A dynamic parameter
+        // spends its head word on a pointer and is followed from there.
+        let data_token = quote! { log.data() };
+
+        let mut head_offset = 0usize;
+        let decode_unindexed_fields: Vec<TokenStream> = unindexed
+            .iter()
+            .map(|(param, name)| {
+                let offset = syn::Index::from(head_offset);
+                let read = read_at(
+                    &param.kind,
+                    &name.to_string(),
+                    &data_token,
+                    &quote! { #offset },
+                );
+                head_offset += element_stride(&param.kind);
+
+                quote! { #name: #read }
             })
             .collect();
+
+        let decode_data = TokenStream::new();
 
         Event {
             name: name.clone(),
@@ -183,6 +186,38 @@ impl Event {
             }
         };
 
+        // Every read below sits at an offset inside the first `fixed_data_size` bytes,
+        // so a buffer at least that long makes all of them in-bounds. `ethabi` reads
+        // the parameters it was given and ignores whatever follows, so a longer buffer
+        // is accepted here too.
+        let decode_match_data = match &self.fixed_data_size {
+            // An event with no unindexed parameter reads nothing out of the data
+            // section, so there is no length to require.
+            Some(0) => TokenStream::new(),
+            Some(fixed_data_size) => {
+                quote! {
+                    if log.data().len() < #fixed_data_size {
+                        return Err(format!(
+                            "data too short, expected at least {}, got {}",
+                            #fixed_data_size,
+                            log.data().len()
+                        ));
+                    }
+                }
+            }
+            None => {
+                quote! {
+                    if log.data().len() < #min_data_size {
+                        return Err(format!(
+                            "data too short, expected at least {}, got {}",
+                            #min_data_size,
+                            log.data().len()
+                        ));
+                    }
+                }
+            }
+        };
+
         let struct_header = if self.has_any_long_tuple {
             quote! {
                 #[derive(Clone)]
@@ -214,6 +249,19 @@ impl Event {
                 }
 
                 pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+                    // Reading an indexed parameter indexes into the topics, so the count
+                    // is checked here too: `decode` is public and callable without
+                    // `match_log` having run first.
+                    if log.topic_count() != #topic_count {
+                        return Err(format!(
+                            "unexpected topic count, expected {}, got {}",
+                            #topic_count,
+                            log.topic_count()
+                        ));
+                    }
+
+                    #decode_match_data
+
                     #decode_data
 
                     Ok(Self {
@@ -305,6 +353,14 @@ mod tests {
                     pub fn decode<L: substreams_ethereum::LogLike>(
                         log: &L
                     ) -> Result<Self, String> {
+                        if log.topic_count() != 1usize {
+                            return Err(
+                                format!(
+                                    "unexpected topic count, expected {}, got {}", 1usize, log
+                                    .topic_count()
+                                )
+                            );
+                        }
                         Ok(Self {})
                     }
                 }
@@ -392,21 +448,20 @@ mod tests {
                     pub fn decode<L: substreams_ethereum::LogLike>(
                         log: &L
                     ) -> Result<Self, String> {
-                        Ok(Self {
-                            foo: ethabi::decode(
-                                    &[ethabi::ParamType::Address],
-                                    log.topic(1usize).expect("bounds already checked")
+                        if log.topic_count() != 2usize {
+                            return Err(
+                                format!(
+                                    "unexpected topic count, expected {}, got {}", 2usize, log
+                                    .topic_count()
                                 )
-                                .map_err(|e| format!(
-                                    "unable to decode param 'foo' from topic of type 'address': {:?}",
-                                    e
-                                ))?
-                                .pop()
-                                .expect(INTERNAL_ERR)
-                                .into_address()
-                                .expect(INTERNAL_ERR)
-                                .as_bytes()
-                                .to_vec()
+                            );
+                        }
+                        Ok(Self {
+                            foo: substreams_ethereum::abi::read_address(
+                                log.topic(1usize).expect("bounds already checked"),
+                                0,
+                                "foo"
+                            )?
                         })
                     }
                 }
@@ -508,50 +563,38 @@ mod tests {
                     pub fn decode<L: substreams_ethereum::LogLike>(
                         log: &L
                     ) -> Result<Self, String> {
-                        let mut values = ethabi::decode(
-                                &[ethabi::ParamType::Uint(256usize)],
-                                log.data()
-                            )
-                            .map_err(|e| format!("unable to decode log.data: {:?}", e))?;
-                        values.reverse();
+                        if log.topic_count() != 3usize {
+                            return Err(
+                                format!(
+                                    "unexpected topic count, expected {}, got {}", 3usize, log
+                                    .topic_count()
+                                )
+                            );
+                        }
+                        if log.data().len() < 32usize {
+                            return Err(
+                                format!(
+                                    "data too short, expected at least {}, got {}", 32usize, log
+                                    .data().len()
+                                )
+                            );
+                        }
                         Ok(Self {
-                            from: ethabi::decode(
-                                    &[ethabi::ParamType::Address],
-                                    log.topic(1usize).expect("bounds already checked")
-                                )
-                                .map_err(|e| format!(
-                                    "unable to decode param 'from' from topic of type 'address': {:?}",
-                                    e
-                                ))?
-                                .pop()
-                                .expect(INTERNAL_ERR)
-                                .into_address()
-                                .expect(INTERNAL_ERR)
-                                .as_bytes()
-                                .to_vec(),
-                            to: ethabi::decode(
-                                    &[ethabi::ParamType::Address],
-                                    log.topic(2usize).expect("bounds already checked")
-                                )
-                                .map_err(|e| format!(
-                                    "unable to decode param 'to' from topic of type 'address': {:?}", e
-                                ))?
-                                .pop()
-                                .expect(INTERNAL_ERR)
-                                .into_address()
-                                .expect(INTERNAL_ERR)
-                                .as_bytes()
-                                .to_vec(),
-                            quantity: {
-                                let mut v = [0 as u8; 32];
-                                values
-                                    .pop()
-                                    .expect(INTERNAL_ERR)
-                                    .into_uint()
-                                    .expect(INTERNAL_ERR)
-                                    .to_big_endian(v.as_mut_slice());
-                                substreams::scalar::BigInt::from_unsigned_bytes_be(&v)
-                            }
+                            from: substreams_ethereum::abi::read_address(
+                                log.topic(1usize).expect("bounds already checked"),
+                                0,
+                                "from"
+                            )?,
+                            to: substreams_ethereum::abi::read_address(
+                                log.topic(2usize).expect("bounds already checked"),
+                                0,
+                                "to"
+                            )?,
+                            quantity: substreams_ethereum::abi::read_uint(
+                                log.data(),
+                                0,
+                                "quantity"
+                            )?
                         })
                     }
                 }
@@ -653,51 +696,30 @@ mod tests {
                     pub fn decode<L: substreams_ethereum::LogLike>(
                         log: &L
                     ) -> Result<Self, String> {
+                        if log.topic_count() != 4usize {
+                            return Err(
+                                format!(
+                                    "unexpected topic count, expected {}, got {}", 4usize, log
+                                    .topic_count()
+                                )
+                            );
+                        }
                         Ok(Self {
-                            from: ethabi::decode(
-                                    &[ethabi::ParamType::Address],
-                                    log.topic(1usize).expect("bounds already checked")
-                                )
-                                .map_err(|e| format!(
-                                    "unable to decode param 'from' from topic of type 'address': {:?}",
-                                    e
-                                ))?
-                                .pop()
-                                .expect(INTERNAL_ERR)
-                                .into_address()
-                                .expect(INTERNAL_ERR)
-                                .as_bytes()
-                                .to_vec(),
-                            to: ethabi::decode(
-                                    &[ethabi::ParamType::Address],
-                                    log.topic(2usize).expect("bounds already checked")
-                                )
-                                .map_err(|e| format!(
-                                    "unable to decode param 'to' from topic of type 'address': {:?}", e
-                                ))?
-                                .pop()
-                                .expect(INTERNAL_ERR)
-                                .into_address()
-                                .expect(INTERNAL_ERR)
-                                .as_bytes()
-                                .to_vec(),
-                            token_id: {
-                                let mut v = [0 as u8; 32];
-                                ethabi::decode(
-                                    &[ethabi::ParamType::Uint(256usize)],
-                                    log.topic(3usize).expect("bounds already checked")
-                                )
-                                    .map_err(|e| format!(
-                                        "unable to decode param 'token_id' from topic of type 'uint256': {:?}",
-                                        e
-                                    ))?
-                                    .pop()
-                                    .expect(INTERNAL_ERR)
-                                    .into_uint()
-                                    .expect(INTERNAL_ERR)
-                                    .to_big_endian(v.as_mut_slice());
-                                substreams::scalar::BigInt::from_unsigned_bytes_be(&v)
-                            }
+                            from: substreams_ethereum::abi::read_address(
+                                log.topic(1usize).expect("bounds already checked"),
+                                0,
+                                "from"
+                            )?,
+                            to: substreams_ethereum::abi::read_address(
+                                log.topic(2usize).expect("bounds already checked"),
+                                0,
+                                "to"
+                            )?,
+                            token_id: substreams_ethereum::abi::read_uint(
+                                log.topic(3usize).expect("bounds already checked"),
+                                0,
+                                "token_id"
+                            )?
                         })
                     }
                 }

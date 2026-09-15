@@ -121,8 +121,6 @@ impl pb::TransactionTrace {
         })
     }
 
-    /// A transaction with no receipt yields a default `ReceiptView`, which reports no
-    /// logs, rather than panicking.
     /// # Panics
     ///
     /// Panics if the transaction carries no receipt.
@@ -291,21 +289,27 @@ mod lazy {
         TransactionTraceLazyView,
     };
     use buffa::DecodeError;
+    use std::rc::Rc;
 
     /// A log together with the call that emitted it.
     pub struct LazyLogWithCall<'a> {
         pub log: LogLazyView<'a>,
-        pub call: CallLazyView<'a>,
+        pub call: Rc<CallLazyView<'a>>,
     }
 
     impl<'a> BlockLazyView<'a> {
-        /// Iterates over successful transactions, skipping any that fail to decode.
-        pub fn transactions(&self) -> impl Iterator<Item = TransactionTraceLazyView<'a>> + '_ {
-            self.try_transactions().filter_map(Result::ok)
+        /// Iterates over successful transactions, dropping any that fail to decode.
+        ///
+        /// A malformed block yields a short list rather than an error. Prefer
+        /// [`transactions`](Self::transactions), which reports the failure.
+        pub fn transactions_lossy(
+            &self,
+        ) -> impl Iterator<Item = TransactionTraceLazyView<'a>> + '_ {
+            self.transactions().filter_map(Result::ok)
         }
 
-        /// Iterates over successful transactions, surfacing decode errors.
-        pub fn try_transactions(
+        /// Iterates over successful transactions, reporting decode failures.
+        pub fn transactions(
             &self,
         ) -> impl Iterator<Item = Result<TransactionTraceLazyView<'a>, DecodeError>> + '_ {
             // Keep undecodable entries so the error reaches the caller.
@@ -319,19 +323,21 @@ mod lazy {
             })
         }
 
-        /// Iterates over transaction receipts of successful transactions, skipping any that
-        /// fail to decode.
-        pub fn receipts(&self) -> impl Iterator<Item = TransactionReceiptLazyView<'a>> + '_ {
-            self.try_receipts().filter_map(Result::ok)
+        /// Iterates over transaction receipts of successful transactions, dropping any
+        /// that fail to decode.
+        ///
+        /// Prefer [`receipts`](Self::receipts), which reports the failure.
+        pub fn receipts_lossy(&self) -> impl Iterator<Item = TransactionReceiptLazyView<'a>> + '_ {
+            self.receipts().filter_map(Result::ok)
         }
 
-        /// Iterates over transaction receipts of successful transactions, surfacing decode
-        /// errors. A transaction carrying no receipt is skipped.
-        pub fn try_receipts(
+        /// Iterates over transaction receipts of successful transactions, reporting decode
+        /// failures. A transaction carrying no receipt is skipped.
+        pub fn receipts(
             &self,
         ) -> impl Iterator<Item = Result<TransactionReceiptLazyView<'a>, DecodeError>> + '_
         {
-            self.try_transactions().filter_map(|transaction| {
+            self.transactions().filter_map(|transaction| {
                 match transaction.and_then(|transaction| transaction.receipt()) {
                     Ok(Some(receipt)) => Some(Ok(receipt)),
                     Ok(None) => None,
@@ -340,33 +346,34 @@ mod lazy {
             })
         }
 
-        /// Iterates over logs in receipts of successful transactions, skipping any that fail
-        /// to decode.
+        /// Iterates over logs in receipts of successful transactions, dropping any that
+        /// fail to decode.
         ///
-        /// A corrupt log is dropped silently, so a malformed block yields a short list rather
-        /// than an error. Use [`try_logs`](Self::try_logs) where that matters.
-        pub fn logs(&self) -> impl Iterator<Item = LogLazyView<'a>> + '_ {
-            self.try_logs().filter_map(Result::ok)
+        /// A corrupt log is dropped silently, so a malformed block yields a short list
+        /// rather than an error. Prefer [`logs`](Self::logs), which reports the failure.
+        pub fn logs_lossy(&self) -> impl Iterator<Item = LogLazyView<'a>> + '_ {
+            self.logs().filter_map(Result::ok)
         }
 
-        /// Iterates over logs in receipts of successful transactions, surfacing decode errors.
-        pub fn try_logs(&self) -> impl Iterator<Item = Result<LogLazyView<'a>, DecodeError>> + '_ {
-            self.try_receipts().flat_map(|receipt| match receipt {
+        /// Iterates over logs in receipts of successful transactions, reporting decode
+        /// failures.
+        pub fn logs(&self) -> impl Iterator<Item = Result<LogLazyView<'a>, DecodeError>> + '_ {
+            self.receipts().flat_map(|receipt| match receipt {
                 Ok(receipt) => receipt.logs.iter().collect::<Vec<_>>(),
                 Err(err) => vec![Err(err)],
             })
         }
 
-        /// Iterates over calls of successful transactions, skipping any that fail to decode.
-        pub fn calls(&self) -> impl Iterator<Item = CallLazyView<'a>> + '_ {
-            self.try_calls().filter_map(Result::ok)
+        /// Iterates over calls of successful transactions, dropping any that fail to decode.
+        ///
+        /// Prefer [`calls`](Self::calls), which reports the failure.
+        pub fn calls_lossy(&self) -> impl Iterator<Item = CallLazyView<'a>> + '_ {
+            self.calls().filter_map(Result::ok)
         }
 
-        /// Iterates over calls of successful transactions, surfacing decode errors.
-        pub fn try_calls(
-            &self,
-        ) -> impl Iterator<Item = Result<CallLazyView<'a>, DecodeError>> + '_ {
-            self.try_transactions()
+        /// Iterates over calls of successful transactions, reporting decode failures.
+        pub fn calls(&self) -> impl Iterator<Item = Result<CallLazyView<'a>, DecodeError>> + '_ {
+            self.transactions()
                 .flat_map(|transaction| match transaction {
                     Ok(transaction) => transaction.calls.iter().collect::<Vec<_>>(),
                     Err(err) => vec![Err(err)],
@@ -381,8 +388,11 @@ mod lazy {
 
         /// All logs in the transaction, excluding those from calls that were not recorded to
         /// the chain's state, sorted by ordinal and paired with the call that produced them.
+        ///
+        /// The pairing holds the call behind an `Rc`: `CallLazyView` owns a `Vec` per
+        /// repeated field, so cloning it once per log costs an allocation per field.
         pub fn logs_with_calls(&self) -> Result<Vec<LazyLogWithCall<'a>>, DecodeError> {
-            let mut out = Vec::with_capacity(self.calls.len());
+            let mut out = Vec::new();
 
             for call in self.calls.iter() {
                 let call = call?;
@@ -390,10 +400,11 @@ mod lazy {
                     continue;
                 }
 
+                let call = Rc::new(call);
                 for log in call.logs.iter() {
                     out.push(LazyLogWithCall {
                         log: log?,
-                        call: call.clone(),
+                        call: Rc::clone(&call),
                     });
                 }
             }
@@ -440,7 +451,10 @@ mod lazy_tests {
         assert_eq!(view.hash, &block.hash[..]);
 
         let expected: Vec<_> = block.transactions().map(|tx| tx.hash.clone()).collect();
-        let actual: Vec<_> = view.transactions().map(|tx| tx.hash.to_vec()).collect();
+        let actual: Vec<_> = view
+            .transactions_lossy()
+            .map(|tx| tx.hash.to_vec())
+            .collect();
 
         assert_eq!(actual, expected);
         assert_eq!(actual.len(), 3, "only the status=1 transactions are kept");
@@ -455,7 +469,7 @@ mod lazy_tests {
     }
 
     #[test]
-    fn it_surfaces_decode_errors_through_every_try_accessor() {
+    fn it_reports_decode_errors_through_every_accessor() {
         let mut bytes = block_with_statuses(&[1]).encode_to_vec();
         let last = bytes.len() - 1;
         bytes[last] = 0xff;
@@ -463,23 +477,27 @@ mod lazy_tests {
         let view = BlockLazyView::decode_lazy(&bytes).expect("the block's own fields are valid");
 
         assert!(
-            view.try_transactions().any(|entry| entry.is_err()),
-            "try_transactions must report a malformed transaction"
+            view.transactions().any(|entry| entry.is_err()),
+            "transactions must report a malformed transaction"
         );
         assert!(
-            view.try_receipts().any(|entry| entry.is_err()),
-            "try_receipts must report a malformed transaction"
+            view.receipts().any(|entry| entry.is_err()),
+            "receipts must report a malformed transaction"
         );
         assert!(
-            view.try_logs().any(|entry| entry.is_err()),
-            "try_logs must report a malformed transaction"
+            view.logs().any(|entry| entry.is_err()),
+            "logs must report a malformed transaction"
         );
         assert!(
-            view.try_calls().any(|entry| entry.is_err()),
-            "try_calls must report a malformed transaction"
+            view.calls().any(|entry| entry.is_err()),
+            "calls must report a malformed transaction"
         );
 
-        assert_eq!(view.transactions().count(), 0, "the lossy twin skips it");
+        assert_eq!(
+            view.transactions_lossy().count(),
+            0,
+            "the lossy twin drops it"
+        );
     }
 }
 
@@ -550,7 +568,10 @@ mod lazy_view_parity_tests {
         let bytes = block().encode_to_vec();
         let view = BlockLazyView::decode_lazy(&bytes).expect("valid block");
 
-        let gas: Vec<_> = view.receipts().map(|r| r.cumulative_gas_used).collect();
+        let gas: Vec<_> = view
+            .receipts_lossy()
+            .map(|r| r.cumulative_gas_used)
+            .collect();
 
         assert_eq!(gas, vec![21_000], "the status=2 transaction is excluded");
     }
@@ -615,7 +636,7 @@ mod lazy_view_parity_tests {
         let bytes = block().encode_to_vec();
         let view = BlockLazyView::decode_lazy(&bytes).expect("valid block");
 
-        let indexes: Vec<_> = view.logs().map(|l| l.index).collect();
+        let indexes: Vec<_> = view.logs_lossy().map(|l| l.index).collect();
 
         assert_eq!(
             indexes,
@@ -632,12 +653,42 @@ mod lazy_view_parity_tests {
         assert_eq!(view.calls().count(), 2);
     }
 
+    /// The owned path is the reference: the lazy pairing must select the same
+    /// logs, in the same order, attributed to the same calls.
+    #[test]
+    fn logs_with_calls_matches_the_owned_pairing() {
+        let owned = block();
+        let bytes = owned.encode_to_vec();
+        let view = BlockLazyView::decode_lazy(&bytes).expect("valid block");
+
+        let expected: Vec<(u64, u32, u32)> = owned
+            .transactions()
+            .flat_map(|trx| trx.logs_with_calls())
+            .map(|(log, call)| (log.ordinal, log.index, call.call.index))
+            .collect();
+
+        let actual: Vec<(u64, u32, u32)> = view
+            .transactions_lossy()
+            .flat_map(|trx| trx.logs_with_calls().expect("decodes"))
+            .map(|entry| (entry.log.ordinal, entry.log.index, entry.call.index))
+            .collect();
+
+        assert_eq!(expected, actual);
+        assert!(
+            !expected.is_empty(),
+            "the fixture must exercise the pairing"
+        );
+    }
+
     #[test]
     fn it_pairs_logs_with_their_calls_skipping_reverted() {
         let bytes = block().encode_to_vec();
         let view = BlockLazyView::decode_lazy(&bytes).expect("valid block");
 
-        let transaction = view.transactions().next().expect("one successful trx");
+        let transaction = view
+            .transactions_lossy()
+            .next()
+            .expect("one successful trx");
         let pairs = transaction.logs_with_calls().expect("decodes");
 
         let ordinals: Vec<_> = pairs.iter().map(|entry| entry.log.ordinal).collect();
