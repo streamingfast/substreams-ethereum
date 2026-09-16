@@ -63,30 +63,6 @@ fn normalize_path<S: AsRef<Path>>(relative_path: S) -> Result<PathBuf, anyhow::E
     Ok(path)
 }
 
-fn to_syntax_string(param_type: &ethabi::ParamType) -> proc_macro2::TokenStream {
-    match *param_type {
-        ParamType::Address => quote! { ethabi::ParamType::Address },
-        ParamType::Bytes => quote! { ethabi::ParamType::Bytes },
-        ParamType::Int(x) => quote! { ethabi::ParamType::Int(#x) },
-        ParamType::Uint(x) => quote! { ethabi::ParamType::Uint(#x) },
-        ParamType::Bool => quote! { ethabi::ParamType::Bool },
-        ParamType::String => quote! { ethabi::ParamType::String },
-        ParamType::Array(ref param_type) => {
-            let param_type_quote = to_syntax_string(param_type);
-            quote! { ethabi::ParamType::Array(Box::new(#param_type_quote)) }
-        }
-        ParamType::FixedBytes(x) => quote! { ethabi::ParamType::FixedBytes(#x) },
-        ParamType::FixedArray(ref param_type, ref x) => {
-            let param_type_quote = to_syntax_string(param_type);
-            quote! { ethabi::ParamType::FixedArray(Box::new(#param_type_quote), #x) }
-        }
-        ParamType::Tuple(ref v) => {
-            let param_type_quotes = v.iter().map(|x| to_syntax_string(x));
-            quote! { ethabi::ParamType::Tuple(vec![#(#param_type_quotes),*]) }
-        }
-    }
-}
-
 // fn to_ethabi_param_vec<'a, P: 'a>(params: P) -> proc_macro2::TokenStream
 // where
 //     P: IntoIterator<Item = &'a Param>,
@@ -380,79 +356,6 @@ fn to_token(name: &proc_macro2::TokenStream, kind: &ParamType) -> proc_macro2::T
                 ethabi::Token::Tuple(vec![
                     #(#inner_tokens),*
                 ])
-            }
-        }
-    }
-}
-
-fn from_token(kind: &ParamType, token: &proc_macro2::TokenStream) -> proc_macro2::TokenStream {
-    match *kind {
-        ParamType::Address => {
-            quote! { #token.into_address().expect(INTERNAL_ERR).as_bytes().to_vec() }
-        }
-        ParamType::Bytes => {
-            quote! { #token.into_bytes().expect(INTERNAL_ERR) }
-        }
-        ParamType::FixedBytes(size) => {
-            let size: syn::Index = size.into();
-            quote! {
-                {
-                    let mut result = [0u8; #size];
-                    let v = #token.into_fixed_bytes().expect(INTERNAL_ERR);
-                    result.copy_from_slice(&v);
-                    result
-                }
-            }
-        }
-        ParamType::Int(_) => quote! {
-            {
-                let mut v = [0 as u8; 32];
-                #token.into_int().expect(INTERNAL_ERR).to_big_endian(v.as_mut_slice());
-                substreams::scalar::BigInt::from_signed_bytes_be(&v)
-            }
-        },
-        ParamType::Uint(_) => quote! {
-                {
-                    let mut v = [0 as u8; 32];
-                    #token.into_uint().expect(INTERNAL_ERR).to_big_endian(v.as_mut_slice());
-                    substreams::scalar::BigInt::from_unsigned_bytes_be(&v)
-                }
-        },
-        ParamType::Bool => quote! { #token.into_bool().expect(INTERNAL_ERR) },
-        ParamType::String => quote! { #token.into_string().expect(INTERNAL_ERR) },
-        ParamType::Array(ref kind) => {
-            let inner = quote! { inner };
-            let inner_loop = from_token(kind, &inner);
-            quote! {
-                #token.into_array().expect(INTERNAL_ERR).into_iter()
-                    .map(|#inner| #inner_loop)
-                    .collect()
-            }
-        }
-        ParamType::FixedArray(ref kind, size) => {
-            let inner = quote! { inner };
-            let inner_loop = from_token(kind, &inner);
-            let to_array = vec![quote! { iter.next().expect(INTERNAL_ERR) }; size];
-            quote! {
-                {
-                    let mut iter = #token.into_fixed_array().expect(INTERNAL_ERR).into_iter()
-                        .map(|#inner| #inner_loop);
-                    [#(#to_array),*]
-                }
-            }
-        }
-        ParamType::Tuple(ref types) => {
-            let conversion = types.iter().enumerate().map(|(i, t)| {
-                let inner = quote! { tuple_elements[#i].clone() };
-                let inner_conversion = from_token(t, &inner);
-                quote! { #inner_conversion }
-            });
-
-            quote! {
-                {
-                    let tuple_elements = #token.into_tuple().expect(INTERNAL_ERR);
-                    (#(#conversion,)*)
-                }
             }
         }
     }
