@@ -10,12 +10,13 @@ use heck::ToUpperCamelCase;
 use proc_macro2::{Span, TokenStream};
 use quote::quote;
 
-use crate::{element_stride, is_long_tuple, read_at};
+use crate::{element_stride, is_long_tuple, read_at, write_at};
 
-use super::{get_output_kinds, param_names, rust_type, to_token};
+use super::{get_output_kinds, param_names, rust_type};
 
 struct Inputs {
-    tokenize: Vec<TokenStream>,
+    writes: Vec<TokenStream>,
+    head_width: usize,
     decoded_values: TokenStream,
     decoded_fields: Vec<TokenStream>,
     fields: Vec<TokenStream>,
@@ -99,11 +100,31 @@ impl<'a> From<(String, &'a ethabi::Function)> for Function {
             })
             .collect();
 
-        // [Token::Uint(param0.into()), Token::Bytes(hello_world.into()), Token::Array(param2.into_iter().map(Into::into).collect())]
-        let tokenize: Vec<_> = input_names
+        // The head section holds one entry per parameter, so a dynamic parameter's
+        // tail offset is measured from the end of all of them.
+        let head_width: usize = f
+            .inputs
+            .iter()
+            .map(|param| element_stride(&param.kind))
+            .sum();
+
+        let mut slot = 0usize;
+        let writes: Vec<_> = input_names
             .iter()
             .zip(f.inputs.iter())
-            .map(|(param_name, param)| to_token(&quote! { self.#param_name }, &param.kind))
+            .map(|(param_name, param)| {
+                let at = syn::Index::from(slot);
+                slot += element_stride(&param.kind);
+
+                write_at(
+                    &param.kind,
+                    &quote! { self.#param_name },
+                    &syn::Ident::new("out", Span::call_site()),
+                    &syn::Ident::new("base", Span::call_site()),
+                    &quote! { #at },
+                    0,
+                )
+            })
             .collect();
 
         let output_result = get_output_kinds(&f.outputs);
@@ -164,7 +185,8 @@ impl<'a> From<(String, &'a ethabi::Function)> for Function {
             original_name: f.name.clone(),
             short_signature: f.short_signature(),
             inputs: Inputs {
-                tokenize,
+                writes,
+                head_width,
                 decoded_values: input_ethabi_param_types,
                 decoded_fields: input_struct_decoded_fields,
                 fields: input_struct_fields,
@@ -192,7 +214,8 @@ impl Function {
             .collect();
 
         let function_fields = &self.inputs.fields;
-        let tokenize = &self.inputs.tokenize;
+        let writes = &self.inputs.writes;
+        let head_width = self.inputs.head_width;
         let decoded_input_values = &self.inputs.decoded_values;
         let decoded_input_fields = &self.inputs.decoded_fields;
 
@@ -275,13 +298,13 @@ impl Function {
                 }
 
                 pub fn encode(&self) -> Vec<u8> {
-                    let data = ethabi::encode(&[#(#tokenize),*]);
+                    let mut out: Vec<u8> = Vec::with_capacity(4 + #head_width);
+                    out.extend(Self::METHOD_ID);
 
-                    let mut encoded = Vec::with_capacity(4 + data.len());
-                    encoded.extend(Self::METHOD_ID);
-                    encoded.extend(data);
+                    let base = substreams_ethereum::abi::reserve_head(&mut out, #head_width);
+                    #(#writes;)*
 
-                    encoded
+                    out
                 }
 
                 #output_implementation

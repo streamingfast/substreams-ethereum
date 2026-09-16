@@ -6,10 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [0.12.0-beta.1](https://github.com/streamingfast/substreams-ethereum/releases/tag/v0.12.0-beta.1)
 
-* Decoding no longer goes through `ethabi`. Generated events and functions read their parameters at
-  offsets computed when the ABI is read, rather than through `ethabi::decode` and a `Vec<Token>`. This
-  covers an event's data section and its indexed parameters, and a function's input and return data.
-  The decoded values are unchanged.
+* Encoding and decoding no longer go through `ethabi`. Generated events and functions read and write
+  their parameters at offsets computed when the ABI is read, rather than through `ethabi::decode`,
+  `ethabi::encode` and a `Vec<Token>`. This covers an event's data section and its indexed parameters,
+  a function's input and return data, and the call data an `eth_call` sends. The encoded bytes and the
+  decoded values are unchanged.
 
   Every type is read by a primitive in `substreams_ethereum::abi`: `address`, `uintN`, `intN`, `bool`
   and `bytesN` from a word at a known offset, and `bytes`, `string`, arrays and tuples by following the
@@ -17,11 +18,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   of a buffer longer than the parameters need, of non-zero padding above an `address`, and its lossy
   reading of a `string` whose bytes are not valid UTF-8.
 
+  Encoding writes the whole call into one buffer. The head section is reserved from the parameter
+  widths in the ABI, fixed values are written into their slots, and a dynamic value appends its tail
+  and fills in its offset word afterwards, so a call allocates once regardless of how deeply its
+  parameters nest. A negative value passed to a `uintN` parameter still panics, as it did when the
+  token was built.
+
   Measured against the previous generation on the same bytes, decoding an ERC-20 `Transfer` is 4.4x
   faster, and the event and function shapes covered by the benchmark are between 1.9x and 6.8x faster.
+  Encoding is between 1.2x and 3.6x faster across the same range of shapes, from a single `address`
+  argument to a `string[]`.
 
-  `ethabi` is still a dependency: it parses the ABI when bindings are generated, and it still encodes a
-  function call.
+  `ethabi` is still a dependency: it parses the ABI when bindings are generated.
 
 * `decode` now checks the log's topic count before reading an indexed parameter, and reports a data
   section shorter than the parameters need, rather than panicking. `match_log` already rejected both,

@@ -55,34 +55,37 @@ pub mod functions {
             })
         }
         pub fn encode(&self) -> Vec<u8> {
-            let data = ethabi::encode(
-                &[
-                    {
-                        let v = self
-                            .param0
-                            .iter()
-                            .map(|inner| ethabi::Token::Address(
-                                ethabi::Address::from_slice(&inner),
-                            ))
-                            .collect();
-                        ethabi::Token::FixedArray(v)
-                    },
-                    {
-                        let v = self
-                            .param1
-                            .iter()
-                            .map(|inner| ethabi::Token::Address(
-                                ethabi::Address::from_slice(&inner),
-                            ))
-                            .collect();
-                        ethabi::Token::Array(v)
-                    },
-                ],
-            );
-            let mut encoded = Vec::with_capacity(4 + data.len());
-            encoded.extend(Self::METHOD_ID);
-            encoded.extend(data);
-            encoded
+            let mut out: Vec<u8> = Vec::with_capacity(4 + 96usize);
+            out.extend(Self::METHOD_ID);
+            let base = substreams_ethereum::abi::reserve_head(&mut out, 96usize);
+            for (index, element) in self.param0.iter().enumerate() {
+                substreams_ethereum::abi::write_address_at(
+                    &mut out,
+                    base + 0 + index * 32usize,
+                    &element,
+                );
+            }
+            {
+                let at = substreams_ethereum::abi::tail_offset(&out, base);
+                {
+                    let count = self.param1.len();
+                    substreams_ethereum::abi::write_offset(&mut out, count);
+                    let base_0 = substreams_ethereum::abi::reserve_head(
+                        &mut out,
+                        count * 32usize,
+                    );
+                    for (index, element_0) in self.param1.iter().enumerate() {
+                        let slot = index * 32usize;
+                        substreams_ethereum::abi::write_address_at(
+                            &mut out,
+                            base_0 + slot,
+                            &element_0,
+                        );
+                    }
+                };
+                substreams_ethereum::abi::backfill_offset(&mut out, base + 64, at);
+            };
+            out
         }
         pub fn output_call(
             call: &substreams_ethereum::pb::eth::v2::Call,
@@ -199,43 +202,37 @@ pub mod functions {
             })
         }
         pub fn encode(&self) -> Vec<u8> {
-            let data = ethabi::encode(
-                &[
-                    {
-                        let v = self
-                            .param0
-                            .iter()
-                            .map(|inner| ethabi::Token::Address(
-                                ethabi::Address::from_slice(&inner),
-                            ))
-                            .collect();
-                        ethabi::Token::FixedArray(v)
-                    },
-                    {
-                        let v = self
-                            .param1
-                            .iter()
-                            .map(|inner| ethabi::Token::Uint(
-                                ethabi::Uint::from_big_endian(
-                                    match inner.clone().to_bytes_be() {
-                                        (num_bigint::Sign::Plus, bytes) => bytes,
-                                        (num_bigint::Sign::NoSign, bytes) => bytes,
-                                        (num_bigint::Sign::Minus, _) => {
-                                            panic!("negative numbers are not supported")
-                                        }
-                                    }
-                                        .as_slice(),
-                                ),
-                            ))
-                            .collect();
-                        ethabi::Token::Array(v)
-                    },
-                ],
-            );
-            let mut encoded = Vec::with_capacity(4 + data.len());
-            encoded.extend(Self::METHOD_ID);
-            encoded.extend(data);
-            encoded
+            let mut out: Vec<u8> = Vec::with_capacity(4 + 96usize);
+            out.extend(Self::METHOD_ID);
+            let base = substreams_ethereum::abi::reserve_head(&mut out, 96usize);
+            for (index, element) in self.param0.iter().enumerate() {
+                substreams_ethereum::abi::write_address_at(
+                    &mut out,
+                    base + 0 + index * 32usize,
+                    &element,
+                );
+            }
+            {
+                let at = substreams_ethereum::abi::tail_offset(&out, base);
+                {
+                    let count = self.param1.len();
+                    substreams_ethereum::abi::write_offset(&mut out, count);
+                    let base_0 = substreams_ethereum::abi::reserve_head(
+                        &mut out,
+                        count * 32usize,
+                    );
+                    for (index, element_0) in self.param1.iter().enumerate() {
+                        let slot = index * 32usize;
+                        substreams_ethereum::abi::write_uint_at(
+                            &mut out,
+                            base_0 + slot,
+                            &element_0,
+                        );
+                    }
+                };
+                substreams_ethereum::abi::backfill_offset(&mut out, base + 64, at);
+            };
+            out
         }
         pub fn output_call(
             call: &substreams_ethereum::pb::eth::v2::Call,
@@ -372,71 +369,64 @@ pub mod functions {
             })
         }
         pub fn encode(&self) -> Vec<u8> {
-            let data = ethabi::encode(
-                &[
-                    ethabi::Token::Address(ethabi::Address::from_slice(&self.param0)),
-                    ethabi::Token::Bytes(self.param1.clone()),
-                    ethabi::Token::FixedBytes(self.param2.as_ref().to_vec()),
-                    ethabi::Token::FixedBytes(self.param3.as_ref().to_vec()),
-                    {
-                        let non_full_signed_bytes = self.param4.to_signed_bytes_be();
-                        let full_signed_bytes_init = if non_full_signed_bytes[0] & 0x80
-                            == 0x80
-                        {
-                            0xff
-                        } else {
-                            0x00
-                        };
-                        let mut full_signed_bytes = [full_signed_bytes_init as u8; 32];
-                        non_full_signed_bytes
-                            .into_iter()
-                            .rev()
-                            .enumerate()
-                            .for_each(|(i, byte)| full_signed_bytes[31 - i] = byte);
-                        ethabi::Token::Int(
-                            ethabi::Int::from_big_endian(full_signed_bytes.as_ref()),
-                        )
-                    },
-                    ethabi::Token::Uint(
-                        ethabi::Uint::from_big_endian(
-                            match self.param5.clone().to_bytes_be() {
-                                (num_bigint::Sign::Plus, bytes) => bytes,
-                                (num_bigint::Sign::NoSign, bytes) => bytes,
-                                (num_bigint::Sign::Minus, _) => {
-                                    panic!("negative numbers are not supported")
-                                }
-                            }
-                                .as_slice(),
-                        ),
-                    ),
-                    ethabi::Token::Bool(self.param6.clone()),
-                    ethabi::Token::String(self.param7.clone()),
-                    {
-                        let v = self
-                            .param8
-                            .iter()
-                            .map(|inner| ethabi::Token::Address(
-                                ethabi::Address::from_slice(&inner),
-                            ))
-                            .collect();
-                        ethabi::Token::FixedArray(v)
-                    },
-                    {
-                        let v = self
-                            .param9
-                            .iter()
-                            .map(|inner| ethabi::Token::Address(
-                                ethabi::Address::from_slice(&inner),
-                            ))
-                            .collect();
-                        ethabi::Token::Array(v)
-                    },
-                ],
+            let mut out: Vec<u8> = Vec::with_capacity(4 + 352usize);
+            out.extend(Self::METHOD_ID);
+            let base = substreams_ethereum::abi::reserve_head(&mut out, 352usize);
+            substreams_ethereum::abi::write_address_at(&mut out, base + 0, &self.param0);
+            {
+                let at = substreams_ethereum::abi::tail_offset(&out, base);
+                substreams_ethereum::abi::write_bytes_tail(&mut out, &self.param1);
+                substreams_ethereum::abi::backfill_offset(&mut out, base + 32, at);
+            };
+            substreams_ethereum::abi::write_fixed_bytes_at(
+                &mut out,
+                base + 64,
+                self.param2.as_ref(),
             );
-            let mut encoded = Vec::with_capacity(4 + data.len());
-            encoded.extend(Self::METHOD_ID);
-            encoded.extend(data);
-            encoded
+            substreams_ethereum::abi::write_fixed_bytes_at(
+                &mut out,
+                base + 96,
+                self.param3.as_ref(),
+            );
+            substreams_ethereum::abi::write_int_at(&mut out, base + 128, &self.param4);
+            substreams_ethereum::abi::write_uint_at(&mut out, base + 160, &self.param5);
+            substreams_ethereum::abi::write_bool_at(&mut out, base + 192, &self.param6);
+            {
+                let at = substreams_ethereum::abi::tail_offset(&out, base);
+                substreams_ethereum::abi::write_bytes_tail(
+                    &mut out,
+                    self.param7.as_bytes(),
+                );
+                substreams_ethereum::abi::backfill_offset(&mut out, base + 224, at);
+            };
+            for (index, element) in self.param8.iter().enumerate() {
+                substreams_ethereum::abi::write_address_at(
+                    &mut out,
+                    base + 256 + index * 32usize,
+                    &element,
+                );
+            }
+            {
+                let at = substreams_ethereum::abi::tail_offset(&out, base);
+                {
+                    let count = self.param9.len();
+                    substreams_ethereum::abi::write_offset(&mut out, count);
+                    let base_0 = substreams_ethereum::abi::reserve_head(
+                        &mut out,
+                        count * 32usize,
+                    );
+                    for (index, element_0) in self.param9.iter().enumerate() {
+                        let slot = index * 32usize;
+                        substreams_ethereum::abi::write_address_at(
+                            &mut out,
+                            base_0 + slot,
+                            &element_0,
+                        );
+                    }
+                };
+                substreams_ethereum::abi::backfill_offset(&mut out, base + 320, at);
+            };
+            out
         }
         pub fn match_call(call: &substreams_ethereum::pb::eth::v2::Call) -> bool {
             match call.input.get(0..4) {
@@ -447,6 +437,91 @@ pub mod functions {
     }
     impl substreams_ethereum::Function for FunAll {
         const NAME: &'static str = "funAll";
+        fn match_call(call: &substreams_ethereum::pb::eth::v2::Call) -> bool {
+            Self::match_call(call)
+        }
+        fn decode(
+            call: &substreams_ethereum::pb::eth::v2::Call,
+        ) -> Result<Self, String> {
+            Self::decode(call)
+        }
+        fn encode(&self) -> Vec<u8> {
+            self.encode()
+        }
+    }
+    #[derive(Debug, Clone, PartialEq)]
+    pub struct FunBytesArray {
+        pub a: Vec<Vec<u8>>,
+    }
+    impl FunBytesArray {
+        const METHOD_ID: [u8; 4] = [57u8, 253u8, 155u8, 147u8];
+        pub fn decode(
+            call: &substreams_ethereum::pb::eth::v2::Call,
+        ) -> Result<Self, String> {
+            let maybe_data = call.input.get(4..);
+            if maybe_data.is_none() {
+                return Err("no data to decode".to_string());
+            }
+            let data = maybe_data.unwrap();
+            Ok(Self {
+                a: {
+                    let (tail, count) = substreams_ethereum::abi::read_array_tail(
+                        data,
+                        0,
+                        "a",
+                    )?;
+                    let mut out = Vec::with_capacity(count.min(1024));
+                    let mut at = 0usize;
+                    for _ in 0..count {
+                        out.push(substreams_ethereum::abi::read_bytes(tail, at, "a")?);
+                        at += 32usize;
+                    }
+                    out
+                },
+            })
+        }
+        pub fn encode(&self) -> Vec<u8> {
+            let mut out: Vec<u8> = Vec::with_capacity(4 + 32usize);
+            out.extend(Self::METHOD_ID);
+            let base = substreams_ethereum::abi::reserve_head(&mut out, 32usize);
+            {
+                let at = substreams_ethereum::abi::tail_offset(&out, base);
+                {
+                    let count = self.a.len();
+                    substreams_ethereum::abi::write_offset(&mut out, count);
+                    let base_0 = substreams_ethereum::abi::reserve_head(
+                        &mut out,
+                        count * 32usize,
+                    );
+                    for (index, element_0) in self.a.iter().enumerate() {
+                        let slot = index * 32usize;
+                        {
+                            let at = substreams_ethereum::abi::tail_offset(&out, base_0);
+                            substreams_ethereum::abi::write_bytes_tail(
+                                &mut out,
+                                &element_0,
+                            );
+                            substreams_ethereum::abi::backfill_offset(
+                                &mut out,
+                                base_0 + slot,
+                                at,
+                            );
+                        };
+                    }
+                };
+                substreams_ethereum::abi::backfill_offset(&mut out, base + 0, at);
+            };
+            out
+        }
+        pub fn match_call(call: &substreams_ethereum::pb::eth::v2::Call) -> bool {
+            match call.input.get(0..4) {
+                Some(signature) => Self::METHOD_ID == signature,
+                None => false,
+            }
+        }
+    }
+    impl substreams_ethereum::Function for FunBytesArray {
+        const NAME: &'static str = "funBytesArray";
         fn match_call(call: &substreams_ethereum::pb::eth::v2::Call) -> bool {
             Self::match_call(call)
         }
@@ -493,22 +568,30 @@ pub mod functions {
             })
         }
         pub fn encode(&self) -> Vec<u8> {
-            let data = ethabi::encode(
-                &[
-                    {
-                        let v = self
-                            .param0
-                            .iter()
-                            .map(|inner| ethabi::Token::Bool(inner.clone()))
-                            .collect();
-                        ethabi::Token::Array(v)
-                    },
-                ],
-            );
-            let mut encoded = Vec::with_capacity(4 + data.len());
-            encoded.extend(Self::METHOD_ID);
-            encoded.extend(data);
-            encoded
+            let mut out: Vec<u8> = Vec::with_capacity(4 + 32usize);
+            out.extend(Self::METHOD_ID);
+            let base = substreams_ethereum::abi::reserve_head(&mut out, 32usize);
+            {
+                let at = substreams_ethereum::abi::tail_offset(&out, base);
+                {
+                    let count = self.param0.len();
+                    substreams_ethereum::abi::write_offset(&mut out, count);
+                    let base_0 = substreams_ethereum::abi::reserve_head(
+                        &mut out,
+                        count * 32usize,
+                    );
+                    for (index, element_0) in self.param0.iter().enumerate() {
+                        let slot = index * 32usize;
+                        substreams_ethereum::abi::write_bool_at(
+                            &mut out,
+                            base_0 + slot,
+                            &element_0,
+                        );
+                    }
+                };
+                substreams_ethereum::abi::backfill_offset(&mut out, base + 0, at);
+            };
+            out
         }
         pub fn match_call(call: &substreams_ethereum::pb::eth::v2::Call) -> bool {
             match call.input.get(0..4) {
@@ -550,33 +633,11 @@ pub mod functions {
             })
         }
         pub fn encode(&self) -> Vec<u8> {
-            let data = ethabi::encode(
-                &[
-                    {
-                        let non_full_signed_bytes = self.arg0.to_signed_bytes_be();
-                        let full_signed_bytes_init = if non_full_signed_bytes[0] & 0x80
-                            == 0x80
-                        {
-                            0xff
-                        } else {
-                            0x00
-                        };
-                        let mut full_signed_bytes = [full_signed_bytes_init as u8; 32];
-                        non_full_signed_bytes
-                            .into_iter()
-                            .rev()
-                            .enumerate()
-                            .for_each(|(i, byte)| full_signed_bytes[31 - i] = byte);
-                        ethabi::Token::Int(
-                            ethabi::Int::from_big_endian(full_signed_bytes.as_ref()),
-                        )
-                    },
-                ],
-            );
-            let mut encoded = Vec::with_capacity(4 + data.len());
-            encoded.extend(Self::METHOD_ID);
-            encoded.extend(data);
-            encoded
+            let mut out: Vec<u8> = Vec::with_capacity(4 + 32usize);
+            out.extend(Self::METHOD_ID);
+            let base = substreams_ethereum::abi::reserve_head(&mut out, 32usize);
+            substreams_ethereum::abi::write_int_at(&mut out, base + 0, &self.arg0);
+            out
         }
         pub fn match_call(call: &substreams_ethereum::pb::eth::v2::Call) -> bool {
             match call.input.get(0..4) {
@@ -618,33 +679,11 @@ pub mod functions {
             })
         }
         pub fn encode(&self) -> Vec<u8> {
-            let data = ethabi::encode(
-                &[
-                    {
-                        let non_full_signed_bytes = self.param0.to_signed_bytes_be();
-                        let full_signed_bytes_init = if non_full_signed_bytes[0] & 0x80
-                            == 0x80
-                        {
-                            0xff
-                        } else {
-                            0x00
-                        };
-                        let mut full_signed_bytes = [full_signed_bytes_init as u8; 32];
-                        non_full_signed_bytes
-                            .into_iter()
-                            .rev()
-                            .enumerate()
-                            .for_each(|(i, byte)| full_signed_bytes[31 - i] = byte);
-                        ethabi::Token::Int(
-                            ethabi::Int::from_big_endian(full_signed_bytes.as_ref()),
-                        )
-                    },
-                ],
-            );
-            let mut encoded = Vec::with_capacity(4 + data.len());
-            encoded.extend(Self::METHOD_ID);
-            encoded.extend(data);
-            encoded
+            let mut out: Vec<u8> = Vec::with_capacity(4 + 32usize);
+            out.extend(Self::METHOD_ID);
+            let base = substreams_ethereum::abi::reserve_head(&mut out, 32usize);
+            substreams_ethereum::abi::write_int_at(&mut out, base + 0, &self.param0);
+            out
         }
         pub fn match_call(call: &substreams_ethereum::pb::eth::v2::Call) -> bool {
             match call.input.get(0..4) {
@@ -686,33 +725,11 @@ pub mod functions {
             })
         }
         pub fn encode(&self) -> Vec<u8> {
-            let data = ethabi::encode(
-                &[
-                    {
-                        let non_full_signed_bytes = self.param0.to_signed_bytes_be();
-                        let full_signed_bytes_init = if non_full_signed_bytes[0] & 0x80
-                            == 0x80
-                        {
-                            0xff
-                        } else {
-                            0x00
-                        };
-                        let mut full_signed_bytes = [full_signed_bytes_init as u8; 32];
-                        non_full_signed_bytes
-                            .into_iter()
-                            .rev()
-                            .enumerate()
-                            .for_each(|(i, byte)| full_signed_bytes[31 - i] = byte);
-                        ethabi::Token::Int(
-                            ethabi::Int::from_big_endian(full_signed_bytes.as_ref()),
-                        )
-                    },
-                ],
-            );
-            let mut encoded = Vec::with_capacity(4 + data.len());
-            encoded.extend(Self::METHOD_ID);
-            encoded.extend(data);
-            encoded
+            let mut out: Vec<u8> = Vec::with_capacity(4 + 32usize);
+            out.extend(Self::METHOD_ID);
+            let base = substreams_ethereum::abi::reserve_head(&mut out, 32usize);
+            substreams_ethereum::abi::write_int_at(&mut out, base + 0, &self.param0);
+            out
         }
         pub fn match_call(call: &substreams_ethereum::pb::eth::v2::Call) -> bool {
             match call.input.get(0..4) {
@@ -754,33 +771,11 @@ pub mod functions {
             })
         }
         pub fn encode(&self) -> Vec<u8> {
-            let data = ethabi::encode(
-                &[
-                    {
-                        let non_full_signed_bytes = self.param0.to_signed_bytes_be();
-                        let full_signed_bytes_init = if non_full_signed_bytes[0] & 0x80
-                            == 0x80
-                        {
-                            0xff
-                        } else {
-                            0x00
-                        };
-                        let mut full_signed_bytes = [full_signed_bytes_init as u8; 32];
-                        non_full_signed_bytes
-                            .into_iter()
-                            .rev()
-                            .enumerate()
-                            .for_each(|(i, byte)| full_signed_bytes[31 - i] = byte);
-                        ethabi::Token::Int(
-                            ethabi::Int::from_big_endian(full_signed_bytes.as_ref()),
-                        )
-                    },
-                ],
-            );
-            let mut encoded = Vec::with_capacity(4 + data.len());
-            encoded.extend(Self::METHOD_ID);
-            encoded.extend(data);
-            encoded
+            let mut out: Vec<u8> = Vec::with_capacity(4 + 32usize);
+            out.extend(Self::METHOD_ID);
+            let base = substreams_ethereum::abi::reserve_head(&mut out, 32usize);
+            substreams_ethereum::abi::write_int_at(&mut out, base + 0, &self.param0);
+            out
         }
         pub fn match_call(call: &substreams_ethereum::pb::eth::v2::Call) -> bool {
             match call.input.get(0..4) {
@@ -828,90 +823,14 @@ pub mod functions {
             })
         }
         pub fn encode(&self) -> Vec<u8> {
-            let data = ethabi::encode(
-                &[
-                    {
-                        let non_full_signed_bytes = self.param0.to_signed_bytes_be();
-                        let full_signed_bytes_init = if non_full_signed_bytes[0] & 0x80
-                            == 0x80
-                        {
-                            0xff
-                        } else {
-                            0x00
-                        };
-                        let mut full_signed_bytes = [full_signed_bytes_init as u8; 32];
-                        non_full_signed_bytes
-                            .into_iter()
-                            .rev()
-                            .enumerate()
-                            .for_each(|(i, byte)| full_signed_bytes[31 - i] = byte);
-                        ethabi::Token::Int(
-                            ethabi::Int::from_big_endian(full_signed_bytes.as_ref()),
-                        )
-                    },
-                    {
-                        let non_full_signed_bytes = self.param1.to_signed_bytes_be();
-                        let full_signed_bytes_init = if non_full_signed_bytes[0] & 0x80
-                            == 0x80
-                        {
-                            0xff
-                        } else {
-                            0x00
-                        };
-                        let mut full_signed_bytes = [full_signed_bytes_init as u8; 32];
-                        non_full_signed_bytes
-                            .into_iter()
-                            .rev()
-                            .enumerate()
-                            .for_each(|(i, byte)| full_signed_bytes[31 - i] = byte);
-                        ethabi::Token::Int(
-                            ethabi::Int::from_big_endian(full_signed_bytes.as_ref()),
-                        )
-                    },
-                    {
-                        let non_full_signed_bytes = self.param2.to_signed_bytes_be();
-                        let full_signed_bytes_init = if non_full_signed_bytes[0] & 0x80
-                            == 0x80
-                        {
-                            0xff
-                        } else {
-                            0x00
-                        };
-                        let mut full_signed_bytes = [full_signed_bytes_init as u8; 32];
-                        non_full_signed_bytes
-                            .into_iter()
-                            .rev()
-                            .enumerate()
-                            .for_each(|(i, byte)| full_signed_bytes[31 - i] = byte);
-                        ethabi::Token::Int(
-                            ethabi::Int::from_big_endian(full_signed_bytes.as_ref()),
-                        )
-                    },
-                    {
-                        let non_full_signed_bytes = self.param3.to_signed_bytes_be();
-                        let full_signed_bytes_init = if non_full_signed_bytes[0] & 0x80
-                            == 0x80
-                        {
-                            0xff
-                        } else {
-                            0x00
-                        };
-                        let mut full_signed_bytes = [full_signed_bytes_init as u8; 32];
-                        non_full_signed_bytes
-                            .into_iter()
-                            .rev()
-                            .enumerate()
-                            .for_each(|(i, byte)| full_signed_bytes[31 - i] = byte);
-                        ethabi::Token::Int(
-                            ethabi::Int::from_big_endian(full_signed_bytes.as_ref()),
-                        )
-                    },
-                ],
-            );
-            let mut encoded = Vec::with_capacity(4 + data.len());
-            encoded.extend(Self::METHOD_ID);
-            encoded.extend(data);
-            encoded
+            let mut out: Vec<u8> = Vec::with_capacity(4 + 128usize);
+            out.extend(Self::METHOD_ID);
+            let base = substreams_ethereum::abi::reserve_head(&mut out, 128usize);
+            substreams_ethereum::abi::write_int_at(&mut out, base + 0, &self.param0);
+            substreams_ethereum::abi::write_int_at(&mut out, base + 32, &self.param1);
+            substreams_ethereum::abi::write_int_at(&mut out, base + 64, &self.param2);
+            substreams_ethereum::abi::write_int_at(&mut out, base + 96, &self.param3);
+            out
         }
         pub fn match_call(call: &substreams_ethereum::pb::eth::v2::Call) -> bool {
             match call.input.get(0..4) {
@@ -935,6 +854,66 @@ pub mod functions {
         }
     }
     #[derive(Debug, Clone, PartialEq)]
+    pub struct FunMixedLeadingDynamic {
+        pub a: String,
+        pub b: substreams::scalar::BigInt,
+        pub c: Vec<u8>,
+    }
+    impl FunMixedLeadingDynamic {
+        const METHOD_ID: [u8; 4] = [119u8, 238u8, 177u8, 144u8];
+        pub fn decode(
+            call: &substreams_ethereum::pb::eth::v2::Call,
+        ) -> Result<Self, String> {
+            let maybe_data = call.input.get(4..);
+            if maybe_data.is_none() {
+                return Err("no data to decode".to_string());
+            }
+            let data = maybe_data.unwrap();
+            Ok(Self {
+                a: substreams_ethereum::abi::read_string(data, 0, "a")?,
+                b: substreams_ethereum::abi::read_uint(data, 32, "b")?,
+                c: substreams_ethereum::abi::read_bytes(data, 64, "c")?,
+            })
+        }
+        pub fn encode(&self) -> Vec<u8> {
+            let mut out: Vec<u8> = Vec::with_capacity(4 + 96usize);
+            out.extend(Self::METHOD_ID);
+            let base = substreams_ethereum::abi::reserve_head(&mut out, 96usize);
+            {
+                let at = substreams_ethereum::abi::tail_offset(&out, base);
+                substreams_ethereum::abi::write_bytes_tail(&mut out, self.a.as_bytes());
+                substreams_ethereum::abi::backfill_offset(&mut out, base + 0, at);
+            };
+            substreams_ethereum::abi::write_uint_at(&mut out, base + 32, &self.b);
+            {
+                let at = substreams_ethereum::abi::tail_offset(&out, base);
+                substreams_ethereum::abi::write_bytes_tail(&mut out, &self.c);
+                substreams_ethereum::abi::backfill_offset(&mut out, base + 64, at);
+            };
+            out
+        }
+        pub fn match_call(call: &substreams_ethereum::pb::eth::v2::Call) -> bool {
+            match call.input.get(0..4) {
+                Some(signature) => Self::METHOD_ID == signature,
+                None => false,
+            }
+        }
+    }
+    impl substreams_ethereum::Function for FunMixedLeadingDynamic {
+        const NAME: &'static str = "funMixedLeadingDynamic";
+        fn match_call(call: &substreams_ethereum::pb::eth::v2::Call) -> bool {
+            Self::match_call(call)
+        }
+        fn decode(
+            call: &substreams_ethereum::pb::eth::v2::Call,
+        ) -> Result<Self, String> {
+            Self::decode(call)
+        }
+        fn encode(&self) -> Vec<u8> {
+            self.encode()
+        }
+    }
+    #[derive(Debug, Clone, PartialEq)]
     pub struct FunReturnsString1 {}
     impl FunReturnsString1 {
         const METHOD_ID: [u8; 4] = [122u8, 55u8, 25u8, 240u8];
@@ -944,11 +923,10 @@ pub mod functions {
             Ok(Self {})
         }
         pub fn encode(&self) -> Vec<u8> {
-            let data = ethabi::encode(&[]);
-            let mut encoded = Vec::with_capacity(4 + data.len());
-            encoded.extend(Self::METHOD_ID);
-            encoded.extend(data);
-            encoded
+            let mut out: Vec<u8> = Vec::with_capacity(4 + 0usize);
+            out.extend(Self::METHOD_ID);
+            let base = substreams_ethereum::abi::reserve_head(&mut out, 0usize);
+            out
         }
         pub fn output_call(
             call: &substreams_ethereum::pb::eth::v2::Call,
@@ -1016,11 +994,10 @@ pub mod functions {
             Ok(Self {})
         }
         pub fn encode(&self) -> Vec<u8> {
-            let data = ethabi::encode(&[]);
-            let mut encoded = Vec::with_capacity(4 + data.len());
-            encoded.extend(Self::METHOD_ID);
-            encoded.extend(data);
-            encoded
+            let mut out: Vec<u8> = Vec::with_capacity(4 + 0usize);
+            out.extend(Self::METHOD_ID);
+            let base = substreams_ethereum::abi::reserve_head(&mut out, 0usize);
+            out
         }
         pub fn output_call(
             call: &substreams_ethereum::pb::eth::v2::Call,
@@ -1088,11 +1065,10 @@ pub mod functions {
             Ok(Self {})
         }
         pub fn encode(&self) -> Vec<u8> {
-            let data = ethabi::encode(&[]);
-            let mut encoded = Vec::with_capacity(4 + data.len());
-            encoded.extend(Self::METHOD_ID);
-            encoded.extend(data);
-            encoded
+            let mut out: Vec<u8> = Vec::with_capacity(4 + 0usize);
+            out.extend(Self::METHOD_ID);
+            let base = substreams_ethereum::abi::reserve_head(&mut out, 0usize);
+            out
         }
         pub fn output_call(
             call: &substreams_ethereum::pb::eth::v2::Call,
@@ -1173,11 +1149,18 @@ pub mod functions {
             })
         }
         pub fn encode(&self) -> Vec<u8> {
-            let data = ethabi::encode(&[ethabi::Token::String(self.first.clone())]);
-            let mut encoded = Vec::with_capacity(4 + data.len());
-            encoded.extend(Self::METHOD_ID);
-            encoded.extend(data);
-            encoded
+            let mut out: Vec<u8> = Vec::with_capacity(4 + 32usize);
+            out.extend(Self::METHOD_ID);
+            let base = substreams_ethereum::abi::reserve_head(&mut out, 32usize);
+            {
+                let at = substreams_ethereum::abi::tail_offset(&out, base);
+                substreams_ethereum::abi::write_bytes_tail(
+                    &mut out,
+                    self.first.as_bytes(),
+                );
+                substreams_ethereum::abi::backfill_offset(&mut out, base + 0, at);
+            };
+            out
         }
         pub fn match_call(call: &substreams_ethereum::pb::eth::v2::Call) -> bool {
             match call.input.get(0..4) {
@@ -1188,6 +1171,259 @@ pub mod functions {
     }
     impl substreams_ethereum::Function for FunString {
         const NAME: &'static str = "funString";
+        fn match_call(call: &substreams_ethereum::pb::eth::v2::Call) -> bool {
+            Self::match_call(call)
+        }
+        fn decode(
+            call: &substreams_ethereum::pb::eth::v2::Call,
+        ) -> Result<Self, String> {
+            Self::decode(call)
+        }
+        fn encode(&self) -> Vec<u8> {
+            self.encode()
+        }
+    }
+    #[derive(Debug, Clone, PartialEq)]
+    pub struct FunStringArray {
+        pub a: Vec<String>,
+    }
+    impl FunStringArray {
+        const METHOD_ID: [u8; 4] = [248u8, 30u8, 18u8, 38u8];
+        pub fn decode(
+            call: &substreams_ethereum::pb::eth::v2::Call,
+        ) -> Result<Self, String> {
+            let maybe_data = call.input.get(4..);
+            if maybe_data.is_none() {
+                return Err("no data to decode".to_string());
+            }
+            let data = maybe_data.unwrap();
+            Ok(Self {
+                a: {
+                    let (tail, count) = substreams_ethereum::abi::read_array_tail(
+                        data,
+                        0,
+                        "a",
+                    )?;
+                    let mut out = Vec::with_capacity(count.min(1024));
+                    let mut at = 0usize;
+                    for _ in 0..count {
+                        out.push(substreams_ethereum::abi::read_string(tail, at, "a")?);
+                        at += 32usize;
+                    }
+                    out
+                },
+            })
+        }
+        pub fn encode(&self) -> Vec<u8> {
+            let mut out: Vec<u8> = Vec::with_capacity(4 + 32usize);
+            out.extend(Self::METHOD_ID);
+            let base = substreams_ethereum::abi::reserve_head(&mut out, 32usize);
+            {
+                let at = substreams_ethereum::abi::tail_offset(&out, base);
+                {
+                    let count = self.a.len();
+                    substreams_ethereum::abi::write_offset(&mut out, count);
+                    let base_0 = substreams_ethereum::abi::reserve_head(
+                        &mut out,
+                        count * 32usize,
+                    );
+                    for (index, element_0) in self.a.iter().enumerate() {
+                        let slot = index * 32usize;
+                        {
+                            let at = substreams_ethereum::abi::tail_offset(&out, base_0);
+                            substreams_ethereum::abi::write_bytes_tail(
+                                &mut out,
+                                element_0.as_bytes(),
+                            );
+                            substreams_ethereum::abi::backfill_offset(
+                                &mut out,
+                                base_0 + slot,
+                                at,
+                            );
+                        };
+                    }
+                };
+                substreams_ethereum::abi::backfill_offset(&mut out, base + 0, at);
+            };
+            out
+        }
+        pub fn match_call(call: &substreams_ethereum::pb::eth::v2::Call) -> bool {
+            match call.input.get(0..4) {
+                Some(signature) => Self::METHOD_ID == signature,
+                None => false,
+            }
+        }
+    }
+    impl substreams_ethereum::Function for FunStringArray {
+        const NAME: &'static str = "funStringArray";
+        fn match_call(call: &substreams_ethereum::pb::eth::v2::Call) -> bool {
+            Self::match_call(call)
+        }
+        fn decode(
+            call: &substreams_ethereum::pb::eth::v2::Call,
+        ) -> Result<Self, String> {
+            Self::decode(call)
+        }
+        fn encode(&self) -> Vec<u8> {
+            self.encode()
+        }
+    }
+    #[derive(Debug, Clone, PartialEq)]
+    pub struct FunStringArrayThenUint {
+        pub a: Vec<String>,
+        pub b: substreams::scalar::BigInt,
+    }
+    impl FunStringArrayThenUint {
+        const METHOD_ID: [u8; 4] = [89u8, 18u8, 7u8, 96u8];
+        pub fn decode(
+            call: &substreams_ethereum::pb::eth::v2::Call,
+        ) -> Result<Self, String> {
+            let maybe_data = call.input.get(4..);
+            if maybe_data.is_none() {
+                return Err("no data to decode".to_string());
+            }
+            let data = maybe_data.unwrap();
+            Ok(Self {
+                a: {
+                    let (tail, count) = substreams_ethereum::abi::read_array_tail(
+                        data,
+                        0,
+                        "a",
+                    )?;
+                    let mut out = Vec::with_capacity(count.min(1024));
+                    let mut at = 0usize;
+                    for _ in 0..count {
+                        out.push(substreams_ethereum::abi::read_string(tail, at, "a")?);
+                        at += 32usize;
+                    }
+                    out
+                },
+                b: substreams_ethereum::abi::read_uint(data, 32, "b")?,
+            })
+        }
+        pub fn encode(&self) -> Vec<u8> {
+            let mut out: Vec<u8> = Vec::with_capacity(4 + 64usize);
+            out.extend(Self::METHOD_ID);
+            let base = substreams_ethereum::abi::reserve_head(&mut out, 64usize);
+            {
+                let at = substreams_ethereum::abi::tail_offset(&out, base);
+                {
+                    let count = self.a.len();
+                    substreams_ethereum::abi::write_offset(&mut out, count);
+                    let base_0 = substreams_ethereum::abi::reserve_head(
+                        &mut out,
+                        count * 32usize,
+                    );
+                    for (index, element_0) in self.a.iter().enumerate() {
+                        let slot = index * 32usize;
+                        {
+                            let at = substreams_ethereum::abi::tail_offset(&out, base_0);
+                            substreams_ethereum::abi::write_bytes_tail(
+                                &mut out,
+                                element_0.as_bytes(),
+                            );
+                            substreams_ethereum::abi::backfill_offset(
+                                &mut out,
+                                base_0 + slot,
+                                at,
+                            );
+                        };
+                    }
+                };
+                substreams_ethereum::abi::backfill_offset(&mut out, base + 0, at);
+            };
+            substreams_ethereum::abi::write_uint_at(&mut out, base + 32, &self.b);
+            out
+        }
+        pub fn match_call(call: &substreams_ethereum::pb::eth::v2::Call) -> bool {
+            match call.input.get(0..4) {
+                Some(signature) => Self::METHOD_ID == signature,
+                None => false,
+            }
+        }
+    }
+    impl substreams_ethereum::Function for FunStringArrayThenUint {
+        const NAME: &'static str = "funStringArrayThenUint";
+        fn match_call(call: &substreams_ethereum::pb::eth::v2::Call) -> bool {
+            Self::match_call(call)
+        }
+        fn decode(
+            call: &substreams_ethereum::pb::eth::v2::Call,
+        ) -> Result<Self, String> {
+            Self::decode(call)
+        }
+        fn encode(&self) -> Vec<u8> {
+            self.encode()
+        }
+    }
+    #[derive(Debug, Clone, PartialEq)]
+    pub struct FunStringFixedArray {
+        pub a: [String; 2usize],
+    }
+    impl FunStringFixedArray {
+        const METHOD_ID: [u8; 4] = [221u8, 63u8, 80u8, 130u8];
+        pub fn decode(
+            call: &substreams_ethereum::pb::eth::v2::Call,
+        ) -> Result<Self, String> {
+            let maybe_data = call.input.get(4..);
+            if maybe_data.is_none() {
+                return Err("no data to decode".to_string());
+            }
+            let data = maybe_data.unwrap();
+            Ok(Self {
+                a: {
+                    let base = substreams_ethereum::abi::read_dynamic_tail(
+                        data,
+                        0,
+                        "a",
+                    )?;
+                    [
+                        substreams_ethereum::abi::read_string(base, 0, "a")?,
+                        substreams_ethereum::abi::read_string(base, 32, "a")?,
+                    ]
+                },
+            })
+        }
+        pub fn encode(&self) -> Vec<u8> {
+            let mut out: Vec<u8> = Vec::with_capacity(4 + 32usize);
+            out.extend(Self::METHOD_ID);
+            let base = substreams_ethereum::abi::reserve_head(&mut out, 32usize);
+            {
+                let at = substreams_ethereum::abi::tail_offset(&out, base);
+                {
+                    let base_0 = substreams_ethereum::abi::reserve_head(
+                        &mut out,
+                        64usize,
+                    );
+                    for (index, element_0) in self.a.iter().enumerate() {
+                        let slot = index * 32usize;
+                        {
+                            let at = substreams_ethereum::abi::tail_offset(&out, base_0);
+                            substreams_ethereum::abi::write_bytes_tail(
+                                &mut out,
+                                element_0.as_bytes(),
+                            );
+                            substreams_ethereum::abi::backfill_offset(
+                                &mut out,
+                                base_0 + slot,
+                                at,
+                            );
+                        };
+                    }
+                };
+                substreams_ethereum::abi::backfill_offset(&mut out, base + 0, at);
+            };
+            out
+        }
+        pub fn match_call(call: &substreams_ethereum::pb::eth::v2::Call) -> bool {
+            match call.input.get(0..4) {
+                Some(signature) => Self::METHOD_ID == signature,
+                None => false,
+            }
+        }
+    }
+    impl substreams_ethereum::Function for FunStringFixedArray {
+        const NAME: &'static str = "funStringFixedArray";
         fn match_call(call: &substreams_ethereum::pb::eth::v2::Call) -> bool {
             Self::match_call(call)
         }
@@ -1221,16 +1457,26 @@ pub mod functions {
             })
         }
         pub fn encode(&self) -> Vec<u8> {
-            let data = ethabi::encode(
-                &[
-                    ethabi::Token::String(self.first.clone()),
-                    ethabi::Token::String(self.second.clone()),
-                ],
-            );
-            let mut encoded = Vec::with_capacity(4 + data.len());
-            encoded.extend(Self::METHOD_ID);
-            encoded.extend(data);
-            encoded
+            let mut out: Vec<u8> = Vec::with_capacity(4 + 64usize);
+            out.extend(Self::METHOD_ID);
+            let base = substreams_ethereum::abi::reserve_head(&mut out, 64usize);
+            {
+                let at = substreams_ethereum::abi::tail_offset(&out, base);
+                substreams_ethereum::abi::write_bytes_tail(
+                    &mut out,
+                    self.first.as_bytes(),
+                );
+                substreams_ethereum::abi::backfill_offset(&mut out, base + 0, at);
+            };
+            {
+                let at = substreams_ethereum::abi::tail_offset(&out, base);
+                substreams_ethereum::abi::write_bytes_tail(
+                    &mut out,
+                    self.second.as_bytes(),
+                );
+                substreams_ethereum::abi::backfill_offset(&mut out, base + 32, at);
+            };
+            out
         }
         pub fn match_call(call: &substreams_ethereum::pb::eth::v2::Call) -> bool {
             match call.input.get(0..4) {
@@ -1282,20 +1528,17 @@ pub mod functions {
             })
         }
         pub fn encode(&self) -> Vec<u8> {
-            let data = ethabi::encode(
-                &[
-                    ethabi::Token::Tuple(
-                        vec![
-                            ethabi::Token::Address(ethabi::Address::from_slice(& self
-                            .param0.0))
-                        ],
-                    ),
-                ],
-            );
-            let mut encoded = Vec::with_capacity(4 + data.len());
-            encoded.extend(Self::METHOD_ID);
-            encoded.extend(data);
-            encoded
+            let mut out: Vec<u8> = Vec::with_capacity(4 + 32usize);
+            out.extend(Self::METHOD_ID);
+            let base = substreams_ethereum::abi::reserve_head(&mut out, 32usize);
+            {
+                substreams_ethereum::abi::write_address_at(
+                    &mut out,
+                    base + 0 + 0,
+                    &self.param0.0,
+                );
+            };
+            out
         }
         pub fn match_call(call: &substreams_ethereum::pb::eth::v2::Call) -> bool {
             match call.input.get(0..4) {
@@ -1306,6 +1549,115 @@ pub mod functions {
     }
     impl substreams_ethereum::Function for FunTupleAddress {
         const NAME: &'static str = "funTupleAddress";
+        fn match_call(call: &substreams_ethereum::pb::eth::v2::Call) -> bool {
+            Self::match_call(call)
+        }
+        fn decode(
+            call: &substreams_ethereum::pb::eth::v2::Call,
+        ) -> Result<Self, String> {
+            Self::decode(call)
+        }
+        fn encode(&self) -> Vec<u8> {
+            self.encode()
+        }
+    }
+    #[derive(Debug, Clone, PartialEq)]
+    pub struct FunTupleArray {
+        pub a: Vec<(String,)>,
+    }
+    impl FunTupleArray {
+        const METHOD_ID: [u8; 4] = [105u8, 233u8, 124u8, 13u8];
+        pub fn decode(
+            call: &substreams_ethereum::pb::eth::v2::Call,
+        ) -> Result<Self, String> {
+            let maybe_data = call.input.get(4..);
+            if maybe_data.is_none() {
+                return Err("no data to decode".to_string());
+            }
+            let data = maybe_data.unwrap();
+            Ok(Self {
+                a: {
+                    let (tail, count) = substreams_ethereum::abi::read_array_tail(
+                        data,
+                        0,
+                        "a",
+                    )?;
+                    let mut out = Vec::with_capacity(count.min(1024));
+                    let mut at = 0usize;
+                    for _ in 0..count {
+                        out.push({
+                            let base = substreams_ethereum::abi::read_dynamic_tail(
+                                tail,
+                                at,
+                                "a",
+                            )?;
+                            (substreams_ethereum::abi::read_string(base, 0, "a")?,)
+                        });
+                        at += 32usize;
+                    }
+                    out
+                },
+            })
+        }
+        pub fn encode(&self) -> Vec<u8> {
+            let mut out: Vec<u8> = Vec::with_capacity(4 + 32usize);
+            out.extend(Self::METHOD_ID);
+            let base = substreams_ethereum::abi::reserve_head(&mut out, 32usize);
+            {
+                let at = substreams_ethereum::abi::tail_offset(&out, base);
+                {
+                    let count = self.a.len();
+                    substreams_ethereum::abi::write_offset(&mut out, count);
+                    let base_0 = substreams_ethereum::abi::reserve_head(
+                        &mut out,
+                        count * 32usize,
+                    );
+                    for (index, element_0) in self.a.iter().enumerate() {
+                        let slot = index * 32usize;
+                        {
+                            let at = substreams_ethereum::abi::tail_offset(&out, base_0);
+                            {
+                                let base_1 = substreams_ethereum::abi::reserve_head(
+                                    &mut out,
+                                    32usize,
+                                );
+                                {
+                                    let at = substreams_ethereum::abi::tail_offset(
+                                        &out,
+                                        base_1,
+                                    );
+                                    substreams_ethereum::abi::write_bytes_tail(
+                                        &mut out,
+                                        element_0.0.as_bytes(),
+                                    );
+                                    substreams_ethereum::abi::backfill_offset(
+                                        &mut out,
+                                        base_1 + 0,
+                                        at,
+                                    );
+                                };
+                            };
+                            substreams_ethereum::abi::backfill_offset(
+                                &mut out,
+                                base_0 + slot,
+                                at,
+                            );
+                        };
+                    }
+                };
+                substreams_ethereum::abi::backfill_offset(&mut out, base + 0, at);
+            };
+            out
+        }
+        pub fn match_call(call: &substreams_ethereum::pb::eth::v2::Call) -> bool {
+            match call.input.get(0..4) {
+                Some(signature) => Self::METHOD_ID == signature,
+                None => false,
+            }
+        }
+    }
+    impl substreams_ethereum::Function for FunTupleArray {
+        const NAME: &'static str = "funTupleArray";
         fn match_call(call: &substreams_ethereum::pb::eth::v2::Call) -> bool {
             Self::match_call(call)
         }
@@ -1375,44 +1727,77 @@ pub mod functions {
             })
         }
         pub fn encode(&self) -> Vec<u8> {
-            let data = ethabi::encode(
-                &[
-                    ethabi::Token::Tuple(
-                        vec![
-                            ethabi::Token::Address(ethabi::Address::from_slice(& self
-                            .arg0.0)),
-                            ethabi::Token::Address(ethabi::Address::from_slice(& self
-                            .arg0.1)),
-                            ethabi::Token::Address(ethabi::Address::from_slice(& self
-                            .arg0.2)),
-                            ethabi::Token::Address(ethabi::Address::from_slice(& self
-                            .arg0.3)),
-                            ethabi::Token::Address(ethabi::Address::from_slice(& self
-                            .arg0.4)),
-                            ethabi::Token::Address(ethabi::Address::from_slice(& self
-                            .arg0.5)),
-                            ethabi::Token::Address(ethabi::Address::from_slice(& self
-                            .arg0.6)),
-                            ethabi::Token::Address(ethabi::Address::from_slice(& self
-                            .arg0.7)),
-                            ethabi::Token::Address(ethabi::Address::from_slice(& self
-                            .arg0.8)),
-                            ethabi::Token::Address(ethabi::Address::from_slice(& self
-                            .arg0.9)),
-                            ethabi::Token::Address(ethabi::Address::from_slice(& self
-                            .arg0.10)),
-                            ethabi::Token::Address(ethabi::Address::from_slice(& self
-                            .arg0.11)),
-                            ethabi::Token::Address(ethabi::Address::from_slice(& self
-                            .arg0.12))
-                        ],
-                    ),
-                ],
-            );
-            let mut encoded = Vec::with_capacity(4 + data.len());
-            encoded.extend(Self::METHOD_ID);
-            encoded.extend(data);
-            encoded
+            let mut out: Vec<u8> = Vec::with_capacity(4 + 416usize);
+            out.extend(Self::METHOD_ID);
+            let base = substreams_ethereum::abi::reserve_head(&mut out, 416usize);
+            {
+                substreams_ethereum::abi::write_address_at(
+                    &mut out,
+                    base + 0 + 0,
+                    &self.arg0.0,
+                );
+                substreams_ethereum::abi::write_address_at(
+                    &mut out,
+                    base + 0 + 32,
+                    &self.arg0.1,
+                );
+                substreams_ethereum::abi::write_address_at(
+                    &mut out,
+                    base + 0 + 64,
+                    &self.arg0.2,
+                );
+                substreams_ethereum::abi::write_address_at(
+                    &mut out,
+                    base + 0 + 96,
+                    &self.arg0.3,
+                );
+                substreams_ethereum::abi::write_address_at(
+                    &mut out,
+                    base + 0 + 128,
+                    &self.arg0.4,
+                );
+                substreams_ethereum::abi::write_address_at(
+                    &mut out,
+                    base + 0 + 160,
+                    &self.arg0.5,
+                );
+                substreams_ethereum::abi::write_address_at(
+                    &mut out,
+                    base + 0 + 192,
+                    &self.arg0.6,
+                );
+                substreams_ethereum::abi::write_address_at(
+                    &mut out,
+                    base + 0 + 224,
+                    &self.arg0.7,
+                );
+                substreams_ethereum::abi::write_address_at(
+                    &mut out,
+                    base + 0 + 256,
+                    &self.arg0.8,
+                );
+                substreams_ethereum::abi::write_address_at(
+                    &mut out,
+                    base + 0 + 288,
+                    &self.arg0.9,
+                );
+                substreams_ethereum::abi::write_address_at(
+                    &mut out,
+                    base + 0 + 320,
+                    &self.arg0.10,
+                );
+                substreams_ethereum::abi::write_address_at(
+                    &mut out,
+                    base + 0 + 352,
+                    &self.arg0.11,
+                );
+                substreams_ethereum::abi::write_address_at(
+                    &mut out,
+                    base + 0 + 384,
+                    &self.arg0.12,
+                );
+            };
+            out
         }
         pub fn match_call(call: &substreams_ethereum::pb::eth::v2::Call) -> bool {
             match call.input.get(0..4) {
@@ -1423,6 +1808,174 @@ pub mod functions {
     }
     impl substreams_ethereum::Function for FunTupleMoreThanTwelveFields {
         const NAME: &'static str = "funTupleMoreThanTwelveFields";
+        fn match_call(call: &substreams_ethereum::pb::eth::v2::Call) -> bool {
+            Self::match_call(call)
+        }
+        fn decode(
+            call: &substreams_ethereum::pb::eth::v2::Call,
+        ) -> Result<Self, String> {
+            Self::decode(call)
+        }
+        fn encode(&self) -> Vec<u8> {
+            self.encode()
+        }
+    }
+    #[derive(Debug, Clone, PartialEq)]
+    pub struct FunTupleTwoDynamic {
+        pub a: (String, Vec<u8>),
+    }
+    impl FunTupleTwoDynamic {
+        const METHOD_ID: [u8; 4] = [47u8, 44u8, 51u8, 126u8];
+        pub fn decode(
+            call: &substreams_ethereum::pb::eth::v2::Call,
+        ) -> Result<Self, String> {
+            let maybe_data = call.input.get(4..);
+            if maybe_data.is_none() {
+                return Err("no data to decode".to_string());
+            }
+            let data = maybe_data.unwrap();
+            Ok(Self {
+                a: {
+                    let base = substreams_ethereum::abi::read_dynamic_tail(
+                        data,
+                        0,
+                        "a",
+                    )?;
+                    (
+                        substreams_ethereum::abi::read_string(base, 0, "a")?,
+                        substreams_ethereum::abi::read_bytes(base, 32, "a")?,
+                    )
+                },
+            })
+        }
+        pub fn encode(&self) -> Vec<u8> {
+            let mut out: Vec<u8> = Vec::with_capacity(4 + 32usize);
+            out.extend(Self::METHOD_ID);
+            let base = substreams_ethereum::abi::reserve_head(&mut out, 32usize);
+            {
+                let at = substreams_ethereum::abi::tail_offset(&out, base);
+                {
+                    let base_0 = substreams_ethereum::abi::reserve_head(
+                        &mut out,
+                        64usize,
+                    );
+                    {
+                        let at = substreams_ethereum::abi::tail_offset(&out, base_0);
+                        substreams_ethereum::abi::write_bytes_tail(
+                            &mut out,
+                            self.a.0.as_bytes(),
+                        );
+                        substreams_ethereum::abi::backfill_offset(
+                            &mut out,
+                            base_0 + 0,
+                            at,
+                        );
+                    };
+                    {
+                        let at = substreams_ethereum::abi::tail_offset(&out, base_0);
+                        substreams_ethereum::abi::write_bytes_tail(&mut out, &self.a.1);
+                        substreams_ethereum::abi::backfill_offset(
+                            &mut out,
+                            base_0 + 32,
+                            at,
+                        );
+                    };
+                };
+                substreams_ethereum::abi::backfill_offset(&mut out, base + 0, at);
+            };
+            out
+        }
+        pub fn match_call(call: &substreams_ethereum::pb::eth::v2::Call) -> bool {
+            match call.input.get(0..4) {
+                Some(signature) => Self::METHOD_ID == signature,
+                None => false,
+            }
+        }
+    }
+    impl substreams_ethereum::Function for FunTupleTwoDynamic {
+        const NAME: &'static str = "funTupleTwoDynamic";
+        fn match_call(call: &substreams_ethereum::pb::eth::v2::Call) -> bool {
+            Self::match_call(call)
+        }
+        fn decode(
+            call: &substreams_ethereum::pb::eth::v2::Call,
+        ) -> Result<Self, String> {
+            Self::decode(call)
+        }
+        fn encode(&self) -> Vec<u8> {
+            self.encode()
+        }
+    }
+    #[derive(Debug, Clone, PartialEq)]
+    pub struct FunTupleWithString {
+        pub a: (String, substreams::scalar::BigInt),
+    }
+    impl FunTupleWithString {
+        const METHOD_ID: [u8; 4] = [21u8, 244u8, 53u8, 21u8];
+        pub fn decode(
+            call: &substreams_ethereum::pb::eth::v2::Call,
+        ) -> Result<Self, String> {
+            let maybe_data = call.input.get(4..);
+            if maybe_data.is_none() {
+                return Err("no data to decode".to_string());
+            }
+            let data = maybe_data.unwrap();
+            Ok(Self {
+                a: {
+                    let base = substreams_ethereum::abi::read_dynamic_tail(
+                        data,
+                        0,
+                        "a",
+                    )?;
+                    (
+                        substreams_ethereum::abi::read_string(base, 0, "a")?,
+                        substreams_ethereum::abi::read_uint(base, 32, "a")?,
+                    )
+                },
+            })
+        }
+        pub fn encode(&self) -> Vec<u8> {
+            let mut out: Vec<u8> = Vec::with_capacity(4 + 32usize);
+            out.extend(Self::METHOD_ID);
+            let base = substreams_ethereum::abi::reserve_head(&mut out, 32usize);
+            {
+                let at = substreams_ethereum::abi::tail_offset(&out, base);
+                {
+                    let base_0 = substreams_ethereum::abi::reserve_head(
+                        &mut out,
+                        64usize,
+                    );
+                    {
+                        let at = substreams_ethereum::abi::tail_offset(&out, base_0);
+                        substreams_ethereum::abi::write_bytes_tail(
+                            &mut out,
+                            self.a.0.as_bytes(),
+                        );
+                        substreams_ethereum::abi::backfill_offset(
+                            &mut out,
+                            base_0 + 0,
+                            at,
+                        );
+                    };
+                    substreams_ethereum::abi::write_uint_at(
+                        &mut out,
+                        base_0 + 32,
+                        &self.a.1,
+                    );
+                };
+                substreams_ethereum::abi::backfill_offset(&mut out, base + 0, at);
+            };
+            out
+        }
+        pub fn match_call(call: &substreams_ethereum::pb::eth::v2::Call) -> bool {
+            match call.input.get(0..4) {
+                Some(signature) => Self::METHOD_ID == signature,
+                None => false,
+            }
+        }
+    }
+    impl substreams_ethereum::Function for FunTupleWithString {
+        const NAME: &'static str = "funTupleWithString";
         fn match_call(call: &substreams_ethereum::pb::eth::v2::Call) -> bool {
             Self::match_call(call)
         }
@@ -1454,26 +2007,11 @@ pub mod functions {
             })
         }
         pub fn encode(&self) -> Vec<u8> {
-            let data = ethabi::encode(
-                &[
-                    ethabi::Token::Uint(
-                        ethabi::Uint::from_big_endian(
-                            match self.param0.clone().to_bytes_be() {
-                                (num_bigint::Sign::Plus, bytes) => bytes,
-                                (num_bigint::Sign::NoSign, bytes) => bytes,
-                                (num_bigint::Sign::Minus, _) => {
-                                    panic!("negative numbers are not supported")
-                                }
-                            }
-                                .as_slice(),
-                        ),
-                    ),
-                ],
-            );
-            let mut encoded = Vec::with_capacity(4 + data.len());
-            encoded.extend(Self::METHOD_ID);
-            encoded.extend(data);
-            encoded
+            let mut out: Vec<u8> = Vec::with_capacity(4 + 32usize);
+            out.extend(Self::METHOD_ID);
+            let base = substreams_ethereum::abi::reserve_head(&mut out, 32usize);
+            substreams_ethereum::abi::write_uint_at(&mut out, base + 0, &self.param0);
+            out
         }
         pub fn match_call(call: &substreams_ethereum::pb::eth::v2::Call) -> bool {
             match call.input.get(0..4) {
@@ -1484,6 +2022,118 @@ pub mod functions {
     }
     impl substreams_ethereum::Function for FunUint256 {
         const NAME: &'static str = "funUint256";
+        fn match_call(call: &substreams_ethereum::pb::eth::v2::Call) -> bool {
+            Self::match_call(call)
+        }
+        fn decode(
+            call: &substreams_ethereum::pb::eth::v2::Call,
+        ) -> Result<Self, String> {
+            Self::decode(call)
+        }
+        fn encode(&self) -> Vec<u8> {
+            self.encode()
+        }
+    }
+    #[derive(Debug, Clone, PartialEq)]
+    pub struct FunUintNestedArray {
+        pub a: Vec<Vec<substreams::scalar::BigInt>>,
+    }
+    impl FunUintNestedArray {
+        const METHOD_ID: [u8; 4] = [157u8, 70u8, 163u8, 106u8];
+        pub fn decode(
+            call: &substreams_ethereum::pb::eth::v2::Call,
+        ) -> Result<Self, String> {
+            let maybe_data = call.input.get(4..);
+            if maybe_data.is_none() {
+                return Err("no data to decode".to_string());
+            }
+            let data = maybe_data.unwrap();
+            Ok(Self {
+                a: {
+                    let (tail, count) = substreams_ethereum::abi::read_array_tail(
+                        data,
+                        0,
+                        "a",
+                    )?;
+                    let mut out = Vec::with_capacity(count.min(1024));
+                    let mut at = 0usize;
+                    for _ in 0..count {
+                        out.push({
+                            let (tail, count) = substreams_ethereum::abi::read_array_tail(
+                                tail,
+                                at,
+                                "a",
+                            )?;
+                            let mut out = Vec::with_capacity(count.min(1024));
+                            let mut at = 0usize;
+                            for _ in 0..count {
+                                out.push(
+                                    substreams_ethereum::abi::read_uint(tail, at, "a")?,
+                                );
+                                at += 32usize;
+                            }
+                            out
+                        });
+                        at += 32usize;
+                    }
+                    out
+                },
+            })
+        }
+        pub fn encode(&self) -> Vec<u8> {
+            let mut out: Vec<u8> = Vec::with_capacity(4 + 32usize);
+            out.extend(Self::METHOD_ID);
+            let base = substreams_ethereum::abi::reserve_head(&mut out, 32usize);
+            {
+                let at = substreams_ethereum::abi::tail_offset(&out, base);
+                {
+                    let count = self.a.len();
+                    substreams_ethereum::abi::write_offset(&mut out, count);
+                    let base_0 = substreams_ethereum::abi::reserve_head(
+                        &mut out,
+                        count * 32usize,
+                    );
+                    for (index, element_0) in self.a.iter().enumerate() {
+                        let slot = index * 32usize;
+                        {
+                            let at = substreams_ethereum::abi::tail_offset(&out, base_0);
+                            {
+                                let count = element_0.len();
+                                substreams_ethereum::abi::write_offset(&mut out, count);
+                                let base_1 = substreams_ethereum::abi::reserve_head(
+                                    &mut out,
+                                    count * 32usize,
+                                );
+                                for (index, element_1) in element_0.iter().enumerate() {
+                                    let slot = index * 32usize;
+                                    substreams_ethereum::abi::write_uint_at(
+                                        &mut out,
+                                        base_1 + slot,
+                                        &element_1,
+                                    );
+                                }
+                            };
+                            substreams_ethereum::abi::backfill_offset(
+                                &mut out,
+                                base_0 + slot,
+                                at,
+                            );
+                        };
+                    }
+                };
+                substreams_ethereum::abi::backfill_offset(&mut out, base + 0, at);
+            };
+            out
+        }
+        pub fn match_call(call: &substreams_ethereum::pb::eth::v2::Call) -> bool {
+            match call.input.get(0..4) {
+                Some(signature) => Self::METHOD_ID == signature,
+                None => false,
+            }
+        }
+    }
+    impl substreams_ethereum::Function for FunUintNestedArray {
+        const NAME: &'static str = "funUintNestedArray";
         fn match_call(call: &substreams_ethereum::pb::eth::v2::Call) -> bool {
             Self::match_call(call)
         }
@@ -1515,33 +2165,11 @@ pub mod functions {
             })
         }
         pub fn encode(&self) -> Vec<u8> {
-            let data = ethabi::encode(
-                &[
-                    {
-                        let non_full_signed_bytes = self.arg0.to_signed_bytes_be();
-                        let full_signed_bytes_init = if non_full_signed_bytes[0] & 0x80
-                            == 0x80
-                        {
-                            0xff
-                        } else {
-                            0x00
-                        };
-                        let mut full_signed_bytes = [full_signed_bytes_init as u8; 32];
-                        non_full_signed_bytes
-                            .into_iter()
-                            .rev()
-                            .enumerate()
-                            .for_each(|(i, byte)| full_signed_bytes[31 - i] = byte);
-                        ethabi::Token::Int(
-                            ethabi::Int::from_big_endian(full_signed_bytes.as_ref()),
-                        )
-                    },
-                ],
-            );
-            let mut encoded = Vec::with_capacity(4 + data.len());
-            encoded.extend(Self::METHOD_ID);
-            encoded.extend(data);
-            encoded
+            let mut out: Vec<u8> = Vec::with_capacity(4 + 32usize);
+            out.extend(Self::METHOD_ID);
+            let base = substreams_ethereum::abi::reserve_head(&mut out, 32usize);
+            substreams_ethereum::abi::write_int_at(&mut out, base + 0, &self.arg0);
+            out
         }
         pub fn match_call(call: &substreams_ethereum::pb::eth::v2::Call) -> bool {
             match call.input.get(0..4) {
@@ -1583,26 +2211,11 @@ pub mod functions {
             })
         }
         pub fn encode(&self) -> Vec<u8> {
-            let data = ethabi::encode(
-                &[
-                    ethabi::Token::Uint(
-                        ethabi::Uint::from_big_endian(
-                            match self.arg0.clone().to_bytes_be() {
-                                (num_bigint::Sign::Plus, bytes) => bytes,
-                                (num_bigint::Sign::NoSign, bytes) => bytes,
-                                (num_bigint::Sign::Minus, _) => {
-                                    panic!("negative numbers are not supported")
-                                }
-                            }
-                                .as_slice(),
-                        ),
-                    ),
-                ],
-            );
-            let mut encoded = Vec::with_capacity(4 + data.len());
-            encoded.extend(Self::METHOD_ID);
-            encoded.extend(data);
-            encoded
+            let mut out: Vec<u8> = Vec::with_capacity(4 + 32usize);
+            out.extend(Self::METHOD_ID);
+            let base = substreams_ethereum::abi::reserve_head(&mut out, 32usize);
+            substreams_ethereum::abi::write_uint_at(&mut out, base + 0, &self.arg0);
+            out
         }
         pub fn match_call(call: &substreams_ethereum::pb::eth::v2::Call) -> bool {
             match call.input.get(0..4) {
@@ -1644,26 +2257,11 @@ pub mod functions {
             })
         }
         pub fn encode(&self) -> Vec<u8> {
-            let data = ethabi::encode(
-                &[
-                    ethabi::Token::Uint(
-                        ethabi::Uint::from_big_endian(
-                            match self.arg0.clone().to_bytes_be() {
-                                (num_bigint::Sign::Plus, bytes) => bytes,
-                                (num_bigint::Sign::NoSign, bytes) => bytes,
-                                (num_bigint::Sign::Minus, _) => {
-                                    panic!("negative numbers are not supported")
-                                }
-                            }
-                                .as_slice(),
-                        ),
-                    ),
-                ],
-            );
-            let mut encoded = Vec::with_capacity(4 + data.len());
-            encoded.extend(Self::METHOD_ID);
-            encoded.extend(data);
-            encoded
+            let mut out: Vec<u8> = Vec::with_capacity(4 + 32usize);
+            out.extend(Self::METHOD_ID);
+            let base = substreams_ethereum::abi::reserve_head(&mut out, 32usize);
+            substreams_ethereum::abi::write_uint_at(&mut out, base + 0, &self.arg0);
+            out
         }
         pub fn match_call(call: &substreams_ethereum::pb::eth::v2::Call) -> bool {
             match call.input.get(0..4) {
@@ -1705,33 +2303,11 @@ pub mod functions {
             })
         }
         pub fn encode(&self) -> Vec<u8> {
-            let data = ethabi::encode(
-                &[
-                    {
-                        let non_full_signed_bytes = self.arg0.to_signed_bytes_be();
-                        let full_signed_bytes_init = if non_full_signed_bytes[0] & 0x80
-                            == 0x80
-                        {
-                            0xff
-                        } else {
-                            0x00
-                        };
-                        let mut full_signed_bytes = [full_signed_bytes_init as u8; 32];
-                        non_full_signed_bytes
-                            .into_iter()
-                            .rev()
-                            .enumerate()
-                            .for_each(|(i, byte)| full_signed_bytes[31 - i] = byte);
-                        ethabi::Token::Int(
-                            ethabi::Int::from_big_endian(full_signed_bytes.as_ref()),
-                        )
-                    },
-                ],
-            );
-            let mut encoded = Vec::with_capacity(4 + data.len());
-            encoded.extend(Self::METHOD_ID);
-            encoded.extend(data);
-            encoded
+            let mut out: Vec<u8> = Vec::with_capacity(4 + 32usize);
+            out.extend(Self::METHOD_ID);
+            let base = substreams_ethereum::abi::reserve_head(&mut out, 32usize);
+            substreams_ethereum::abi::write_int_at(&mut out, base + 0, &self.arg0);
+            out
         }
         pub fn match_call(call: &substreams_ethereum::pb::eth::v2::Call) -> bool {
             match call.input.get(0..4) {
@@ -1773,26 +2349,11 @@ pub mod functions {
             })
         }
         pub fn encode(&self) -> Vec<u8> {
-            let data = ethabi::encode(
-                &[
-                    ethabi::Token::Uint(
-                        ethabi::Uint::from_big_endian(
-                            match self.arg0.clone().to_bytes_be() {
-                                (num_bigint::Sign::Plus, bytes) => bytes,
-                                (num_bigint::Sign::NoSign, bytes) => bytes,
-                                (num_bigint::Sign::Minus, _) => {
-                                    panic!("negative numbers are not supported")
-                                }
-                            }
-                                .as_slice(),
-                        ),
-                    ),
-                ],
-            );
-            let mut encoded = Vec::with_capacity(4 + data.len());
-            encoded.extend(Self::METHOD_ID);
-            encoded.extend(data);
-            encoded
+            let mut out: Vec<u8> = Vec::with_capacity(4 + 32usize);
+            out.extend(Self::METHOD_ID);
+            let base = substreams_ethereum::abi::reserve_head(&mut out, 32usize);
+            substreams_ethereum::abi::write_uint_at(&mut out, base + 0, &self.arg0);
+            out
         }
         pub fn match_call(call: &substreams_ethereum::pb::eth::v2::Call) -> bool {
             match call.input.get(0..4) {
@@ -1834,33 +2395,11 @@ pub mod functions {
             })
         }
         pub fn encode(&self) -> Vec<u8> {
-            let data = ethabi::encode(
-                &[
-                    {
-                        let non_full_signed_bytes = self.arg0.to_signed_bytes_be();
-                        let full_signed_bytes_init = if non_full_signed_bytes[0] & 0x80
-                            == 0x80
-                        {
-                            0xff
-                        } else {
-                            0x00
-                        };
-                        let mut full_signed_bytes = [full_signed_bytes_init as u8; 32];
-                        non_full_signed_bytes
-                            .into_iter()
-                            .rev()
-                            .enumerate()
-                            .for_each(|(i, byte)| full_signed_bytes[31 - i] = byte);
-                        ethabi::Token::Int(
-                            ethabi::Int::from_big_endian(full_signed_bytes.as_ref()),
-                        )
-                    },
-                ],
-            );
-            let mut encoded = Vec::with_capacity(4 + data.len());
-            encoded.extend(Self::METHOD_ID);
-            encoded.extend(data);
-            encoded
+            let mut out: Vec<u8> = Vec::with_capacity(4 + 32usize);
+            out.extend(Self::METHOD_ID);
+            let base = substreams_ethereum::abi::reserve_head(&mut out, 32usize);
+            substreams_ethereum::abi::write_int_at(&mut out, base + 0, &self.arg0);
+            out
         }
         pub fn match_call(call: &substreams_ethereum::pb::eth::v2::Call) -> bool {
             match call.input.get(0..4) {

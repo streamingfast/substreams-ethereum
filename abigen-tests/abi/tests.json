@@ -1172,5 +1172,142 @@
     ],
     "name": "EventInt128",
     "type": "event"
+  },
+  {
+    "type": "function",
+    "name": "funStringArray",
+    "inputs": [
+      {
+        "name": "a",
+        "type": "string[]"
+      }
+    ],
+    "outputs": []
+  },
+  {
+    "type": "function",
+    "name": "funBytesArray",
+    "inputs": [
+      {
+        "name": "a",
+        "type": "bytes[]"
+      }
+    ],
+    "outputs": []
+  },
+  {
+    "type": "function",
+    "name": "funStringFixedArray",
+    "inputs": [
+      {
+        "name": "a",
+        "type": "string[2]"
+      }
+    ],
+    "outputs": []
+  },
+  {
+    "type": "function",
+    "name": "funUintNestedArray",
+    "inputs": [
+      {
+        "name": "a",
+        "type": "uint256[][]"
+      }
+    ],
+    "outputs": []
+  },
+  {
+    "type": "function",
+    "name": "funTupleWithString",
+    "inputs": [
+      {
+        "name": "a",
+        "type": "tuple",
+        "components": [
+          {
+            "name": "x",
+            "type": "string"
+          },
+          {
+            "name": "y",
+            "type": "uint256"
+          }
+        ]
+      }
+    ],
+    "outputs": []
+  },
+  {
+    "type": "function",
+    "name": "funTupleTwoDynamic",
+    "inputs": [
+      {
+        "name": "a",
+        "type": "tuple",
+        "components": [
+          {
+            "name": "x",
+            "type": "string"
+          },
+          {
+            "name": "y",
+            "type": "bytes"
+          }
+        ]
+      }
+    ],
+    "outputs": []
+  },
+  {
+    "type": "function",
+    "name": "funMixedLeadingDynamic",
+    "inputs": [
+      {
+        "name": "a",
+        "type": "string"
+      },
+      {
+        "name": "b",
+        "type": "uint256"
+      },
+      {
+        "name": "c",
+        "type": "bytes"
+      }
+    ],
+    "outputs": []
+  },
+  {
+    "type": "function",
+    "name": "funStringArrayThenUint",
+    "inputs": [
+      {
+        "name": "a",
+        "type": "string[]"
+      },
+      {
+        "name": "b",
+        "type": "uint256"
+      }
+    ],
+    "outputs": []
+  },
+  {
+    "type": "function",
+    "name": "funTupleArray",
+    "inputs": [
+      {
+        "name": "a",
+        "type": "tuple[]",
+        "components": [
+          {
+            "name": "x",
+            "type": "string"
+          }
+        ]
+      }
+    ],
+    "outputs": []
   }
 ]

@@ -1,13 +1,16 @@
-//! Straight-line readers for ABI-encoded values at known offsets.
+//! Straight-line readers and writers for ABI-encoded values.
 //!
-//! `abigen` emits calls to these for events whose parameters are all fixed-size,
-//! where the byte layout is known when the ABI is read. Dynamic parameters still
-//! go through `ethabi`.
+//! `abigen` emits calls to these for every parameter it decodes, and for the
+//! inputs it encodes for an `eth_call`. A reader takes the offset its value sits
+//! at. A writer works against one buffer holding the whole payload: the caller
+//! reserves a head section, fixed values are written into their slots, and a
+//! dynamic value appends its tail and fills its offset word in afterwards.
 //!
-//! These deliberately reproduce `ethabi`'s accept/reject behaviour rather than the
-//! stricter reading of the ABI spec. `ethabi` discards the high-order padding of an
-//! `address` instead of requiring it to be zero, and accepts a buffer longer than
-//! the parameters need. Rejecting either would drop logs that decode today.
+//! The readers deliberately reproduce `ethabi`'s accept/reject behaviour rather
+//! than the stricter reading of the ABI spec. `ethabi` discards the high-order
+//! padding of an `address` instead of requiring it to be zero, and accepts a
+//! buffer longer than the parameters need. Rejecting either would drop logs that
+//! decode today.
 
 /// Reads the 32-byte word at `offset`.
 ///
@@ -396,6 +399,504 @@ mod dynamic_tests {
         assert!(read_array_tail(&[], 0, "p").is_err());
         assert!(read_dynamic_tail(&[], 0, "p").is_err());
         assert!(read_offset(&[], 0, "p").is_err());
+    }
+}
+
+#[cfg(test)]
+mod write_tests {
+    use super::*;
+
+    /// The hex `cast abi-encode` prints for the same value, without its `0x`.
+    fn encoded(of: impl FnOnce(&mut Vec<u8>)) -> String {
+        let mut out = Vec::new();
+        of(&mut out);
+        out.iter().map(|byte| format!("{:02x}", byte)).collect()
+    }
+
+    fn int(value: &str) -> substreams::scalar::BigInt {
+        value.parse().unwrap()
+    }
+
+    #[test]
+    fn it_writes_a_negative_int_sign_extended_across_the_word() {
+        assert_eq!(
+            encoded(|out| write_int(out, &int("-1"))),
+            "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+        );
+        assert_eq!(
+            encoded(|out| write_int(out, &int("-12345"))),
+            "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffcfc7"
+        );
+    }
+
+    #[test]
+    fn it_sign_extends_a_narrow_int_across_the_whole_word() {
+        // An `int128` fills the word rather than its declared width.
+        assert_eq!(
+            encoded(|out| write_int(out, &int("-1000000"))),
+            "fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0bdc0"
+        );
+    }
+
+    #[test]
+    fn it_writes_a_positive_int_zero_padded() {
+        assert_eq!(
+            encoded(|out| write_int(out, &int("5"))),
+            "0000000000000000000000000000000000000000000000000000000000000005"
+        );
+    }
+
+    #[test]
+    fn it_writes_the_largest_uint() {
+        assert_eq!(
+            encoded(|out| {
+                write_uint(
+                out,
+                &int("115792089237316195423570985008687907853269984665640564039457584007913129639935")
+            )
+            }),
+            "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+        );
+    }
+
+    #[test]
+    fn it_writes_zero_as_an_empty_word() {
+        assert_eq!(
+            encoded(|out| write_uint(out, &int("0"))),
+            "0000000000000000000000000000000000000000000000000000000000000000"
+        );
+        assert_eq!(
+            encoded(|out| write_int(out, &int("0"))),
+            "0000000000000000000000000000000000000000000000000000000000000000"
+        );
+    }
+
+    #[test]
+    #[should_panic(expected = "negative numbers are not supported")]
+    fn it_panics_on_a_negative_uint() {
+        let mut out = Vec::new();
+        write_uint(&mut out, &int("-1"));
+    }
+
+    #[test]
+    fn it_writes_an_address_right_aligned() {
+        let address = [
+            0xff, 0xfd, 0xb7, 0x37, 0x73, 0x45, 0x37, 0x18, 0x17, 0xf2, 0xb4, 0xdd, 0x49, 0x03,
+            0x19, 0x75, 0x5f, 0x58, 0x99, 0xec,
+        ];
+
+        assert_eq!(
+            encoded(|out| write_address(out, &address)),
+            "000000000000000000000000fffdb7377345371817f2b4dd490319755f5899ec"
+        );
+    }
+
+    #[test]
+    fn it_writes_a_bool_in_the_low_byte() {
+        assert_eq!(
+            encoded(|out| write_bool(out, &true)),
+            "0000000000000000000000000000000000000000000000000000000000000001"
+        );
+        assert_eq!(
+            encoded(|out| write_bool(out, &false)),
+            "0000000000000000000000000000000000000000000000000000000000000000"
+        );
+    }
+
+    #[test]
+    fn it_writes_fixed_bytes_padded_on_the_right() {
+        assert_eq!(
+            encoded(|out| write_fixed_bytes(out, &[0xde, 0xad, 0xbe, 0xef])),
+            "deadbeef00000000000000000000000000000000000000000000000000000000"
+        );
+    }
+
+    #[test]
+    fn it_writes_a_full_word_of_fixed_bytes_without_padding() {
+        assert_eq!(
+            encoded(|out| write_fixed_bytes(out, &[0x11; 32])),
+            "11".repeat(32)
+        );
+    }
+
+    #[test]
+    fn it_writes_a_bytes_tail_as_a_length_then_padded_content() {
+        assert_eq!(
+            encoded(|out| write_bytes_tail(out, &[0xab, 0xde, 0xff, 0x90])),
+            "0000000000000000000000000000000000000000000000000000000000000004\
+             abdeff9000000000000000000000000000000000000000000000000000000000"
+        );
+    }
+
+    #[test]
+    fn it_pads_a_bytes_tail_that_spills_into_a_second_word() {
+        let value: Vec<u8> = (1u8..=33).collect();
+
+        assert_eq!(
+            encoded(|out| write_bytes_tail(out, &value)),
+            "0000000000000000000000000000000000000000000000000000000000000021\
+             0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20\
+             2100000000000000000000000000000000000000000000000000000000000000"
+        );
+    }
+
+    #[test]
+    fn it_writes_an_empty_bytes_tail_as_a_bare_length() {
+        assert_eq!(
+            encoded(|out| write_bytes_tail(out, &[])),
+            "0000000000000000000000000000000000000000000000000000000000000000"
+        );
+    }
+
+    #[test]
+    fn it_writes_a_head_offset() {
+        assert_eq!(
+            encoded(|out| write_offset(out, 32)),
+            "0000000000000000000000000000000000000000000000000000000000000020"
+        );
+    }
+}
+
+/// Appends a 32-byte word holding `value` in its low bytes, zero-padded on the
+/// left.
+#[inline]
+pub fn write_padded(out: &mut Vec<u8>, value: &[u8]) {
+    out.extend(core::iter::repeat(0u8).take(32 - value.len()));
+    out.extend_from_slice(value);
+}
+
+/// Writes an `address` as its low 20 bytes, right-aligned in the word.
+///
+/// An input longer than 20 bytes keeps its trailing 20, which is what
+/// `ethabi::Address::from_slice` would have panicked on; a shorter one is
+/// left-padded.
+#[inline]
+pub fn write_address(out: &mut Vec<u8>, value: &[u8]) {
+    let from = value.len().saturating_sub(20);
+    write_padded(out, &value[from..]);
+}
+
+/// Writes a `uintN` as a big-endian word.
+///
+/// A negative value has no `uint` encoding, and `encode` returns bytes rather
+/// than a result, so there is nowhere to report one but a panic.
+#[inline]
+pub fn write_uint(out: &mut Vec<u8>, value: &substreams::scalar::BigInt) {
+    let (sign, bytes) = value.to_bytes_be();
+    if sign == num_bigint::Sign::Minus {
+        panic!("negative numbers are not supported");
+    }
+
+    write_word_of(out, &bytes, 0x00);
+}
+
+/// Writes an `intN` as a big-endian two's-complement word.
+///
+/// `to_signed_bytes_be` returns the minimal width that carries the value, so a
+/// negative one is sign-extended with `0xff` to fill the word rather than
+/// zero-padded.
+#[inline]
+pub fn write_int(out: &mut Vec<u8>, value: &substreams::scalar::BigInt) {
+    let bytes = value.to_signed_bytes_be();
+    let fill = if bytes.first().is_some_and(|byte| byte & 0x80 == 0x80) {
+        0xff
+    } else {
+        0x00
+    };
+
+    write_word_of(out, &bytes, fill);
+}
+
+/// Appends a word holding the low 32 bytes of `bytes`, padded on the left with
+/// `fill`.
+///
+/// A value wider than a word keeps its low 32 bytes, matching what the integer
+/// types do when they overflow their declared width.
+#[inline]
+fn write_word_of(out: &mut Vec<u8>, bytes: &[u8], fill: u8) {
+    let from = bytes.len().saturating_sub(32);
+    let value = &bytes[from..];
+
+    out.extend(core::iter::repeat(fill).take(32 - value.len()));
+    out.extend_from_slice(value);
+}
+
+/// Writes a `bool` as a word whose low byte is 0 or 1.
+#[inline]
+pub fn write_bool(out: &mut Vec<u8>, value: &bool) {
+    out.extend(core::iter::repeat(0u8).take(31));
+    out.push(*value as u8);
+}
+
+/// Writes `bytesN` as the leading `N` bytes of a word, padded on the right.
+#[inline]
+pub fn write_fixed_bytes(out: &mut Vec<u8>, value: &[u8]) {
+    out.extend_from_slice(value);
+
+    let padding = (32 - value.len() % 32) % 32;
+    out.extend(core::iter::repeat(0u8).take(padding));
+}
+
+/// Writes a head word holding `offset`, the distance from the start of the
+/// enclosing head section to the value's tail.
+#[inline]
+pub fn write_offset(out: &mut Vec<u8>, offset: usize) {
+    write_padded(out, &(offset as u64).to_be_bytes());
+}
+
+/// Writes the tail of a `bytes` or `string`: a length word, then the bytes
+/// padded out to a whole number of words.
+#[inline]
+pub fn write_bytes_tail(out: &mut Vec<u8>, value: &[u8]) {
+    write_offset(out, value.len());
+    out.extend_from_slice(value);
+
+    let padding = (32 - value.len() % 32) % 32;
+    out.extend(core::iter::repeat(0u8).take(padding));
+}
+
+/// Writes a word into the slot at `at`, taking the low 32 bytes of `bytes` and
+/// padding the rest with `fill`.
+///
+/// The slot was reserved by `reserve_head`, so its bytes already belong to the
+/// buffer and are overwritten in place. This is what lets a parameter list hold
+/// its fixed values while dynamic tails are appended past the head.
+#[inline]
+fn write_word_at(out: &mut [u8], at: usize, bytes: &[u8], fill: u8) {
+    let from = bytes.len().saturating_sub(32);
+    let value = &bytes[from..];
+    let pad = 32 - value.len();
+
+    out[at..at + pad].fill(fill);
+    out[at + pad..at + 32].copy_from_slice(value);
+}
+
+/// Writes an `address` into the slot at `at`, right-aligned in the word.
+#[inline]
+pub fn write_address_at(out: &mut [u8], at: usize, value: &[u8]) {
+    let from = value.len().saturating_sub(20);
+    write_word_at(out, at, &value[from..], 0x00);
+}
+
+/// Writes a `uintN` into the slot at `at`.
+#[inline]
+pub fn write_uint_at(out: &mut [u8], at: usize, value: &substreams::scalar::BigInt) {
+    let (sign, bytes) = value.to_bytes_be();
+    if sign == num_bigint::Sign::Minus {
+        panic!("negative numbers are not supported");
+    }
+
+    write_word_at(out, at, &bytes, 0x00);
+}
+
+/// Writes an `intN` into the slot at `at`, sign-extended across the word.
+#[inline]
+pub fn write_int_at(out: &mut [u8], at: usize, value: &substreams::scalar::BigInt) {
+    let bytes = value.to_signed_bytes_be();
+    let fill = if bytes.first().is_some_and(|byte| byte & 0x80 == 0x80) {
+        0xff
+    } else {
+        0x00
+    };
+
+    write_word_at(out, at, &bytes, fill);
+}
+
+/// Writes a `bool` into the slot at `at`, in the low byte of the word.
+#[inline]
+pub fn write_bool_at(out: &mut [u8], at: usize, value: &bool) {
+    out[at..at + 31].fill(0);
+    out[at + 31] = *value as u8;
+}
+
+/// Writes `bytesN` into the slot at `at`, the leading `N` bytes of the word.
+#[inline]
+pub fn write_fixed_bytes_at(out: &mut [u8], at: usize, value: &[u8]) {
+    let len = value.len().min(32);
+
+    out[at..at + len].copy_from_slice(&value[..len]);
+    out[at + len..at + 32].fill(0);
+}
+
+/// Opens a head section of `width` bytes, returning where it starts.
+///
+/// The section is zeroed so each parameter can be written into its own slot in
+/// any order, which is what lets a dynamic value append its tail to the same
+/// buffer and fill its offset in afterwards.
+#[inline]
+pub fn reserve_head(out: &mut Vec<u8>, width: usize) -> usize {
+    let base = out.len();
+    out.resize(base + width, 0);
+    base
+}
+
+/// Fills in the offset word of a head slot at `at`.
+///
+/// The slot was reserved by `reserve_head`, so the bytes it spans are already
+/// part of the buffer and are overwritten rather than appended. The offset is
+/// passed in rather than read from the buffer's length, so the call does not
+/// have to sit at a particular point relative to the tail it points at.
+#[inline]
+pub fn backfill_offset(out: &mut Vec<u8>, at: usize, offset: usize) {
+    out[at + 24..at + 32].copy_from_slice(&(offset as u64).to_be_bytes());
+}
+
+/// Where a value's tail begins, measured from the start of the head section it
+/// is pointed at from.
+#[inline]
+pub fn tail_offset(out: &[u8], base: usize) -> usize {
+    out.len() - base
+}
+
+#[cfg(test)]
+mod single_buffer_tests {
+    use super::*;
+
+    /// The hex of a slot written into a freshly reserved head.
+    fn slot_of(write: impl FnOnce(&mut [u8])) -> String {
+        let mut out = Vec::new();
+        reserve_head(&mut out, 32);
+        write(&mut out);
+        out.iter().map(|byte| format!("{:02x}", byte)).collect()
+    }
+
+    fn int(value: &str) -> substreams::scalar::BigInt {
+        value.parse().unwrap()
+    }
+
+    #[test]
+    fn it_writes_a_uint_into_its_slot() {
+        assert_eq!(
+            slot_of(|out| write_uint_at(out, 0, &int("42"))),
+            "000000000000000000000000000000000000000000000000000000000000002a"
+        );
+    }
+
+    #[test]
+    fn it_writes_a_negative_int_into_its_slot_sign_extended() {
+        assert_eq!(
+            slot_of(|out| write_int_at(out, 0, &int("-12345"))),
+            "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffcfc7"
+        );
+    }
+
+    #[test]
+    fn it_writes_an_address_into_its_slot_right_aligned() {
+        let address = [
+            0xff, 0xfd, 0xb7, 0x37, 0x73, 0x45, 0x37, 0x18, 0x17, 0xf2, 0xb4, 0xdd, 0x49, 0x03,
+            0x19, 0x75, 0x5f, 0x58, 0x99, 0xec,
+        ];
+
+        assert_eq!(
+            slot_of(|out| write_address_at(out, 0, &address)),
+            "000000000000000000000000fffdb7377345371817f2b4dd490319755f5899ec"
+        );
+    }
+
+    #[test]
+    fn it_writes_a_bool_into_its_slot() {
+        assert_eq!(
+            slot_of(|out| write_bool_at(out, 0, &true)),
+            "0000000000000000000000000000000000000000000000000000000000000001"
+        );
+    }
+
+    #[test]
+    fn it_writes_fixed_bytes_into_its_slot_padded_right() {
+        assert_eq!(
+            slot_of(|out| write_fixed_bytes_at(out, 0, &[0xde, 0xad, 0xbe, 0xef])),
+            "deadbeef00000000000000000000000000000000000000000000000000000000"
+        );
+    }
+
+    #[test]
+    fn it_overwrites_a_slot_that_already_held_bytes() {
+        let mut out = vec![0xff; 64];
+        write_uint_at(&mut out, 32, &int("1"));
+
+        assert_eq!(&out[..32], &[0xff; 32]);
+        assert_eq!(
+            out[32..]
+                .iter()
+                .map(|b| format!("{:02x}", b))
+                .collect::<String>(),
+            "0000000000000000000000000000000000000000000000000000000000000001"
+        );
+    }
+
+    #[test]
+    fn it_writes_each_slot_of_a_wider_head_independently() {
+        let mut out = Vec::new();
+        reserve_head(&mut out, 64);
+
+        write_uint_at(&mut out, 0, &int("1"));
+        write_uint_at(&mut out, 32, &int("2"));
+
+        assert_eq!(&out[24..32], &1u64.to_be_bytes());
+        assert_eq!(&out[56..64], &2u64.to_be_bytes());
+    }
+
+    #[test]
+    fn it_reserves_a_zeroed_head_section() {
+        let mut out = Vec::new();
+        let base = reserve_head(&mut out, 64);
+
+        assert_eq!(base, 0);
+        assert_eq!(out, vec![0u8; 64]);
+    }
+
+    #[test]
+    fn it_reserves_past_content_already_written() {
+        let mut out = vec![0xff; 32];
+        let base = reserve_head(&mut out, 32);
+
+        assert_eq!(base, 32);
+        assert_eq!(out.len(), 64);
+        assert_eq!(&out[..32], &[0xff; 32]);
+        assert_eq!(&out[32..], &[0u8; 32]);
+    }
+
+    #[test]
+    fn it_backfills_an_offset_measured_from_the_head_start() {
+        let mut out = Vec::new();
+        let base = reserve_head(&mut out, 32);
+
+        let at = tail_offset(&out, base);
+        write_bytes_tail(&mut out, b"hi");
+        backfill_offset(&mut out, base, at);
+
+        // The tail begins one word past the head, so the slot holds 32.
+        assert_eq!(&out[24..32], &32u64.to_be_bytes());
+    }
+
+    #[test]
+    fn it_backfills_each_slot_of_a_wider_head() {
+        let mut out = Vec::new();
+        let base = reserve_head(&mut out, 64);
+
+        let first = tail_offset(&out, base);
+        write_bytes_tail(&mut out, b"first");
+        backfill_offset(&mut out, base, first);
+
+        let second = tail_offset(&out, base);
+        write_bytes_tail(&mut out, b"second");
+        backfill_offset(&mut out, base + 32, second);
+
+        assert_eq!(&out[24..32], &64u64.to_be_bytes());
+        assert_eq!(&out[56..64], &128u64.to_be_bytes());
+    }
+
+    #[test]
+    fn it_measures_a_nested_offset_from_its_own_base() {
+        let mut out = vec![0xaa; 96];
+        let base = reserve_head(&mut out, 32);
+
+        let at = tail_offset(&out, base);
+        write_bytes_tail(&mut out, b"x");
+        backfill_offset(&mut out, base, at);
+
+        // The content before the section does not shift the offset.
+        assert_eq!(&out[96 + 24..96 + 32], &32u64.to_be_bytes());
     }
 }
 

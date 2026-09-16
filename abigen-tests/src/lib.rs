@@ -2039,3 +2039,191 @@ mod match_and_decode_shapes {
         assert_eq!(decoded.len(), 1);
     }
 }
+
+#[cfg(test)]
+mod encode_parity {
+    use crate::abi::tests::functions;
+    use ethabi::Token;
+    use substreams::scalar::BigInt;
+
+    /// The encoded parameters, past the four selector bytes. The selector comes
+    /// from the signature rather than the encoder, so only what follows it is
+    /// worth comparing.
+    fn ours(encoded: Vec<u8>) -> Vec<u8> {
+        encoded[4..].to_vec()
+    }
+
+    fn theirs(tokens: &[Token]) -> Vec<u8> {
+        ethabi::encode(tokens)
+    }
+
+    fn uint(value: u64) -> BigInt {
+        BigInt::from(value)
+    }
+
+    fn eth_uint(value: u64) -> Token {
+        Token::Uint(ethabi::Uint::from(value))
+    }
+
+    fn text(value: &str) -> Token {
+        Token::String(value.to_string())
+    }
+
+    #[test]
+    fn it_encodes_a_string_array_as_ethabi_does() {
+        let call = functions::FunStringArray {
+            a: vec!["first".to_string(), "second".to_string()],
+        };
+
+        assert_eq!(
+            ours(call.encode()),
+            theirs(&[Token::Array(vec![text("first"), text("second")])])
+        );
+    }
+
+    #[test]
+    fn it_encodes_an_empty_string_array_as_ethabi_does() {
+        let call = functions::FunStringArray { a: vec![] };
+
+        assert_eq!(ours(call.encode()), theirs(&[Token::Array(vec![])]));
+    }
+
+    #[test]
+    fn it_encodes_string_array_elements_of_uneven_length() {
+        let long = "this one is longer than a single word of thirty two";
+        let call = functions::FunStringArray {
+            a: vec!["a".to_string(), long.to_string(), "z".to_string()],
+        };
+
+        assert_eq!(
+            ours(call.encode()),
+            theirs(&[Token::Array(vec![text("a"), text(long), text("z")])])
+        );
+    }
+
+    #[test]
+    fn it_encodes_a_bytes_array_as_ethabi_does() {
+        let call = functions::FunBytesArray {
+            a: vec![vec![0xde, 0xad], vec![0xbe, 0xef, 0x01, 0x02, 0x03]],
+        };
+
+        assert_eq!(
+            ours(call.encode()),
+            theirs(&[Token::Array(vec![
+                Token::Bytes(vec![0xde, 0xad]),
+                Token::Bytes(vec![0xbe, 0xef, 0x01, 0x02, 0x03]),
+            ])])
+        );
+    }
+
+    #[test]
+    fn it_encodes_a_fixed_array_of_strings_without_a_length_word() {
+        let call = functions::FunStringFixedArray {
+            a: ["alpha".to_string(), "beta".to_string()],
+        };
+
+        assert_eq!(
+            ours(call.encode()),
+            theirs(&[Token::FixedArray(vec![text("alpha"), text("beta")])])
+        );
+    }
+
+    #[test]
+    fn it_encodes_an_array_whose_elements_are_arrays() {
+        let call = functions::FunUintNestedArray {
+            a: vec![vec![uint(1), uint(2)], vec![uint(3)]],
+        };
+
+        assert_eq!(
+            ours(call.encode()),
+            theirs(&[Token::Array(vec![
+                Token::Array(vec![eth_uint(1), eth_uint(2)]),
+                Token::Array(vec![eth_uint(3)]),
+            ])])
+        );
+    }
+
+    #[test]
+    fn it_encodes_a_nested_array_holding_an_empty_inner() {
+        let call = functions::FunUintNestedArray {
+            a: vec![vec![], vec![uint(7)]],
+        };
+
+        assert_eq!(
+            ours(call.encode()),
+            theirs(&[Token::Array(vec![
+                Token::Array(vec![]),
+                Token::Array(vec![eth_uint(7)]),
+            ])])
+        );
+    }
+
+    #[test]
+    fn it_encodes_a_tuple_whose_leading_field_is_dynamic() {
+        let call = functions::FunTupleWithString {
+            a: ("hello".to_string(), uint(42)),
+        };
+
+        assert_eq!(
+            ours(call.encode()),
+            theirs(&[Token::Tuple(vec![text("hello"), eth_uint(42)])])
+        );
+    }
+
+    #[test]
+    fn it_encodes_a_tuple_of_two_dynamic_fields() {
+        let call = functions::FunTupleTwoDynamic {
+            a: ("hello".to_string(), vec![0x01, 0x02, 0x03]),
+        };
+
+        assert_eq!(
+            ours(call.encode()),
+            theirs(&[Token::Tuple(vec![
+                text("hello"),
+                Token::Bytes(vec![0x01, 0x02, 0x03]),
+            ])])
+        );
+    }
+
+    #[test]
+    fn it_measures_a_later_tail_past_the_one_before_it() {
+        let call = functions::FunMixedLeadingDynamic {
+            a: "leading".to_string(),
+            b: uint(99),
+            c: vec![0xaa; 40],
+        };
+
+        assert_eq!(
+            ours(call.encode()),
+            theirs(&[text("leading"), eth_uint(99), Token::Bytes(vec![0xaa; 40]),])
+        );
+    }
+
+    #[test]
+    fn it_measures_an_array_tail_across_a_wider_head_section() {
+        let call = functions::FunStringArrayThenUint {
+            a: vec!["one".to_string(), "two".to_string()],
+            b: uint(5),
+        };
+
+        assert_eq!(
+            ours(call.encode()),
+            theirs(&[Token::Array(vec![text("one"), text("two")]), eth_uint(5),])
+        );
+    }
+
+    #[test]
+    fn it_encodes_an_array_of_dynamic_tuples() {
+        let call = functions::FunTupleArray {
+            a: vec![("x".to_string(),), ("yy".to_string(),)],
+        };
+
+        assert_eq!(
+            ours(call.encode()),
+            theirs(&[Token::Array(vec![
+                Token::Tuple(vec![text("x")]),
+                Token::Tuple(vec![text("yy")]),
+            ])])
+        );
+    }
+}
