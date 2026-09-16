@@ -54,7 +54,7 @@ pub use substreams_ethereum_abigen::build::Abigen;
 ///         pub struct Transfer {
 ///             pub from: Vec<u8>,
 ///             pub to: Vec<u8>,
-///             pub token_id: ethabi::Uint,
+///             pub token_id: substreams::scalar::BigInt,
 ///         }
 ///
 ///         impl Transfer {

@@ -12,17 +12,14 @@ extern crate proc_macro;
 
 mod assertions;
 pub mod build;
-// mod constructor;
 mod contract;
 mod event;
 mod function;
 
 use anyhow::format_err;
-// use ethabi::{Contract, Error, Param, ParamType, Result};
 use ethabi::{Contract, Error, Param, ParamType};
 use heck::ToSnakeCase;
 use proc_macro2::Span;
-// use heck::ToSnakeCase;
 use quote::quote;
 use std::{
     borrow::Cow,
@@ -62,28 +59,6 @@ fn normalize_path<S: AsRef<Path>>(relative_path: S) -> Result<PathBuf, anyhow::E
     path.push(relative_path);
     Ok(path)
 }
-
-// fn to_ethabi_param_vec<'a, P: 'a>(params: P) -> proc_macro2::TokenStream
-// where
-//     P: IntoIterator<Item = &'a Param>,
-// {
-//     let p = params
-//         .into_iter()
-//         .map(|x| {
-//             let name = &x.name;
-//             let kind = to_syntax_string(&x.kind);
-//             quote! {
-//                 ethabi::Param {
-//                     name: #name.to_owned(),
-//                     kind: #kind,
-//                     internal_type: None
-//                 }
-//             }
-//         })
-//         .collect::<Vec<_>>();
-
-//     quote! { vec![ #(#p),* ] }
-// }
 
 fn rust_type_indexed(input: &ParamType) -> proc_macro2::TokenStream {
     match input.is_dynamic() {
@@ -473,67 +448,11 @@ fn is_long_tuple(input: &ParamType) -> bool {
     }
 }
 
-// fn template_param_type(input: &ParamType, index: usize) -> proc_macro2::TokenStream {
-//     let t_ident = syn::Ident::new(&format!("T{}", index), Span::call_site());
-//     let u_ident = syn::Ident::new(&format!("U{}", index), Span::call_site());
-//     match *input {
-//         ParamType::Address => quote! { #t_ident: Into<ethabi::Address> },
-//         ParamType::Bytes => quote! { #t_ident: Into<ethabi::Bytes> },
-//         ParamType::FixedBytes(32) => quote! { #t_ident: Into<ethabi::Hash> },
-//         ParamType::FixedBytes(size) => quote! { #t_ident: Into<[u8; #size]> },
-//         ParamType::Int(_) => quote! { #t_ident: Into<ethabi::Int> },
-//         ParamType::Uint(_) => quote! { #t_ident: Into<ethabi::Uint> },
-//         ParamType::Bool => quote! { #t_ident: Into<bool> },
-//         ParamType::String => quote! { #t_ident: Into<String> },
-//         ParamType::Array(ref kind) => {
-//             let t = rust_type(&*kind);
-//             quote! {
-//                 #t_ident: IntoIterator<Item = #u_ident>, #u_ident: Into<#t>
-//             }
-//         }
-//         ParamType::FixedArray(ref kind, size) => {
-//             let t = rust_type(&*kind);
-//             quote! {
-//                 #t_ident: Into<[#u_ident; #size]>, #u_ident: Into<#t>
-//             }
-//         }
-//         ParamType::Tuple(_) => {
-//             unimplemented!(
-//                 "Tuples are not supported. https://github.com/openethereum/ethabi/issues/175"
-//             )
-//         }
-//     }
-// }
-
-// fn from_template_param(input: &ParamType, name: &syn::Ident) -> proc_macro2::TokenStream {
-//     match *input {
-//         ParamType::Array(_) => {
-//             quote! { self.#name.into_iter().map(Into::into).collect::<Vec<_>>() }
-//         }
-//         ParamType::FixedArray(_, _) => {
-//             quote! { (Box::new(self.#name.into()) as Box<[_]>).into_vec().into_iter().map(Into::into).collect::<Vec<_>>() }
-//         }
-//         ParamType::Address => quote! { ethabi::Address::from_slice(self.#name.as_ref() ) },
-//         _ => firehose_into_ethabi_type(input, quote! { self.#name }),
-//     }
-// }
-
-// fn firehose_into_ethabi_type(
-//     input: &ParamType,
-//     variable: proc_macro2::TokenStream,
-// ) -> proc_macro2::TokenStream {
-//     match *input {
-//         ParamType::Address => quote! { ethabi::Address::from_slice(#variable) },
-//         ParamType::String => quote! { #variable.clone() },
-//         _ => quote! {#variable.into() },
-//     }
-// }
-
 /// Emits a read of `kind` at a byte offset known at generation time, for the
 /// parameters of an event whose data section is entirely fixed-size.
 ///
 /// Returns `None` for a dynamic type, which has no such offset; the caller
-/// falls back to `ethabi::decode` for the whole event.
+/// reads it through its head word instead.
 fn read_fixed_at(
     kind: &ParamType,
     name: &str,
@@ -733,14 +652,6 @@ fn param_names(inputs: &[Param]) -> Vec<syn::Ident> {
         .collect()
 }
 
-// fn get_template_names(kinds: &[proc_macro2::TokenStream]) -> Vec<syn::Ident> {
-//     kinds
-//         .iter()
-//         .enumerate()
-//         .map(|(index, _)| syn::Ident::new(&format!("T{}", index), Span::call_site()))
-//         .collect()
-// }
-
 fn get_output_kinds(outputs: &[Param]) -> proc_macro2::TokenStream {
     match outputs.len() {
         0 => quote! {()},
@@ -771,16 +682,6 @@ mod tests {
     use ethabi::ParamType;
 
     use crate::{fixed_data_size, min_data_size};
-
-    #[test]
-    fn from_firehose_types_to_ethabi_token() {
-        use substreams::hex;
-
-        let firehose_address = hex!("0000000000000000000000000000000000000000").to_vec();
-
-        // Compilation is enough for those tests
-        ethabi::Token::Address(ethabi::Address::from_slice(firehose_address.as_ref()));
-    }
 
     #[test]
     fn it_fixed_data_size_works() {

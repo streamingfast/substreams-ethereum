@@ -610,6 +610,7 @@ impl SpentItem {
 
 If you struggle with something, reach out to us on Discord and we are going to help you out.
 
+</details>
 
 ## Release
 
