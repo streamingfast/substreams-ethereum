@@ -14,7 +14,6 @@ rust-version.workspace = true
 [dependencies]
 buffa = { version = "0.9", default-features = false, features = ["std", "fast-utf8"] }
 buffa-types = { version = "0.9", default-features = false }
-ethabi = "17.0"
 substreams = { workspace = true }
 num-bigint = "0.4"
 bigdecimal = "0.3"
@@ -22,6 +21,3 @@ bigdecimal = "0.3"
 [dev-dependencies]
 anyhow = "1"
 
-# Required so that ethabi > ethereum-types build correctly under wasm32-unknown-unknown
-[target.wasm32-unknown-unknown.dependencies]
-getrandom = { version = "0.2.10", features = ["custom"] }

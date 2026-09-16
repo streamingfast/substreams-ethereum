@@ -10,22 +10,19 @@
 
 extern crate proc_macro;
 
+pub mod abi;
 mod assertions;
 pub mod build;
-// mod constructor;
 mod contract;
 mod event;
 mod function;
 
-use anyhow::format_err;
-// use ethabi::{Contract, Error, Param, ParamType, Result};
-use ethabi::{Contract, Error, Param, ParamType};
+use crate::abi::{Contract, Param, ParamType};
+use anyhow::{anyhow, format_err};
 use heck::ToSnakeCase;
 use proc_macro2::Span;
-// use heck::ToSnakeCase;
-use quote::{quote, ToTokens};
+use quote::quote;
 use std::{
-    borrow::Cow,
     env, fs,
     path::{Path, PathBuf},
 };
@@ -36,10 +33,10 @@ pub fn generate_abi_code<S: AsRef<str>>(
 ) -> Result<proc_macro2::TokenStream, anyhow::Error> {
     let normalized_path = normalize_path(path.as_ref())?;
     let source_file = fs::File::open(&normalized_path).map_err(|_| {
-        Error::Other(Cow::Owned(format!(
+        anyhow!(
             "Cannot load contract abi from `{}`",
             normalized_path.display()
-        )))
+        )
     })?;
     let contract = Contract::load(source_file)?;
     let c = contract::Contract::from(&contract);
@@ -62,52 +59,6 @@ fn normalize_path<S: AsRef<Path>>(relative_path: S) -> Result<PathBuf, anyhow::E
     path.push(relative_path);
     Ok(path)
 }
-
-fn to_syntax_string(param_type: &ethabi::ParamType) -> proc_macro2::TokenStream {
-    match *param_type {
-        ParamType::Address => quote! { ethabi::ParamType::Address },
-        ParamType::Bytes => quote! { ethabi::ParamType::Bytes },
-        ParamType::Int(x) => quote! { ethabi::ParamType::Int(#x) },
-        ParamType::Uint(x) => quote! { ethabi::ParamType::Uint(#x) },
-        ParamType::Bool => quote! { ethabi::ParamType::Bool },
-        ParamType::String => quote! { ethabi::ParamType::String },
-        ParamType::Array(ref param_type) => {
-            let param_type_quote = to_syntax_string(param_type);
-            quote! { ethabi::ParamType::Array(Box::new(#param_type_quote)) }
-        }
-        ParamType::FixedBytes(x) => quote! { ethabi::ParamType::FixedBytes(#x) },
-        ParamType::FixedArray(ref param_type, ref x) => {
-            let param_type_quote = to_syntax_string(param_type);
-            quote! { ethabi::ParamType::FixedArray(Box::new(#param_type_quote), #x) }
-        }
-        ParamType::Tuple(ref v) => {
-            let param_type_quotes = v.iter().map(|x| to_syntax_string(x));
-            quote! { ethabi::ParamType::Tuple(vec![#(#param_type_quotes),*]) }
-        }
-    }
-}
-
-// fn to_ethabi_param_vec<'a, P: 'a>(params: P) -> proc_macro2::TokenStream
-// where
-//     P: IntoIterator<Item = &'a Param>,
-// {
-//     let p = params
-//         .into_iter()
-//         .map(|x| {
-//             let name = &x.name;
-//             let kind = to_syntax_string(&x.kind);
-//             quote! {
-//                 ethabi::Param {
-//                     name: #name.to_owned(),
-//                     kind: #kind,
-//                     internal_type: None
-//                 }
-//             }
-//         })
-//         .collect::<Vec<_>>();
-
-//     quote! { vec![ #(#p),* ] }
-// }
 
 fn rust_type_indexed(input: &ParamType) -> proc_macro2::TokenStream {
     match input.is_dynamic() {
@@ -143,6 +94,20 @@ fn rust_type(input: &ParamType) -> proc_macro2::TokenStream {
     }
 }
 
+/// The largest data section a generated guard will describe.
+///
+/// A `count` in a fixed array comes from the ABI file, so a size computed from it
+/// can exceed what a `usize` holds on the `wasm32` target the generated code runs
+/// on, and the literal baked into a guard has to stay representable there. No log
+/// approaches this, so clamping only affects inputs that could not decode anyway.
+const MAX_DATA_SIZE: usize = u32::MAX as usize;
+
+/// The most elements a fixed array may declare before `abigen` refuses it.
+///
+/// Reads are emitted one per element, so a large count is a build that never
+/// finishes rather than a decoder that misbehaves.
+const MAX_FIXED_ARRAY_ELEMENTS: usize = 4096;
+
 fn fixed_data_size(input: &ParamType) -> Option<usize> {
     match input {
         ParamType::Address
@@ -151,17 +116,29 @@ fn fixed_data_size(input: &ParamType) -> Option<usize> {
         | ParamType::Bool
         | ParamType::FixedBytes(_) => Some(32),
         ParamType::Bytes | ParamType::String | ParamType::Array(_) => None,
+        // The element is itself sized here rather than assumed to have a size: a
+        // non-dynamic element can still be an array whose own size is past what a
+        // guard may describe, and that answer has to travel outwards.
         ParamType::FixedArray(ref sub_type, count) => match sub_type.is_dynamic() {
             true => None,
-            false => Some(
-                count * fixed_data_size(sub_type).expect("not dynamic, will always be Some(_)"),
-            ),
+            false => count
+                .checked_mul(fixed_data_size(sub_type)?)
+                .filter(|size| *size <= MAX_DATA_SIZE),
         },
         ParamType::Tuple(ref types) => {
             if types.iter().any(ParamType::is_dynamic) {
                 return None;
             }
-            Some(types.iter().map(fixed_data_size).map(Option::unwrap).sum())
+
+            // A field can be a fixed array whose own size is past what a guard may
+            // describe, and a tuple of those sums past it too, so neither the field
+            // sizes nor their total are taken for granted here.
+            types
+                .iter()
+                .try_fold(0usize, |total, kind| {
+                    total.checked_add(fixed_data_size(kind)?)
+                })
+                .filter(|size| *size <= MAX_DATA_SIZE)
         }
     }
 }
@@ -181,8 +158,12 @@ fn min_data_size(input: &ParamType) -> usize {
         //
         // If the sub type is not dynamic, we use its fixed data size.
         ParamType::FixedArray(ref sub_type, count) => match sub_type.is_dynamic() {
-            true => 32 + count * min_data_size(sub_type),
-            false => fixed_data_size(input).expect("not dynamic, will always be Some(_)"),
+            true => {
+                32 + count
+                    .saturating_mul(min_data_size(sub_type))
+                    .min(MAX_DATA_SIZE)
+            }
+            false => fixed_data_size(input).unwrap_or(MAX_DATA_SIZE),
         },
         // Those are dynamic type meaning there is first an offset where to find the data written (32 bytes)
         // and then minimally a length (32 bytes) so minimum size is `size(offset) + size(length)` which is
@@ -190,6 +171,257 @@ fn min_data_size(input: &ParamType) -> usize {
         ParamType::Bytes | ParamType::String | ParamType::Array(_) => 32 + 32,
         ParamType::Tuple(ref types) => types.iter().map(min_data_size).sum(),
     }
+}
+
+/// Emits a write of `value` into the head and tail buffers named by `heads` and
+/// `tails`.
+///
+/// A fixed-size type writes itself into the head. A dynamic one writes a head
+/// word holding the distance from the start of the head section to its own tail,
+/// which is the head's full width plus whatever tails precede it, then appends
+/// its content to the tail buffer. The head width is known from the ABI, so the
+/// offset is computed rather than read back.
+fn write_at(
+    kind: &ParamType,
+    value: &proc_macro2::TokenStream,
+    out: &syn::Ident,
+    base: &syn::Ident,
+    slot: &proc_macro2::TokenStream,
+    depth: usize,
+) -> proc_macro2::TokenStream {
+    if !kind.is_dynamic() {
+        return write_fixed(kind, value, out, base, slot);
+    }
+
+    let tail = write_tail(kind, value, out, depth);
+
+    quote! {
+        {
+            let at = substreams_ethereum::abi::tail_offset(&#out, #base);
+            #tail;
+            substreams_ethereum::abi::backfill_offset(&mut #out, #base + #slot, at);
+        }
+    }
+}
+
+/// Emits the write of a fixed-size type into the head slot at `base + slot`.
+///
+/// The slot was reserved before any tail was appended, so the value is written
+/// into bytes the buffer already holds rather than pushed onto its end.
+fn write_fixed(
+    kind: &ParamType,
+    value: &proc_macro2::TokenStream,
+    out: &syn::Ident,
+    base: &syn::Ident,
+    slot: &proc_macro2::TokenStream,
+) -> proc_macro2::TokenStream {
+    match kind {
+        ParamType::Address => quote! {
+            substreams_ethereum::abi::write_address_at(&mut #out, #base + #slot, &#value)
+        },
+        ParamType::Uint(_) => quote! {
+            substreams_ethereum::abi::write_uint_at(&mut #out, #base + #slot, &#value)
+        },
+        ParamType::Int(_) => quote! {
+            substreams_ethereum::abi::write_int_at(&mut #out, #base + #slot, &#value)
+        },
+        ParamType::Bool => quote! {
+            substreams_ethereum::abi::write_bool_at(&mut #out, #base + #slot, &#value)
+        },
+        ParamType::FixedBytes(_) => quote! {
+            substreams_ethereum::abi::write_fixed_bytes_at(
+                &mut #out,
+                #base + #slot,
+                #value.as_ref(),
+            )
+        },
+        // A fixed array or tuple of fixed-size elements spans several slots of
+        // the head, one after another, with no offset word of its own.
+        ParamType::FixedArray(inner, size) => {
+            assert!(
+                *size <= MAX_FIXED_ARRAY_ELEMENTS,
+                "the ABI declares a fixed array of {} elements, above the {} `abigen` will \
+                 generate writes for",
+                size,
+                MAX_FIXED_ARRAY_ELEMENTS
+            );
+
+            let stride = element_stride(inner);
+            let element = write_fixed(
+                inner,
+                &quote! { element },
+                out,
+                base,
+                &quote! { #slot + index * #stride },
+            );
+
+            quote! {
+                for (index, element) in #value.iter().enumerate() {
+                    #element;
+                }
+            }
+        }
+        ParamType::Tuple(fields) => {
+            let mut at = 0usize;
+            let writes: Vec<_> = fields
+                .iter()
+                .enumerate()
+                .map(|(index, field)| {
+                    let index = Index::from(index);
+                    let within = syn::Index::from(at);
+                    at += element_stride(field);
+
+                    write_fixed(
+                        field,
+                        &quote! { #value.#index },
+                        out,
+                        base,
+                        &quote! { #slot + #within },
+                    )
+                })
+                .collect();
+
+            quote! {
+                {
+                    #(#writes;)*
+                }
+            }
+        }
+        ParamType::Bytes | ParamType::String | ParamType::Array(_) => {
+            unreachable!("dynamic types are written through their tail")
+        }
+    }
+}
+
+/// Emits the write of a dynamic value's tail.
+///
+/// An array's elements form a head section of their own, so a dynamic element
+/// nests the same two-buffer construction against that section rather than the
+/// enclosing one.
+fn write_tail(
+    kind: &ParamType,
+    value: &proc_macro2::TokenStream,
+    out: &syn::Ident,
+    depth: usize,
+) -> proc_macro2::TokenStream {
+    // A tail can hold another tail, and each level measures its own offsets from
+    // where its head section starts, so every level names that position after its
+    // own depth rather than shadowing the level above.
+    let base = buffer_ident("base", depth);
+    let element = element_ident(depth);
+
+    match kind {
+        ParamType::Bytes => quote! {
+            substreams_ethereum::abi::write_bytes_tail(&mut #out, &#value)
+        },
+        ParamType::String => quote! {
+            substreams_ethereum::abi::write_bytes_tail(&mut #out, #value.as_bytes())
+        },
+        // An array's elements form a head section of their own, one stride per
+        // element, so a dynamic element's offset is measured from there rather
+        // than from the enclosing list.
+        ParamType::Array(inner) => {
+            let stride_of_inner = element_stride(inner);
+            let write_one = write_element(inner, out, &base, depth);
+
+            quote! {
+                {
+                    let count = #value.len();
+                    substreams_ethereum::abi::write_offset(&mut #out, count);
+
+                    let #base = substreams_ethereum::abi::reserve_head(
+                        &mut #out,
+                        count * #stride_of_inner,
+                    );
+
+                    for (index, #element) in #value.iter().enumerate() {
+                        let slot = index * #stride_of_inner;
+                        #write_one;
+                    }
+                }
+            }
+        }
+        // A fixed array or tuple is dynamic only because one of its elements is,
+        // so it has no length word; its elements are laid out head-then-tail the
+        // way a parameter list is.
+        ParamType::FixedArray(inner, size) => {
+            let stride_of_inner = element_stride(inner);
+            let head_width = size.saturating_mul(stride_of_inner);
+            let write_one = write_element(inner, out, &base, depth);
+
+            quote! {
+                {
+                    let #base = substreams_ethereum::abi::reserve_head(&mut #out, #head_width);
+
+                    for (index, #element) in #value.iter().enumerate() {
+                        let slot = index * #stride_of_inner;
+                        #write_one;
+                    }
+                }
+            }
+        }
+        ParamType::Tuple(fields) => {
+            let head_width: usize = fields.iter().map(element_stride).sum();
+
+            let mut slot = 0usize;
+            let writes: Vec<_> = fields
+                .iter()
+                .enumerate()
+                .map(|(index, field)| {
+                    let index = Index::from(index);
+                    let at = syn::Index::from(slot);
+                    slot += element_stride(field);
+
+                    write_at(
+                        field,
+                        &quote! { #value.#index },
+                        out,
+                        &base,
+                        &quote! { #at },
+                        depth + 1,
+                    )
+                })
+                .collect();
+
+            quote! {
+                {
+                    let #base = substreams_ethereum::abi::reserve_head(&mut #out, #head_width);
+                    #(#writes;)*
+                }
+            }
+        }
+        _ => unreachable!("a fixed-size type is written into the head"),
+    }
+}
+
+/// Emits the write of one element of an array into the buffer its enclosing tail
+/// reserved a head section in.
+fn write_element(
+    inner: &ParamType,
+    out: &syn::Ident,
+    base: &syn::Ident,
+    depth: usize,
+) -> proc_macro2::TokenStream {
+    let element = element_ident(depth);
+
+    write_at(
+        inner,
+        &quote! { #element },
+        out,
+        base,
+        &quote! { slot },
+        depth + 1,
+    )
+}
+
+/// A position a nesting level measures its own offsets from.
+fn buffer_ident(role: &str, depth: usize) -> syn::Ident {
+    syn::Ident::new(&format!("{}_{}", role, depth), Span::call_site())
+}
+
+/// The loop variable a nesting level binds each element to.
+fn element_ident(depth: usize) -> syn::Ident {
+    syn::Ident::new(&format!("element_{}", depth), Span::call_site())
 }
 
 /// Check if the given ParamType (recursively navigating through the types if necessary)
@@ -216,215 +448,167 @@ fn is_long_tuple(input: &ParamType) -> bool {
     }
 }
 
-// fn template_param_type(input: &ParamType, index: usize) -> proc_macro2::TokenStream {
-//     let t_ident = syn::Ident::new(&format!("T{}", index), Span::call_site());
-//     let u_ident = syn::Ident::new(&format!("U{}", index), Span::call_site());
-//     match *input {
-//         ParamType::Address => quote! { #t_ident: Into<ethabi::Address> },
-//         ParamType::Bytes => quote! { #t_ident: Into<ethabi::Bytes> },
-//         ParamType::FixedBytes(32) => quote! { #t_ident: Into<ethabi::Hash> },
-//         ParamType::FixedBytes(size) => quote! { #t_ident: Into<[u8; #size]> },
-//         ParamType::Int(_) => quote! { #t_ident: Into<ethabi::Int> },
-//         ParamType::Uint(_) => quote! { #t_ident: Into<ethabi::Uint> },
-//         ParamType::Bool => quote! { #t_ident: Into<bool> },
-//         ParamType::String => quote! { #t_ident: Into<String> },
-//         ParamType::Array(ref kind) => {
-//             let t = rust_type(&*kind);
-//             quote! {
-//                 #t_ident: IntoIterator<Item = #u_ident>, #u_ident: Into<#t>
-//             }
-//         }
-//         ParamType::FixedArray(ref kind, size) => {
-//             let t = rust_type(&*kind);
-//             quote! {
-//                 #t_ident: Into<[#u_ident; #size]>, #u_ident: Into<#t>
-//             }
-//         }
-//         ParamType::Tuple(_) => {
-//             unimplemented!(
-//                 "Tuples are not supported. https://github.com/openethereum/ethabi/issues/175"
-//             )
-//         }
-//     }
-// }
-
-// fn from_template_param(input: &ParamType, name: &syn::Ident) -> proc_macro2::TokenStream {
-//     match *input {
-//         ParamType::Array(_) => {
-//             quote! { self.#name.into_iter().map(Into::into).collect::<Vec<_>>() }
-//         }
-//         ParamType::FixedArray(_, _) => {
-//             quote! { (Box::new(self.#name.into()) as Box<[_]>).into_vec().into_iter().map(Into::into).collect::<Vec<_>>() }
-//         }
-//         ParamType::Address => quote! { ethabi::Address::from_slice(self.#name.as_ref() ) },
-//         _ => firehose_into_ethabi_type(input, quote! { self.#name }),
-//     }
-// }
-
-// fn firehose_into_ethabi_type(
-//     input: &ParamType,
-//     variable: proc_macro2::TokenStream,
-// ) -> proc_macro2::TokenStream {
-//     match *input {
-//         ParamType::Address => quote! { ethabi::Address::from_slice(#variable) },
-//         ParamType::String => quote! { #variable.clone() },
-//         _ => quote! {#variable.into() },
-//     }
-// }
-
-fn to_token(name: &proc_macro2::TokenStream, kind: &ParamType) -> proc_macro2::TokenStream {
-    match *kind {
-        ParamType::Address => {
-            quote! { ethabi::Token::Address(ethabi::Address::from_slice(&#name)) }
+/// Emits a read of `kind` at a byte offset known at generation time, for the
+/// parameters of an event whose data section is entirely fixed-size.
+///
+/// Returns `None` for a dynamic type, which has no such offset; the caller
+/// reads it through its head word instead.
+fn read_fixed_at(
+    kind: &ParamType,
+    name: &str,
+    data: &proc_macro2::TokenStream,
+    offset: &proc_macro2::TokenStream,
+) -> Option<proc_macro2::TokenStream> {
+    Some(match kind {
+        ParamType::Address => quote! {
+            substreams_ethereum::abi::read_address(#data, #offset, #name)?
+        },
+        ParamType::Uint(_) => quote! {
+            substreams_ethereum::abi::read_uint(#data, #offset, #name)?
+        },
+        ParamType::Int(_) => quote! {
+            substreams_ethereum::abi::read_int(#data, #offset, #name)?
+        },
+        ParamType::Bool => quote! {
+            substreams_ethereum::abi::read_bool(#data, #offset, #name)?
+        },
+        ParamType::FixedBytes(size) => {
+            let size = syn::Index::from(*size);
+            quote! {
+                substreams_ethereum::abi::read_fixed_bytes::<#size>(#data, #offset, #name)?
+            }
         }
-        ParamType::Bytes => quote! { ethabi::Token::Bytes(#name.clone()) },
-        ParamType::FixedBytes(_) => quote! { ethabi::Token::FixedBytes(#name.as_ref().to_vec()) },
-        ParamType::Int(_) => {
-            // The check non_full_signed_bytes[0] & 0x80 == 0x80 is checking if the leftmost bit of the first byte is set.
-            // If it is, the number is negative and full_signed_bytes_init is set to 0xff. Otherwise, it's set to 0x00.
+        _ => return None,
+    })
+}
+
+/// Emits a read of any parameter at `offset` words into `data`.
+///
+/// A head word sits at a known offset whatever the type; a dynamic type spends it
+/// on a pointer to its tail and is read from there, which is why the recursive
+/// calls start again at offset zero against a different slice.
+fn read_at(
+    kind: &ParamType,
+    name: &str,
+    data: &proc_macro2::TokenStream,
+    offset: &proc_macro2::TokenStream,
+) -> proc_macro2::TokenStream {
+    if let Some(fixed) = read_fixed_at(kind, name, data, offset) {
+        return fixed;
+    }
+
+    match kind {
+        ParamType::Bytes => quote! {
+            substreams_ethereum::abi::read_bytes(#data, #offset, #name)?
+        },
+        ParamType::String => quote! {
+            substreams_ethereum::abi::read_string(#data, #offset, #name)?
+        },
+        ParamType::Array(inner) => {
+            // A dynamic element carries a head word holding an offset measured from
+            // the start of the array's tail, so every element is read against that
+            // one slice at an advancing offset rather than against a slice of its
+            // own. Re-slicing per element would move what those offsets resolve
+            // against.
+            let element = read_at(inner, name, &quote! { tail }, &quote! { at });
+            let step = element_stride(inner);
+
             quote! {
                 {
-                    let non_full_signed_bytes = #name.to_signed_bytes_be();
-                    let full_signed_bytes_init = if non_full_signed_bytes[0] & 0x80 == 0x80 { 0xff } else { 0x00 };
-                    let mut full_signed_bytes = [full_signed_bytes_init as u8; 32];
-                    non_full_signed_bytes.into_iter().rev().enumerate().for_each(|(i, byte)| full_signed_bytes[31 - i] = byte);
+                    let (tail, count) = substreams_ethereum::abi::read_array_tail(
+                        #data, #offset, #name
+                    )?;
 
-                    ethabi::Token::Int(ethabi::Int::from_big_endian(full_signed_bytes.as_ref()))
+                    let mut out = Vec::with_capacity(count.min(1024));
+                    let mut at = 0usize;
+                    for _ in 0..count {
+                        out.push(#element);
+                        at += #step;
+                    }
+                    out
                 }
             }
         }
-        ParamType::Uint(_) => {
-            quote! {
-                ethabi::Token::Uint(
-                            ethabi::Uint::from_big_endian(
-                                match #name.clone().to_bytes_be() {
-                                    (num_bigint::Sign::Plus, bytes) => bytes,
-                                    (num_bigint::Sign::NoSign, bytes) => bytes,
-                                    (num_bigint::Sign::Minus, _) => {
-                                        panic!("negative numbers are not supported")
-                                    },
-                                }.as_slice(),
-                            ),
-                        )
-            }
-        }
-        ParamType::Bool => quote! { ethabi::Token::Bool(#name.clone()) },
-        ParamType::String => quote! { ethabi::Token::String(#name.clone()) },
-        ParamType::Array(ref kind) => {
-            let inner_name = quote! { inner };
-            let inner_loop = to_token(&inner_name, kind);
-            quote! {
-                // note the double {{
-                {
-                    let v = #name.iter().map(|#inner_name| #inner_loop).collect();
-                    ethabi::Token::Array(v)
-                }
-            }
-        }
-        ParamType::FixedArray(ref kind, _) => {
-            let inner_name = quote! { inner };
-            let inner_loop = to_token(&inner_name, kind);
-            quote! {
-                // note the double {{
-                {
-                    let v = #name.iter().map(|#inner_name| #inner_loop).collect();
-                    ethabi::Token::FixedArray(v)
-                }
-            }
-        }
-        ParamType::Tuple(ref types) => {
-            let inner_names = (0..types.len())
-                .map(|i| {
-                    let i = Index::from(i);
-                    quote! { #name.#i }
+        ParamType::FixedArray(inner, size) => {
+            assert!(
+                *size <= MAX_FIXED_ARRAY_ELEMENTS,
+                "the ABI declares a fixed array of {} elements for param '{}', above the {} \
+                 `abigen` will generate reads for",
+                size,
+                name,
+                MAX_FIXED_ARRAY_ELEMENTS
+            );
+
+            let base = base_slice(kind, data, offset, name);
+            let step = element_stride(inner);
+            let reads: Vec<_> = (0..*size)
+                .map(|index| {
+                    let at = syn::Index::from(index.saturating_mul(step));
+                    read_at(inner, name, &quote! { base }, &quote! { #at })
                 })
-                .collect::<Vec<_>>();
-
-            let inner_tokens = types
-                .iter()
-                .zip(&inner_names)
-                .map(|(kind, inner_name)| to_token(&inner_name.to_token_stream(), kind))
-                .collect::<Vec<_>>();
+                .collect();
 
             quote! {
-                ethabi::Token::Tuple(vec![
-                    #(#inner_tokens),*
-                ])
+                {
+                    let base = #base;
+                    [#(#reads),*]
+                }
             }
         }
+        ParamType::Tuple(fields) => {
+            let base = base_slice(kind, data, offset, name);
+            let mut at = 0usize;
+            let reads: Vec<_> = fields
+                .iter()
+                .map(|field| {
+                    let index = syn::Index::from(at);
+                    let read = read_at(field, name, &quote! { base }, &quote! { #index });
+                    at += element_stride(field);
+                    read
+                })
+                .collect();
+
+            quote! {
+                {
+                    let base = #base;
+                    (#(#reads,)*)
+                }
+            }
+        }
+        _ => unreachable!("read_fixed_at covers every remaining type"),
     }
 }
 
-fn from_token(kind: &ParamType, token: &proc_macro2::TokenStream) -> proc_macro2::TokenStream {
-    match *kind {
-        ParamType::Address => {
-            quote! { #token.into_address().expect(INTERNAL_ERR).as_bytes().to_vec() }
-        }
-        ParamType::Bytes => {
-            quote! { #token.into_bytes().expect(INTERNAL_ERR) }
-        }
-        ParamType::FixedBytes(size) => {
-            let size: syn::Index = size.into();
-            quote! {
-                {
-                    let mut result = [0u8; #size];
-                    let v = #token.into_fixed_bytes().expect(INTERNAL_ERR);
-                    result.copy_from_slice(&v);
-                    result
-                }
-            }
-        }
-        ParamType::Int(_) => quote! {
-            {
-                let mut v = [0 as u8; 32];
-                #token.into_int().expect(INTERNAL_ERR).to_big_endian(v.as_mut_slice());
-                substreams::scalar::BigInt::from_signed_bytes_be(&v)
-            }
+/// The slice a fixed array or tuple reads its elements from: its own tail when it
+/// is dynamic, otherwise the parameter list it sits in.
+fn base_slice(
+    kind: &ParamType,
+    data: &proc_macro2::TokenStream,
+    offset: &proc_macro2::TokenStream,
+    name: &str,
+) -> proc_macro2::TokenStream {
+    match kind.is_dynamic() {
+        true => quote! {
+            substreams_ethereum::abi::read_dynamic_tail(#data, #offset, #name)?
         },
-        ParamType::Uint(_) => quote! {
-                {
-                    let mut v = [0 as u8; 32];
-                    #token.into_uint().expect(INTERNAL_ERR).to_big_endian(v.as_mut_slice());
-                    substreams::scalar::BigInt::from_unsigned_bytes_be(&v)
-                }
+        false => quote! {
+            #data.get(#offset..).ok_or_else(|| format!(
+                "unable to decode param '{}': need bytes at offset {}", #name, #offset
+            ))?
         },
-        ParamType::Bool => quote! { #token.into_bool().expect(INTERNAL_ERR) },
-        ParamType::String => quote! { #token.into_string().expect(INTERNAL_ERR) },
-        ParamType::Array(ref kind) => {
-            let inner = quote! { inner };
-            let inner_loop = from_token(kind, &inner);
-            quote! {
-                #token.into_array().expect(INTERNAL_ERR).into_iter()
-                    .map(|#inner| #inner_loop)
-                    .collect()
-            }
-        }
-        ParamType::FixedArray(ref kind, size) => {
-            let inner = quote! { inner };
-            let inner_loop = from_token(kind, &inner);
-            let to_array = vec![quote! { iter.next().expect(INTERNAL_ERR) }; size];
-            quote! {
-                {
-                    let mut iter = #token.into_fixed_array().expect(INTERNAL_ERR).into_iter()
-                        .map(|#inner| #inner_loop);
-                    [#(#to_array),*]
-                }
-            }
-        }
-        ParamType::Tuple(ref types) => {
-            let conversion = types.iter().enumerate().map(|(i, t)| {
-                let inner = quote! { tuple_elements[#i].clone() };
-                let inner_conversion = from_token(t, &inner);
-                quote! { #inner_conversion }
-            });
+    }
+}
 
-            quote! {
-                {
-                    let tuple_elements = #token.into_tuple().expect(INTERNAL_ERR);
-                    (#(#conversion,)*)
-                }
-            }
-        }
+/// Bytes a parameter occupies in the list it belongs to: one word, unless it is a
+/// fixed-size aggregate written out in place.
+///
+/// An aggregate whose size is past what a guard may describe has no stride worth
+/// computing, and the reads emitted after it would be past the buffer regardless,
+/// so it takes the width of a single word.
+fn element_stride(kind: &ParamType) -> usize {
+    match kind.is_dynamic() {
+        true => 32,
+        false => fixed_data_size(kind).unwrap_or(32),
     }
 }
 
@@ -433,41 +617,24 @@ fn decode_topic(
     kind: &ParamType,
     data_token: &proc_macro2::TokenStream,
 ) -> proc_macro2::TokenStream {
-    let error_msg = format!(
-        "unable to decode param '{}' from topic of type '{}': {{:?}}",
-        name, kind
-    );
-
     match kind {
         ParamType::Int(_) => {
             quote! {
                 substreams::scalar::BigInt::from_signed_bytes_be(#data_token)
             }
         }
+        // An indexed parameter of a dynamic type carries the hash of the value
+        // rather than the value, so the topic is kept as its 32 bytes.
         _ if kind.is_dynamic() => {
-            let syntax_type = quote! { ethabi::ParamType::FixedBytes(32) };
-
             quote! {
-                ethabi::decode(&[#syntax_type], #data_token)
-                    .map_err(|e| format!(#error_msg, e))?
-                    .pop()
-                    .expect(INTERNAL_ERR)
-                    .into_fixed_bytes()
-                    .expect(INTERNAL_ERR)
+                substreams_ethereum::abi::read_fixed_bytes::<32>(#data_token, 0, #name)?
+                    .to_vec()
                     .into()
             }
         }
-        _ => {
-            let syntax_type = to_syntax_string(kind);
-            let decode_topic = quote! {
-                        ethabi::decode(&[#syntax_type], #data_token)
-                        .map_err(|e| format!(#error_msg, e))?
-                        .pop()
-                        .expect(INTERNAL_ERR)
-            };
-
-            from_token(kind, &decode_topic)
-        }
+        // A topic is exactly one word, so an indexed parameter of a fixed type is
+        // the same read as the first word of a data section.
+        _ => read_at(kind, name, data_token, &quote! { 0 }),
     }
 }
 
@@ -484,14 +651,6 @@ fn param_names(inputs: &[Param]) -> Vec<syn::Ident> {
         })
         .collect()
 }
-
-// fn get_template_names(kinds: &[proc_macro2::TokenStream]) -> Vec<syn::Ident> {
-//     kinds
-//         .iter()
-//         .enumerate()
-//         .map(|(index, _)| syn::Ident::new(&format!("T{}", index), Span::call_site()))
-//         .collect()
-// }
 
 fn get_output_kinds(outputs: &[Param]) -> proc_macro2::TokenStream {
     match outputs.len() {
@@ -520,19 +679,9 @@ fn rust_variable(name: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use ethabi::ParamType;
+    use crate::abi::ParamType;
 
     use crate::{fixed_data_size, min_data_size};
-
-    #[test]
-    fn from_firehose_types_to_ethabi_token() {
-        use substreams::hex;
-
-        let firehose_address = hex!("0000000000000000000000000000000000000000").to_vec();
-
-        // Compilation is enough for those tests
-        ethabi::Token::Address(ethabi::Address::from_slice(firehose_address.as_ref()));
-    }
 
     #[test]
     fn it_fixed_data_size_works() {

@@ -12,18 +12,16 @@ use heck::ToUpperCamelCase;
 use proc_macro2::TokenStream;
 use quote::quote;
 
-// use crate::{constructor::Constructor,};
 use crate::{event::Event, function::Function};
 
 /// Structure used to generate rust interface for solidity contract.
 pub struct Contract {
-    // constructor: Option<Constructor>,
     functions: Vec<Function>,
     events: Vec<Event>,
 }
 
-impl<'a> From<&'a ethabi::Contract> for Contract {
-    fn from(c: &'a ethabi::Contract) -> Self {
+impl<'a> From<&'a crate::abi::Contract> for Contract {
+    fn from(c: &'a crate::abi::Contract) -> Self {
         let mut events: Vec<_> = c
             .events
             .values()
@@ -43,7 +41,8 @@ impl<'a> From<&'a ethabi::Contract> for Contract {
         // Since some people will actually commit this code, we use a "stable" generation order
         events.sort_by(|left: &Event, right: &Event| left.name.cmp(&right.name));
 
-        let mut function_by_rust_struct_name = BTreeMap::<String, Vec<&ethabi::Function>>::new();
+        let mut function_by_rust_struct_name =
+            BTreeMap::<String, Vec<&crate::abi::Function>>::new();
         for (_, functions) in c.functions.iter() {
             for function in functions {
                 let sanitized_name = function.name.to_upper_camel_case();
@@ -74,41 +73,29 @@ impl<'a> From<&'a ethabi::Contract> for Contract {
         // Since some people will actually commit this code, we use a "stable" generation order
         functions.sort_by(|left: &Function, right: &Function| left.name.cmp(&right.name));
 
-        Contract {
-            // constructor: c.constructor.as_ref().map(Into::into),
-            functions,
-            events,
-        }
+        Contract { functions, events }
     }
 }
 
 impl Contract {
     /// Generates rust interface for a contract.
     pub fn generate(&self) -> TokenStream {
-        // let constructor = self.constructor.as_ref().map(Constructor::generate);
         let functions: Vec<_> = self.functions.iter().map(Function::generate).collect();
         let events: Vec<_> = self
             .events
             .iter()
             .map(|event| event.generate_event())
             .collect();
-        // let logs: Vec<_> = self.events.iter().map(Event::generate_log).collect();
         quote! {
-            const INTERNAL_ERR: &'static str = "`ethabi_derive` internal error";
-
-            // #constructor
-
             /// Contract's functions.
             #[allow(dead_code, unused_imports, unused_variables)]
             pub mod functions {
-                use super::INTERNAL_ERR;
                 #(#functions)*
             }
 
             /// Contract's events.
             #[allow(dead_code, unused_imports, unused_variables)]
             pub mod events {
-                use super::INTERNAL_ERR;
                 #(#events)*
             }
         }
@@ -125,33 +112,20 @@ mod test {
 
     #[test]
     fn test_no_body() {
-        let ethabi_contract = ethabi::Contract {
-            constructor: None,
-            functions: Default::default(),
-            events: Default::default(),
-            errors: Default::default(),
-            receive: false,
-            fallback: false,
-        };
+        let abi_contract = crate::abi::Contract::default();
 
-        let c = Contract::from(&ethabi_contract);
+        let c = Contract::from(&abi_contract);
 
         assert_ast_eq(
             c.generate(),
             quote! {
-                const INTERNAL_ERR: &'static str = "`ethabi_derive` internal error";
-
                 /// Contract's functions.
                 #[allow(dead_code, unused_imports, unused_variables)]
-                pub mod functions {
-                    use super::INTERNAL_ERR;
-                }
+                pub mod functions {}
 
                 /// Contract's events.
                 #[allow(dead_code, unused_imports, unused_variables)]
-                pub mod events {
-                    use super::INTERNAL_ERR;
-                }
+                pub mod events {}
             },
         );
     }

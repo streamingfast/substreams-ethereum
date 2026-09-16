@@ -10,12 +10,13 @@ use heck::ToUpperCamelCase;
 use proc_macro2::{Span, TokenStream};
 use quote::quote;
 
-use crate::{is_long_tuple, to_syntax_string};
+use crate::{element_stride, is_long_tuple, read_at, write_at};
 
-use super::{from_token, get_output_kinds, param_names, rust_type, to_token};
+use super::{get_output_kinds, param_names, rust_type};
 
 struct Inputs {
-    tokenize: Vec<TokenStream>,
+    writes: Vec<TokenStream>,
+    head_width: usize,
     decoded_values: TokenStream,
     decoded_fields: Vec<TokenStream>,
     fields: Vec<TokenStream>,
@@ -45,8 +46,8 @@ pub struct Function {
     outputs: Outputs,
 }
 
-impl<'a> From<(String, &'a ethabi::Function)> for Function {
-    fn from((name, f): (String, &'a ethabi::Function)) -> Self {
+impl<'a> From<(String, &'a crate::abi::Function)> for Function {
+    fn from((name, f): (String, &'a crate::abi::Function)) -> Self {
         // [param0, hello_world, param2]
         let input_names = param_names(&f.inputs);
 
@@ -63,64 +64,80 @@ impl<'a> From<(String, &'a ethabi::Function)> for Function {
             .map(|(param_name, kind)| quote! { pub #param_name: #kind })
             .collect();
 
-        let input_ethabi_param_types = if !f.inputs.is_empty() {
-            let params: Vec<_> = f
-                .inputs
-                .iter()
-                .map(|input| to_syntax_string(&input.kind))
-                .collect();
-
+        // The four selector bytes sit ahead of the parameter list, so every head
+        // offset is measured from the input past them.
+        let input_data_binding = if !f.inputs.is_empty() {
             quote! {
                 let maybe_data = call.input.get(4..);
                 if maybe_data.is_none() {
                     return Err("no data to decode".to_string());
                 }
-
-                let mut values = ethabi::decode(&[#(#params),*], maybe_data.unwrap())
-                        .map_err(|e| format!("unable to decode call.input: {:?}", e))?;
-                values.reverse();
+                let data = maybe_data.unwrap();
             }
         } else {
             quote! {}
         };
 
-        // We go reverse in the iteration because we use a series of `.pop()` to correctly
-        // extract elements and put them in the good fields.
+        let data_token = quote! { data };
+        let mut head_offset = 0usize;
         let input_struct_decoded_fields = f
             .inputs
             .iter()
             .zip(input_names.iter())
             .map(|(param, name)| {
-                let data_access = quote! { values.pop().expect(INTERNAL_ERR) };
-                let decode_input = from_token(&param.kind, &data_access);
+                let offset = syn::Index::from(head_offset);
+                let decode_input = read_at(
+                    &param.kind,
+                    &name.to_string(),
+                    &data_token,
+                    &quote! { #offset },
+                );
+                head_offset += element_stride(&param.kind);
+
                 quote! {
                    #name: #decode_input
                 }
             })
             .collect();
 
-        // [Token::Uint(param0.into()), Token::Bytes(hello_world.into()), Token::Array(param2.into_iter().map(Into::into).collect())]
-        let tokenize: Vec<_> = input_names
+        // The head section holds one entry per parameter, so a dynamic parameter's
+        // tail offset is measured from the end of all of them.
+        let head_width: usize = f
+            .inputs
+            .iter()
+            .map(|param| element_stride(&param.kind))
+            .sum();
+
+        let mut slot = 0usize;
+        let writes: Vec<_> = input_names
             .iter()
             .zip(f.inputs.iter())
-            .map(|(param_name, param)| to_token(&quote! { self.#param_name }, &param.kind))
+            .map(|(param_name, param)| {
+                let at = syn::Index::from(slot);
+                slot += element_stride(&param.kind);
+
+                write_at(
+                    &param.kind,
+                    &quote! { self.#param_name },
+                    &syn::Ident::new("out", Span::call_site()),
+                    &syn::Ident::new("base", Span::call_site()),
+                    &quote! { #at },
+                    0,
+                )
+            })
             .collect();
 
         let output_result = get_output_kinds(&f.outputs);
 
-        let output_param_types: Vec<_> = f
-            .outputs
-            .iter()
-            .map(|output| to_syntax_string(&output.kind))
-            .collect();
-
         let output_implementation = match f.outputs.len() {
             0 => quote! {},
             1 => {
-                let decode_param_type = &output_param_types[0];
-                let data_access =
-                    quote! { values.pop().expect("one output data should have existed") };
-                let decode_input = from_token(&f.outputs[0].kind, &data_access);
+                let decode_input = read_at(
+                    &f.outputs[0].kind,
+                    "output",
+                    &quote! { data },
+                    &quote! { 0 },
+                );
 
                 quote! {
                     pub fn output_call(call: &substreams_ethereum::pb::eth::v2::Call) -> Result<#output_result, String> {
@@ -128,37 +145,22 @@ impl<'a> From<(String, &'a ethabi::Function)> for Function {
                     }
 
                     pub fn output(data: &[u8]) -> Result<#output_result, String> {
-                        let mut values = ethabi::decode(&[#decode_param_type], data.as_ref())
-                        .map_err(|e| format!("unable to decode output data: {:?}", e))?;
-
                         Ok(#decode_input)
                     }
                 }
             }
             _ => {
-                let output_tuple_fields: Vec<_> = f
-                    .outputs
-                    .iter()
-                    .map(|input| to_syntax_string(&input.kind))
-                    .collect();
-
-                let output_ethabi_decoded_values = quote! {
-                    let mut values = ethabi::decode(&[#(#output_tuple_fields),*], data.as_ref())
-                            .map_err(|e| format!("unable to decode output data: {:?}", e))?;
-                    values.reverse();
-                };
-
-                // We go reverse in the iteration because we use a series of `.pop()` to correctly
-                // extract elements and put them in the good fields.
+                let mut head_offset = 0usize;
                 let output_tuple_decoded_fields: Vec<TokenStream> = f
                     .outputs
                     .iter()
                     .map(|param| {
-                        let data_access = quote! { values.pop().expect(INTERNAL_ERR) };
-                        let decode_input = from_token(&param.kind, &data_access);
-                        quote! {
-                           #decode_input
-                        }
+                        let offset = syn::Index::from(head_offset);
+                        let decode_input =
+                            read_at(&param.kind, "output", &quote! { data }, &quote! { #offset });
+                        head_offset += element_stride(&param.kind);
+
+                        decode_input
                     })
                     .collect();
 
@@ -168,8 +170,6 @@ impl<'a> From<(String, &'a ethabi::Function)> for Function {
                     }
 
                     pub fn output(data: &[u8]) -> Result<#output_result, String> {
-                        #output_ethabi_decoded_values
-
                         Ok((#(#output_tuple_decoded_fields),*))
                     }
                 }
@@ -185,8 +185,9 @@ impl<'a> From<(String, &'a ethabi::Function)> for Function {
             original_name: f.name.clone(),
             short_signature: f.short_signature(),
             inputs: Inputs {
-                tokenize,
-                decoded_values: input_ethabi_param_types,
+                writes,
+                head_width,
+                decoded_values: input_data_binding,
                 decoded_fields: input_struct_decoded_fields,
                 fields: input_struct_fields,
                 has_any_long_tuple: f.inputs.iter().any(|param| is_long_tuple(&param.kind)),
@@ -213,7 +214,8 @@ impl Function {
             .collect();
 
         let function_fields = &self.inputs.fields;
-        let tokenize = &self.inputs.tokenize;
+        let writes = &self.inputs.writes;
+        let head_width = self.inputs.head_width;
         let decoded_input_values = &self.inputs.decoded_values;
         let decoded_input_fields = &self.inputs.decoded_fields;
 
@@ -296,13 +298,13 @@ impl Function {
                 }
 
                 pub fn encode(&self) -> Vec<u8> {
-                    let data = ethabi::encode(&[#(#tokenize),*]);
+                    let mut out: Vec<u8> = Vec::with_capacity(4 + #head_width);
+                    out.extend(Self::METHOD_ID);
 
-                    let mut encoded = Vec::with_capacity(4 + data.len());
-                    encoded.extend(Self::METHOD_ID);
-                    encoded.extend(data);
+                    let base = substreams_ethereum::abi::reserve_head(&mut out, #head_width);
+                    #(#writes;)*
 
-                    encoded
+                    out
                 }
 
                 #output_implementation

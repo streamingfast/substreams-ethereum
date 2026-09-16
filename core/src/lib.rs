@@ -3,6 +3,9 @@ pub use buffa;
 pub mod pb;
 pub mod rpc;
 
+/// Readers used by generated decoders for fixed-size ABI parameters.
+pub mod abi;
+
 /// Helpers to deal with block sources.
 pub mod block_view;
 pub use event::{Event, LogLike};

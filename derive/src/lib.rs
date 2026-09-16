@@ -10,8 +10,7 @@
 
 extern crate proc_macro;
 
-use ethabi::{Error, Result};
-use std::borrow::Cow;
+use anyhow::{anyhow, Result};
 
 const ERROR_MSG: &str = "`derive(EthabiContract)` in substreams-ethereum failed";
 
@@ -27,7 +26,6 @@ fn impl_ethabi_derive(ast: &syn::DeriveInput) -> Result<proc_macro2::TokenStream
     let path = get_option(&options, "path")?;
 
     substreams_ethereum_abigen::generate_abi_code(path)
-        .map_err(|e| Error::Other(Cow::Owned(format!("{}", e))))
 }
 
 fn get_options(attrs: &[syn::Attribute], name: &str) -> Result<Vec<syn::NestedMeta>> {
@@ -38,7 +36,7 @@ fn get_options(attrs: &[syn::Attribute], name: &str) -> Result<Vec<syn::NestedMe
 
     match options {
         Some(syn::Meta::List(list)) => Ok(list.nested.into_iter().collect()),
-        _ => Err(Error::Other(Cow::Borrowed("Unexpected meta item"))),
+        _ => Err(anyhow!("Unexpected meta item")),
     }
 }
 
@@ -50,7 +48,7 @@ fn get_option(options: &[syn::NestedMeta], name: &str) -> Result<String> {
             _ => None,
         })
         .find(|meta| meta.path().is_ident(name))
-        .ok_or_else(|| Error::Other(Cow::Owned(format!("Expected to find option {}", name))))?;
+        .ok_or_else(|| anyhow!("Expected to find option {}", name))?;
 
     str_value_of_meta_item(item, name)
 }
@@ -62,8 +60,9 @@ fn str_value_of_meta_item(item: &syn::Meta, name: &str) -> Result<String> {
         }
     }
 
-    Err(Error::Other(Cow::Owned(format!(
+    Err(anyhow!(
         r#"`{}` must be in the form `#[{}="something"]`"#,
-        name, name
-    ))))
+        name,
+        name
+    ))
 }
