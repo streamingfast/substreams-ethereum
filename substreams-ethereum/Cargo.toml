@@ -18,7 +18,8 @@ substreams-ethereum-abigen = { workspace = true }
 substreams-ethereum-derive = { workspace = true }
 substreams-ethereum-core = { workspace = true }
 
-# Required so that ethabi > ethereum-types build correctly under wasm32-unknown-unknown
+# Registers the custom hook `init!()` installs, so a dependency reaching for
+# randomness fails rather than pulling an implementation into the module.
 [target.wasm32-unknown-unknown.dependencies]
 getrandom = { version = "0.2.10", features = ["custom"] }
 

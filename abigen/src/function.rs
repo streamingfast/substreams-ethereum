@@ -46,8 +46,8 @@ pub struct Function {
     outputs: Outputs,
 }
 
-impl<'a> From<(String, &'a ethabi::Function)> for Function {
-    fn from((name, f): (String, &'a ethabi::Function)) -> Self {
+impl<'a> From<(String, &'a crate::abi::Function)> for Function {
+    fn from((name, f): (String, &'a crate::abi::Function)) -> Self {
         // [param0, hello_world, param2]
         let input_names = param_names(&f.inputs);
 
@@ -66,7 +66,7 @@ impl<'a> From<(String, &'a ethabi::Function)> for Function {
 
         // The four selector bytes sit ahead of the parameter list, so every head
         // offset is measured from the input past them.
-        let input_ethabi_param_types = if !f.inputs.is_empty() {
+        let input_data_binding = if !f.inputs.is_empty() {
             quote! {
                 let maybe_data = call.input.get(4..);
                 if maybe_data.is_none() {
@@ -187,7 +187,7 @@ impl<'a> From<(String, &'a ethabi::Function)> for Function {
             inputs: Inputs {
                 writes,
                 head_width,
-                decoded_values: input_ethabi_param_types,
+                decoded_values: input_data_binding,
                 decoded_fields: input_struct_decoded_fields,
                 fields: input_struct_fields,
                 has_any_long_tuple: f.inputs.iter().any(|param| is_long_tuple(&param.kind)),

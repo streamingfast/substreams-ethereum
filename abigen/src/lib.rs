@@ -10,19 +10,19 @@
 
 extern crate proc_macro;
 
+pub mod abi;
 mod assertions;
 pub mod build;
 mod contract;
 mod event;
 mod function;
 
-use anyhow::format_err;
-use ethabi::{Contract, Error, Param, ParamType};
+use crate::abi::{Contract, Param, ParamType};
+use anyhow::{anyhow, format_err};
 use heck::ToSnakeCase;
 use proc_macro2::Span;
 use quote::quote;
 use std::{
-    borrow::Cow,
     env, fs,
     path::{Path, PathBuf},
 };
@@ -33,10 +33,10 @@ pub fn generate_abi_code<S: AsRef<str>>(
 ) -> Result<proc_macro2::TokenStream, anyhow::Error> {
     let normalized_path = normalize_path(path.as_ref())?;
     let source_file = fs::File::open(&normalized_path).map_err(|_| {
-        Error::Other(Cow::Owned(format!(
+        anyhow!(
             "Cannot load contract abi from `{}`",
             normalized_path.display()
-        )))
+        )
     })?;
     let contract = Contract::load(source_file)?;
     let c = contract::Contract::from(&contract);
@@ -679,7 +679,7 @@ fn rust_variable(name: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use ethabi::ParamType;
+    use crate::abi::ParamType;
 
     use crate::{fixed_data_size, min_data_size};
 

@@ -29,7 +29,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   Encoding is between 1.2x and 3.6x faster across the same range of shapes, from a single `address`
   argument to a `string[]`.
 
-  `ethabi` is still a dependency: it parses the ABI when bindings are generated.
+  `abigen` reads the ABI file itself, so `ethabi` is no longer a dependency of any crate here. It
+  stays a dev-dependency while the generated reads, writes and signatures are checked against it.
 
 * `decode` now checks the log's topic count before reading an indexed parameter, and reports a data
   section shorter than the parameters need, rather than panicking. `match_log` already rejected both,

@@ -89,9 +89,9 @@ macro_rules! use_contract {
     };
 }
 
-/// The `init` macro registers a custom get random function in the system which is required
-/// because `ethabi` that we rely on for ABI decoding/encoding primitives use it somewhere in
-/// its transitive set of dependencies and causes problem in `wasm32-unknown-unknown` target.
+/// The `init` macro registers a custom get random function in the system. A dependency that
+/// reaches for randomness has no source of it under `wasm32-unknown-unknown`, so the hook
+/// reports that rather than letting the target fail to build.
 ///
 /// This macro must be invoked in the root crate so you must have the `substreams_ethereum::init!()`
 /// call in your `lib.rs` of your Substreams.
@@ -100,7 +100,7 @@ macro_rules! use_contract {
 /// in your Substreams `Cargo.toml` file:
 ///
 /// ```toml
-/// # Required so that ethabi > ethereum-types build correctly under wasm32-unknown-unknown
+/// # Required so the custom randomness hook registers under wasm32-unknown-unknown
 /// [target.wasm32-unknown-unknown.dependencies]
 /// getrandom = { version = "0.2", features = ["custom"] }
 ///```

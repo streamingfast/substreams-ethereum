@@ -20,8 +20,8 @@ pub struct Contract {
     events: Vec<Event>,
 }
 
-impl<'a> From<&'a ethabi::Contract> for Contract {
-    fn from(c: &'a ethabi::Contract) -> Self {
+impl<'a> From<&'a crate::abi::Contract> for Contract {
+    fn from(c: &'a crate::abi::Contract) -> Self {
         let mut events: Vec<_> = c
             .events
             .values()
@@ -41,7 +41,8 @@ impl<'a> From<&'a ethabi::Contract> for Contract {
         // Since some people will actually commit this code, we use a "stable" generation order
         events.sort_by(|left: &Event, right: &Event| left.name.cmp(&right.name));
 
-        let mut function_by_rust_struct_name = BTreeMap::<String, Vec<&ethabi::Function>>::new();
+        let mut function_by_rust_struct_name =
+            BTreeMap::<String, Vec<&crate::abi::Function>>::new();
         for (_, functions) in c.functions.iter() {
             for function in functions {
                 let sanitized_name = function.name.to_upper_camel_case();
@@ -111,16 +112,9 @@ mod test {
 
     #[test]
     fn test_no_body() {
-        let ethabi_contract = ethabi::Contract {
-            constructor: None,
-            functions: Default::default(),
-            events: Default::default(),
-            errors: Default::default(),
-            receive: false,
-            fallback: false,
-        };
+        let abi_contract = crate::abi::Contract::default();
 
-        let c = Contract::from(&ethabi_contract);
+        let c = Contract::from(&abi_contract);
 
         assert_ast_eq(
             c.generate(),

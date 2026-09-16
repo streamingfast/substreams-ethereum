@@ -26,8 +26,8 @@ pub struct Event {
     decode_data: TokenStream,
 }
 
-impl<'a> From<(&'a String, &'a ethabi::Event)> for Event {
-    fn from((name, e): (&'a String, &'a ethabi::Event)) -> Self {
+impl<'a> From<(&'a String, &'a crate::abi::Event)> for Event {
+    fn from((name, e): (&'a String, &'a crate::abi::Event)) -> Self {
         let names: Vec<_> = e
             .inputs
             .iter()
@@ -135,7 +135,7 @@ impl<'a> From<(&'a String, &'a ethabi::Event)> for Event {
         Event {
             name: name.clone(),
             original_name: e.name.clone(),
-            topic_hash: e.signature().to_fixed_bytes(),
+            topic_hash: e.signature(),
             topic_count,
             fixed_data_size,
             min_data_size,
@@ -187,7 +187,7 @@ impl Event {
         };
 
         // Every read below sits at an offset inside the first `fixed_data_size` bytes,
-        // so a buffer at least that long makes all of them in-bounds. `ethabi` reads
+        // so a buffer at least that long makes all of them in-bounds. A read takes
         // the parameters it was given and ignores whatever follows, so a longer buffer
         // is accepted here too.
         let decode_match_data = match &self.fixed_data_size {
@@ -292,13 +292,13 @@ mod tests {
 
     #[test]
     fn test_empty_event() {
-        let ethabi_event = ethabi::Event {
+        let abi_event = crate::abi::Event {
             name: "hello".into(),
             inputs: vec![],
             anonymous: false,
         };
 
-        let e = Event::from((&ethabi_event.name, &ethabi_event));
+        let e = Event::from((&abi_event.name, &abi_event));
 
         assert_ast_eq(
             e.generate_event(),
@@ -381,17 +381,17 @@ mod tests {
 
     #[test]
     fn test_event_with_one_input() {
-        let ethabi_event = ethabi::Event {
+        let abi_event = crate::abi::Event {
             name: "one".into(),
-            inputs: vec![ethabi::EventParam {
+            inputs: vec![crate::abi::EventParam {
                 name: "foo".into(),
-                kind: ethabi::ParamType::Address,
+                kind: crate::abi::ParamType::Address,
                 indexed: true,
             }],
             anonymous: false,
         };
 
-        let e = Event::from((&ethabi_event.name, &ethabi_event));
+        let e = Event::from((&abi_event.name, &abi_event));
 
         assert_ast_eq(
             e.generate_event(),
@@ -482,29 +482,29 @@ mod tests {
 
     #[test]
     fn test_event_erc20_transfer() {
-        let ethabi_event = ethabi::Event {
+        let abi_event = crate::abi::Event {
             name: "Transfer".into(),
             inputs: vec![
-                ethabi::EventParam {
+                crate::abi::EventParam {
                     name: "from".into(),
-                    kind: ethabi::ParamType::Address,
+                    kind: crate::abi::ParamType::Address,
                     indexed: true,
                 },
-                ethabi::EventParam {
+                crate::abi::EventParam {
                     name: "to".into(),
-                    kind: ethabi::ParamType::Address,
+                    kind: crate::abi::ParamType::Address,
                     indexed: true,
                 },
-                ethabi::EventParam {
+                crate::abi::EventParam {
                     name: "quantity".into(),
-                    kind: ethabi::ParamType::Uint(256),
+                    kind: crate::abi::ParamType::Uint(256),
                     indexed: false,
                 },
             ],
             anonymous: false,
         };
 
-        let e = Event::from((&ethabi_event.name, &ethabi_event));
+        let e = Event::from((&abi_event.name, &abi_event));
 
         assert_ast_eq(
             e.generate_event(),
@@ -615,29 +615,29 @@ mod tests {
 
     #[test]
     fn test_event_erc721_transfer() {
-        let ethabi_event = ethabi::Event {
+        let abi_event = crate::abi::Event {
             name: "Transfer".into(),
             inputs: vec![
-                ethabi::EventParam {
+                crate::abi::EventParam {
                     name: "from".into(),
-                    kind: ethabi::ParamType::Address,
+                    kind: crate::abi::ParamType::Address,
                     indexed: true,
                 },
-                ethabi::EventParam {
+                crate::abi::EventParam {
                     name: "to".into(),
-                    kind: ethabi::ParamType::Address,
+                    kind: crate::abi::ParamType::Address,
                     indexed: true,
                 },
-                ethabi::EventParam {
+                crate::abi::EventParam {
                     name: "token_id".into(),
-                    kind: ethabi::ParamType::Uint(256),
+                    kind: crate::abi::ParamType::Uint(256),
                     indexed: true,
                 },
             ],
             anonymous: false,
         };
 
-        let e = Event::from((&ethabi_event.name, &ethabi_event));
+        let e = Event::from((&abi_event.name, &abi_event));
 
         assert_ast_eq(
             e.generate_event(),
