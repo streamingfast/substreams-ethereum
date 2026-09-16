@@ -15,7 +15,6 @@ rust-version.workspace = true
 doc = false
 
 [dependencies]
-ethabi = "17.0"
 num-bigint = "0.4.3"
 num-traits = "0.2.15"
 substreams = { workspace = true }
@@ -26,5 +25,6 @@ anyhow = "1"
 substreams-ethereum = { workspace = true }
 
 [dev-dependencies]
+ethabi = "17.0"
 buffa = { version = "0.9", default-features = false, features = ["std", "fast-utf8"] }
 pretty_assertions = "1.2.1"
