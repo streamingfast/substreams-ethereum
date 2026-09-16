@@ -1,4 +1,4 @@
-//! The ABI file a contract is generated from.
+//! Reads the ABI file a contract's bindings are generated from.
 //!
 //! An ABI file names a contract's functions and events and the types of their
 //! parameters. This reads one into the shapes the generator walks, and computes
