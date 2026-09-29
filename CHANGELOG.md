@@ -40,7 +40,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
   Generated event decoders are now generic over the log representation, so the same decoder works with an owned `Log`, a `LogView`, or one of buffa's borrowed lazy views.
 
-  Generated types differ from `prost` in three ways: enum fields are `EnumValue<E>` rather than `i32` (compare against the variant directly), singular message fields are `MessageField<T>` rather than `Option<T>` and deref to a default instance, and encoding is infallible.
+  Generated types differ from `prost` in three ways: enum fields are `EnumValue<E>` rather than `i32` (compare against the variant directly), singular message fields are `MessageField<T>` rather than `Option<T>` and deref to a default instance, and encoding returns no `Result` (it panics above the 2 GiB Protobuf limit; the `try_*` variants return that as an error).
+
+  The `Message` trait itself also differs. `decode` takes `&mut impl Buf` rather than `impl Buf`, so a slice needs `&mut bytes.as_slice()`, or use `decode_from_slice`. `encoded_len` returns `u32` rather than `usize`, so a call site that mixes the result with a `usize` stops compiling and needs a cast.
 
   **Breaking**: singular message fields deref to a default instance, so a field whose absence carried meaning now reads as a zero value indistinguishable from a real one. Use `.is_set()` or `.as_option()` where the distinction matters. The affected generated fields are `BlockHeader.base_fee_per_gas` (absent before London), `TransactionTrace.max_fee_per_gas` and `max_priority_fee_per_gas` (absent on a legacy transaction, and on a `BASE`-detail block where they are `EXTENDED`-only), and `TransactionTrace.gas_price`, `TransactionTrace.value`, `Call.value`, `TransactionTrace.blob_gas_fee_cap` and `TransactionReceipt.blob_gas_price` when unset.
 
