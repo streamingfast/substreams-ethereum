@@ -40,7 +40,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
   Generated event decoders are now generic over the log representation, so the same decoder works with an owned `Log`, a `LogView`, or one of buffa's borrowed lazy views.
 
-  Generated types differ from `prost` in three ways: enum fields are `EnumValue<E>` rather than `i32` (compare against the variant directly), singular message fields are `MessageField<T>` rather than `Option<T>` and deref to a default instance, and encoding is infallible.
+  Generated types differ from `prost` in three ways: enum fields are `EnumValue<E>` rather than `i32` (compare against the variant directly), singular message fields are `MessageField<T>` rather than `Option<T>` and deref to a default instance, and encoding returns no `Result` (it panics above the 2 GiB Protobuf limit; the `try_*` variants return that as an error).
+
+  The `Message` trait itself also differs. `decode` takes `&mut impl Buf` rather than `impl Buf`, so a slice needs `&mut bytes.as_slice()`, or use `decode_from_slice`. `encoded_len` returns `u32` rather than `usize`, so a call site that mixes the result with a `usize` stops compiling and needs a cast.
 
   **Breaking**: singular message fields deref to a default instance, so a field whose absence carried meaning now reads as a zero value indistinguishable from a real one. Use `.is_set()` or `.as_option()` where the distinction matters. The affected generated fields are `BlockHeader.base_fee_per_gas` (absent before London), `TransactionTrace.max_fee_per_gas` and `max_priority_fee_per_gas` (absent on a legacy transaction, and on a `BASE`-detail block where they are `EXTENDED`-only), and `TransactionTrace.gas_price`, `TransactionTrace.value`, `Call.value`, `TransactionTrace.blob_gas_fee_cap` and `TransactionReceipt.blob_gas_price` when unset.
 
@@ -48,11 +50,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 * Added lazy view accessors on `BlockLazyView`: `transactions()`, `receipts()`, `logs()`, `calls()` and `TransactionTraceLazyView::logs_with_calls()`.
 
-  A lazy view defers validation to field access, so these report decode failures rather than hiding them: `transactions()`, `receipts()`, `logs()` and `calls()` each yield `Result` items. Each has a `_lossy` twin that drops undecodable entries instead.
+  A lazy view defers validation to field access. An entry that fails to decode panics rather than being skipped, matching the owned `Block`, which fails to decode outright. Our own Protobuf block model is not a place where a corrupt entry should be tolerated: silently yielding a short list would let a malformed block pass as a valid smaller one.
 
-  **Breaking**: the plain name is the reporting one. An owned `Block` containing a corrupt log fails to decode and the module aborts; `BlockLazyView::logs_lossy()` yields the logs it could read and drops the rest silently, so a malformed block passes as a short one. Reach for the `_lossy` twin only where that is what you want.
-
-  A transaction carrying no receipt is skipped by `receipts()` and `receipts_lossy()`, matching the owned block's refusal to present one with no logs.
+  A transaction carrying no receipt is skipped by `receipts()`, matching the owned block's refusal to present one with no logs.
 
 * Changed `LazyLogWithCall::call` to an `Rc<CallLazyView>`. `CallLazyView` owns a `Vec` per repeated field, so pairing each log with a cloned call allocated once per field per log.
 
