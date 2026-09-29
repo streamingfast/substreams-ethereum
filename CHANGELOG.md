@@ -48,11 +48,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 * Added lazy view accessors on `BlockLazyView`: `transactions()`, `receipts()`, `logs()`, `calls()` and `TransactionTraceLazyView::logs_with_calls()`.
 
-  A lazy view defers validation to field access, so these report decode failures rather than hiding them: `transactions()`, `receipts()`, `logs()` and `calls()` each yield `Result` items. Each has a `_lossy` twin that drops undecodable entries instead.
+  A lazy view defers validation to field access. An entry that fails to decode panics rather than being skipped, matching the owned `Block`, which fails to decode outright. Our own Protobuf block model is not a place where a corrupt entry should be tolerated: silently yielding a short list would let a malformed block pass as a valid smaller one.
 
-  **Breaking**: the plain name is the reporting one. An owned `Block` containing a corrupt log fails to decode and the module aborts; `BlockLazyView::logs_lossy()` yields the logs it could read and drops the rest silently, so a malformed block passes as a short one. Reach for the `_lossy` twin only where that is what you want.
-
-  A transaction carrying no receipt is skipped by `receipts()` and `receipts_lossy()`, matching the owned block's refusal to present one with no logs.
+  A transaction carrying no receipt is skipped by `receipts()`, matching the owned block's refusal to present one with no logs.
 
 * Changed `LazyLogWithCall::call` to an `Rc<CallLazyView>`. `CallLazyView` owns a `Vec` per repeated field, so pairing each log with a cloned call allocated once per field per log.
 
