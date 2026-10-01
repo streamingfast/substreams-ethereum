@@ -878,6 +878,30 @@ pub struct BlockHeader {
     ///
     /// Field 26: `slot_number`
     pub slot_number: ::core::option::Option<u64>,
+    /// MorphNextL1MsgIndex is the index in Morph's L1 message queue at which the next block must
+    /// start processing L1 messages. Since Morph's Jade upgrade, it is the queue index of the last L1
+    /// message included in this block plus one, or the parent's value if the block includes none.
+    /// Before Jade, the sequencer could skip queue indices, so the value can be higher than that.
+    ///
+    /// Morph specific, unset on all other chains.
+    ///
+    /// Field 27: `morph_next_l1_msg_index`
+    pub morph_next_l1_msg_index: ::core::option::Option<u64>,
+    /// BlockAccessListHash was added by EIP-7928 and is ignored in legacy headers, it is scheduled
+    /// to be added in Amsterdam hard fork. This is the field the block header itself commits to.
+    ///
+    /// Field 28: `block_access_list_hash`
+    pub block_access_list_hash: ::core::option::Option<::buffa::alloc::vec::Vec<u8>>,
+    /// BlockAccessList is the RLP-encoded EIP-7928 block access list for this block, added in the
+    /// Amsterdam hard fork. Unlike `block_access_list_hash`, the header does not commit to this
+    /// field directly.
+    ///
+    /// EXPERIMENTAL: this field is populated for measurement purposes only and must **not** be
+    /// depended on. It is not yet officially supported for consumption and may be dropped or
+    /// change shape without notice until StreamingFast declares it stable.
+    ///
+    /// Field 29: `block_access_list_rlp`
+    pub block_access_list_rlp: ::core::option::Option<::buffa::alloc::vec::Vec<u8>>,
 }
 impl ::core::fmt::Debug for BlockHeader {
     fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
@@ -907,6 +931,9 @@ impl ::core::fmt::Debug for BlockHeader {
             .field("parent_beacon_root", &self.parent_beacon_root)
             .field("requests_hash", &self.requests_hash)
             .field("slot_number", &self.slot_number)
+            .field("morph_next_l1_msg_index", &self.morph_next_l1_msg_index)
+            .field("block_access_list_hash", &self.block_access_list_hash)
+            .field("block_access_list_rlp", &self.block_access_list_rlp)
             .finish()
     }
 }
@@ -957,6 +984,33 @@ impl BlockHeader {
     ///Sets [`Self::slot_number`] to `Some(value)`, consuming and returning `self`.
     pub fn with_slot_number(mut self, value: u64) -> Self {
         self.slot_number = Some(value);
+        self
+    }
+    #[must_use = "with_* setters return `self` by value; assign or chain the result"]
+    #[inline]
+    ///Sets [`Self::morph_next_l1_msg_index`] to `Some(value)`, consuming and returning `self`.
+    pub fn with_morph_next_l1_msg_index(mut self, value: u64) -> Self {
+        self.morph_next_l1_msg_index = Some(value);
+        self
+    }
+    #[must_use = "with_* setters return `self` by value; assign or chain the result"]
+    #[inline]
+    ///Sets [`Self::block_access_list_hash`] to `Some(value)`, consuming and returning `self`.
+    pub fn with_block_access_list_hash(
+        mut self,
+        value: impl Into<::buffa::alloc::vec::Vec<u8>>,
+    ) -> Self {
+        self.block_access_list_hash = Some(value.into());
+        self
+    }
+    #[must_use = "with_* setters return `self` by value; assign or chain the result"]
+    #[inline]
+    ///Sets [`Self::block_access_list_rlp`] to `Some(value)`, consuming and returning `self`.
+    pub fn with_block_access_list_rlp(
+        mut self,
+        value: impl Into<::buffa::alloc::vec::Vec<u8>>,
+    ) -> Self {
+        self.block_access_list_rlp = Some(value.into());
         self
     }
 }
@@ -1084,6 +1138,15 @@ impl ::buffa::Message for BlockHeader {
         if let Some(v) = self.slot_number {
             size += 2u64 + ::buffa::types::uint64_encoded_len(v) as u64;
         }
+        if let Some(v) = self.morph_next_l1_msg_index {
+            size += 2u64 + ::buffa::types::uint64_encoded_len(v) as u64;
+        }
+        if let Some(ref v) = self.block_access_list_hash {
+            size += 2u64 + ::buffa::types::bytes_encoded_len(v) as u64;
+        }
+        if let Some(ref v) = self.block_access_list_rlp {
+            size += 2u64 + ::buffa::types::bytes_encoded_len(v) as u64;
+        }
         ::buffa::saturate_size(size)
     }
     fn write_to(
@@ -1192,6 +1255,15 @@ impl ::buffa::Message for BlockHeader {
         }
         if let Some(v) = self.slot_number {
             ::buffa::types::put_uint64_field(26u32, v, buf);
+        }
+        if let Some(v) = self.morph_next_l1_msg_index {
+            ::buffa::types::put_uint64_field(27u32, v, buf);
+        }
+        if let Some(ref v) = self.block_access_list_hash {
+            ::buffa::types::put_shared_bytes_field(28u32, v, buf);
+        }
+        if let Some(ref v) = self.block_access_list_rlp {
+            ::buffa::types::put_shared_bytes_field(29u32, v, buf);
         }
     }
     fn merge_field(
@@ -1414,6 +1486,39 @@ impl ::buffa::Message for BlockHeader {
                     ::buffa::types::decode_uint64(buf)?,
                 );
             }
+            27u32 => {
+                ::buffa::encoding::check_wire_type(
+                    tag,
+                    ::buffa::encoding::WireType::Varint,
+                )?;
+                self.morph_next_l1_msg_index = ::core::option::Option::Some(
+                    ::buffa::types::decode_uint64(buf)?,
+                );
+            }
+            28u32 => {
+                ::buffa::encoding::check_wire_type(
+                    tag,
+                    ::buffa::encoding::WireType::LengthDelimited,
+                )?;
+                ::buffa::types::merge_bytes(
+                    self
+                        .block_access_list_hash
+                        .get_or_insert_with(::buffa::alloc::vec::Vec::new),
+                    buf,
+                )?;
+            }
+            29u32 => {
+                ::buffa::encoding::check_wire_type(
+                    tag,
+                    ::buffa::encoding::WireType::LengthDelimited,
+                )?;
+                ::buffa::types::merge_bytes(
+                    self
+                        .block_access_list_rlp
+                        .get_or_insert_with(::buffa::alloc::vec::Vec::new),
+                    buf,
+                )?;
+            }
             _ => {
                 ::buffa::encoding::skip_field_depth(tag, buf, ctx.depth())?;
             }
@@ -1446,6 +1551,9 @@ impl ::buffa::Message for BlockHeader {
         self.parent_beacon_root = ::core::option::Option::None;
         self.requests_hash = ::core::option::Option::None;
         self.slot_number = ::core::option::Option::None;
+        self.morph_next_l1_msg_index = ::core::option::Option::None;
+        self.block_access_list_hash = ::core::option::Option::None;
+        self.block_access_list_rlp = ::core::option::Option::None;
     }
 }
 #[derive(Clone, PartialEq, Default)]
@@ -1970,10 +2078,29 @@ pub struct TransactionTrace {
     /// This is specified by <https://eips.ethereum.org/EIPS/eip-7702>
     ///
     /// This will is populated only if `TransactionTrace.Type == TRX_TYPE_SET_CODE` which is possible only
-    /// if Prague fork is active on the chain.
+    /// if Prague fork is active on the chain, or on Morph if `TransactionTrace.Type == TRX_TYPE_MORPH`
+    /// and \[MorphTxConfig.version\] is 2.
     ///
     /// Field 36: `set_code_authorizations`
     pub set_code_authorizations: ::buffa::alloc::vec::Vec<SetCodeAuthorization>,
+    /// MorphTxConfig holds the Morph specific fields carried by a MorphTx transaction.
+    ///
+    /// This will is populated only if `TransactionTrace.Type == TRX_TYPE_MORPH`.
+    ///
+    /// Field 37: `morph_tx_config`
+    pub morph_tx_config: ::buffa::MessageField<
+        MorphTxConfig,
+        ::buffa::Inline<MorphTxConfig>,
+    >,
+    /// MorphL1MessageConfig holds the Morph specific fields carried by an L1 message transaction.
+    ///
+    /// This will is populated only if `TransactionTrace.Type == TRX_TYPE_MORPH_L1_MESSAGE`.
+    ///
+    /// Field 38: `morph_l1_message_config`
+    pub morph_l1_message_config: ::buffa::MessageField<
+        MorphL1MessageConfig,
+        ::buffa::Inline<MorphL1MessageConfig>,
+    >,
 }
 impl ::core::fmt::Debug for TransactionTrace {
     fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
@@ -2006,6 +2133,8 @@ impl ::core::fmt::Debug for TransactionTrace {
             .field("blob_gas_fee_cap", &self.blob_gas_fee_cap)
             .field("blob_hashes", &self.blob_hashes)
             .field("set_code_authorizations", &self.set_code_authorizations)
+            .field("morph_tx_config", &self.morph_tx_config)
+            .field("morph_l1_message_config", &self.morph_l1_message_config)
             .finish()
     }
 }
@@ -2180,6 +2309,22 @@ impl ::buffa::Message for TransactionTrace {
                 += 2u64 + ::buffa::encoding::varint_len(inner_size as u64) as u64
                     + inner_size as u64;
         }
+        if self.morph_tx_config.is_set() {
+            let __slot = __cache.reserve();
+            let inner_size = self.morph_tx_config.compute_size(__cache);
+            __cache.set(__slot, inner_size);
+            size
+                += 2u64 + ::buffa::encoding::varint_len(inner_size as u64) as u64
+                    + inner_size as u64;
+        }
+        if self.morph_l1_message_config.is_set() {
+            let __slot = __cache.reserve();
+            let inner_size = self.morph_l1_message_config.compute_size(__cache);
+            __cache.set(__slot, inner_size);
+            size
+                += 2u64 + ::buffa::encoding::varint_len(inner_size as u64) as u64
+                    + inner_size as u64;
+        }
         ::buffa::saturate_size(size)
     }
     fn write_to(
@@ -2323,6 +2468,22 @@ impl ::buffa::Message for TransactionTrace {
                 buf,
             );
             v.write_to(__cache, buf);
+        }
+        if self.morph_tx_config.is_set() {
+            ::buffa::types::put_len_delimited_header(
+                37u32,
+                u64::from(__cache.consume_next()),
+                buf,
+            );
+            self.morph_tx_config.write_to(__cache, buf);
+        }
+        if self.morph_l1_message_config.is_set() {
+            ::buffa::types::put_len_delimited_header(
+                38u32,
+                u64::from(__cache.consume_next()),
+                buf,
+            );
+            self.morph_l1_message_config.write_to(__cache, buf);
         }
     }
     fn merge_field(
@@ -2581,6 +2742,28 @@ impl ::buffa::Message for TransactionTrace {
                 ::buffa::Message::merge_length_delimited(&mut elem, buf, ctx)?;
                 self.set_code_authorizations.push(elem);
             }
+            37u32 => {
+                ::buffa::encoding::check_wire_type(
+                    tag,
+                    ::buffa::encoding::WireType::LengthDelimited,
+                )?;
+                ::buffa::Message::merge_length_delimited(
+                    self.morph_tx_config.get_or_insert_default(),
+                    buf,
+                    ctx,
+                )?;
+            }
+            38u32 => {
+                ::buffa::encoding::check_wire_type(
+                    tag,
+                    ::buffa::encoding::WireType::LengthDelimited,
+                )?;
+                ::buffa::Message::merge_length_delimited(
+                    self.morph_l1_message_config.get_or_insert_default(),
+                    buf,
+                    ctx,
+                )?;
+            }
             _ => {
                 ::buffa::encoding::skip_field_depth(tag, buf, ctx.depth())?;
             }
@@ -2616,6 +2799,8 @@ impl ::buffa::Message for TransactionTrace {
         self.blob_gas_fee_cap = ::buffa::MessageField::none();
         self.blob_hashes.clear();
         self.set_code_authorizations.clear();
+        self.morph_tx_config = ::buffa::MessageField::none();
+        self.morph_l1_message_config = ::buffa::MessageField::none();
     }
 }
 pub mod transaction_trace {
@@ -2661,6 +2846,22 @@ pub mod transaction_trace {
         TRX_TYPE_OPTIMISM_DEPOSIT = 126i32,
         /// Polygon(bor)-specific
         TRX_TYPE_POLYGON_STATE_SYNC = 200i32,
+        /// Morph-specific transactions
+        ///
+        /// MorphTx (type byte 0x7f on chain), a transaction that can pay for its gas with a registered
+        /// ERC-20 token instead of the native token and that can carry an indexable reference and a memo.
+        /// Those extra fields are recorded in \[TransactionTrace.morph_tx_config\].
+        ///
+        /// Specified by <https://docs.morph.network/docs/about-morph/morphtx>
+        TRX_TYPE_MORPH = 300i32,
+        /// Morph's L1 message transaction (type byte 0x7e on chain), a transaction queued on the L1
+        /// chain and later included by the sequencer in an L2 block. It carries no signature, its
+        /// 'from' is the L1 sender and its queue index is recorded in
+        /// \[TransactionTrace.morph_l1_message_config\].
+        ///
+        /// It shares its type byte with Optimism's deposit transaction (TRX_TYPE_OPTIMISM_DEPOSIT) but
+        /// has different semantics, hence the distinct value here.
+        TRX_TYPE_MORPH_L1_MESSAGE = 301i32,
     }
     impl Type {
         ///Idiomatic alias for [`Self::TRX_TYPE_LEGACY`]; `Debug` prints the variant name.
@@ -2705,6 +2906,12 @@ pub mod transaction_trace {
         ///Idiomatic alias for [`Self::TRX_TYPE_POLYGON_STATE_SYNC`]; `Debug` prints the variant name.
         #[allow(non_upper_case_globals)]
         pub const TrxTypePolygonStateSync: Self = Self::TRX_TYPE_POLYGON_STATE_SYNC;
+        ///Idiomatic alias for [`Self::TRX_TYPE_MORPH`]; `Debug` prints the variant name.
+        #[allow(non_upper_case_globals)]
+        pub const TrxTypeMorph: Self = Self::TRX_TYPE_MORPH;
+        ///Idiomatic alias for [`Self::TRX_TYPE_MORPH_L1_MESSAGE`]; `Debug` prints the variant name.
+        #[allow(non_upper_case_globals)]
+        pub const TrxTypeMorphL1Message: Self = Self::TRX_TYPE_MORPH_L1_MESSAGE;
     }
     impl ::core::default::Default for Type {
         fn default() -> Self {
@@ -2732,6 +2939,8 @@ pub mod transaction_trace {
                 120i32 => ::core::option::Option::Some(Self::TRX_TYPE_ARBITRUM_LEGACY),
                 126i32 => ::core::option::Option::Some(Self::TRX_TYPE_OPTIMISM_DEPOSIT),
                 200i32 => ::core::option::Option::Some(Self::TRX_TYPE_POLYGON_STATE_SYNC),
+                300i32 => ::core::option::Option::Some(Self::TRX_TYPE_MORPH),
+                301i32 => ::core::option::Option::Some(Self::TRX_TYPE_MORPH_L1_MESSAGE),
                 _ => ::core::option::Option::None,
             }
         }
@@ -2756,6 +2965,8 @@ pub mod transaction_trace {
                 Self::TRX_TYPE_ARBITRUM_LEGACY => "TRX_TYPE_ARBITRUM_LEGACY",
                 Self::TRX_TYPE_OPTIMISM_DEPOSIT => "TRX_TYPE_OPTIMISM_DEPOSIT",
                 Self::TRX_TYPE_POLYGON_STATE_SYNC => "TRX_TYPE_POLYGON_STATE_SYNC",
+                Self::TRX_TYPE_MORPH => "TRX_TYPE_MORPH",
+                Self::TRX_TYPE_MORPH_L1_MESSAGE => "TRX_TYPE_MORPH_L1_MESSAGE",
             }
         }
         fn from_proto_name(name: &str) -> ::core::option::Option<Self> {
@@ -2800,6 +3011,10 @@ pub mod transaction_trace {
                 "TRX_TYPE_POLYGON_STATE_SYNC" => {
                     ::core::option::Option::Some(Self::TRX_TYPE_POLYGON_STATE_SYNC)
                 }
+                "TRX_TYPE_MORPH" => ::core::option::Option::Some(Self::TRX_TYPE_MORPH),
+                "TRX_TYPE_MORPH_L1_MESSAGE" => {
+                    ::core::option::Option::Some(Self::TRX_TYPE_MORPH_L1_MESSAGE)
+                }
                 _ => ::core::option::Option::None,
             }
         }
@@ -2819,8 +3034,294 @@ pub mod transaction_trace {
                 Self::TRX_TYPE_ARBITRUM_LEGACY,
                 Self::TRX_TYPE_OPTIMISM_DEPOSIT,
                 Self::TRX_TYPE_POLYGON_STATE_SYNC,
+                Self::TRX_TYPE_MORPH,
+                Self::TRX_TYPE_MORPH_L1_MESSAGE,
             ]
         }
+    }
+}
+/// MorphTxConfig represents the extra fields of a Morph MorphTx transaction, a transaction type
+/// that enables paying the gas fees with a registered ERC-20 token instead of the native token.
+///
+/// Specified by <https://docs.morph.network/docs/about-morph/morphtx>
+#[derive(Clone, PartialEq, Default)]
+pub struct MorphTxConfig {
+    /// Version of the MorphTx payload, 0 for the initial encoding, 1 for the encoding that added
+    /// the 'reference' and 'memo' fields as well as support for paying the fees with the native token,
+    /// and 2 for the encoding that adds an EIP-7702 authorization list, recorded in
+    /// \[TransactionTrace.set_code_authorizations\].
+    ///
+    /// The on chain type is a 'uint8'.
+    ///
+    /// Field 1: `version`
+    pub version: u32,
+    /// FeeTokenID is the identifier, in Morph's L2 token registry, of the ERC-20 token used to pay
+    /// for the gas of this transaction. A value of 0 means the native token is used to pay the fees,
+    /// which is possible only since version 1.
+    ///
+    /// The on chain type is a 'uint16'.
+    ///
+    /// Field 2: `fee_token_id`
+    pub fee_token_id: u32,
+    /// FeeLimit is the maximum amount of 'fee_token_id' token the sender authorizes to be spent on
+    /// the fees of this transaction, L2 gas plus the L1 data fee. A value of 0 means no explicit limit,
+    /// the sender's whole token balance is available. It must be 0 when 'fee_token_id' is 0.
+    ///
+    /// Field 3: `fee_limit`
+    pub fee_limit: ::buffa::MessageField<BigInt, ::buffa::Inline<BigInt>>,
+    /// Reference is an arbitrary 32 bytes value attached to the transaction and meant to be indexed
+    /// by consumers.
+    ///
+    /// Available since version 1 only and optional, will be empty when unset.
+    ///
+    /// Field 4: `reference`
+    pub reference: ::buffa::alloc::vec::Vec<u8>,
+    /// Memo is an arbitrary value of at most 64 bytes attached to the transaction.
+    ///
+    /// Available since version 1 only and optional, will be empty when unset.
+    ///
+    /// Field 5: `memo`
+    pub memo: ::buffa::alloc::vec::Vec<u8>,
+}
+impl ::core::fmt::Debug for MorphTxConfig {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+        f.debug_struct("MorphTxConfig")
+            .field("version", &self.version)
+            .field("fee_token_id", &self.fee_token_id)
+            .field("fee_limit", &self.fee_limit)
+            .field("reference", &self.reference)
+            .field("memo", &self.memo)
+            .finish()
+    }
+}
+impl MorphTxConfig {
+    /// Protobuf type URL for this message, for use with `Any::pack` and
+    /// `Any::unpack_if`.
+    ///
+    /// Format: `type.googleapis.com/<fully.qualified.TypeName>`
+    pub const TYPE_URL: &'static str = "type.googleapis.com/sf.ethereum.type.v2.MorphTxConfig";
+}
+::buffa::impl_default_instance!(MorphTxConfig);
+impl ::buffa::MessageName for MorphTxConfig {
+    const PACKAGE: &'static str = "sf.ethereum.type.v2";
+    const NAME: &'static str = "MorphTxConfig";
+    const FULL_NAME: &'static str = "sf.ethereum.type.v2.MorphTxConfig";
+    const TYPE_URL: &'static str = "type.googleapis.com/sf.ethereum.type.v2.MorphTxConfig";
+}
+impl ::buffa::Message for MorphTxConfig {
+    /// Returns the total encoded size in bytes.
+    ///
+    /// Accumulates in `u64` (which cannot overflow for in-memory
+    /// data) and saturates to `u32` at return, so a message whose
+    /// encoded size exceeds the 2 GiB protobuf limit yields a value
+    /// above [`::buffa::MAX_MESSAGE_BYTES`] that the encode entry
+    /// points reject, never a silently wrapped size.
+    #[allow(clippy::let_and_return)]
+    fn compute_size(&self, __cache: &mut ::buffa::SizeCache) -> u32 {
+        #[allow(unused_imports)]
+        use ::buffa::Enumeration as _;
+        let mut size = 0u64;
+        if self.version != 0u32 {
+            size += 1u64 + ::buffa::types::uint32_encoded_len(self.version) as u64;
+        }
+        if self.fee_token_id != 0u32 {
+            size += 1u64 + ::buffa::types::uint32_encoded_len(self.fee_token_id) as u64;
+        }
+        if self.fee_limit.is_set() {
+            let __slot = __cache.reserve();
+            let inner_size = self.fee_limit.compute_size(__cache);
+            __cache.set(__slot, inner_size);
+            size
+                += 1u64 + ::buffa::encoding::varint_len(inner_size as u64) as u64
+                    + inner_size as u64;
+        }
+        if !self.reference.is_empty() {
+            size += 1u64 + ::buffa::types::bytes_encoded_len(&self.reference) as u64;
+        }
+        if !self.memo.is_empty() {
+            size += 1u64 + ::buffa::types::bytes_encoded_len(&self.memo) as u64;
+        }
+        ::buffa::saturate_size(size)
+    }
+    fn write_to(
+        &self,
+        __cache: &mut ::buffa::SizeCache,
+        buf: &mut impl ::buffa::EncodeSink,
+    ) {
+        #[allow(unused_imports)]
+        use ::buffa::Enumeration as _;
+        if self.version != 0u32 {
+            ::buffa::types::put_uint32_field(1u32, self.version, buf);
+        }
+        if self.fee_token_id != 0u32 {
+            ::buffa::types::put_uint32_field(2u32, self.fee_token_id, buf);
+        }
+        if self.fee_limit.is_set() {
+            ::buffa::types::put_len_delimited_header(
+                3u32,
+                u64::from(__cache.consume_next()),
+                buf,
+            );
+            self.fee_limit.write_to(__cache, buf);
+        }
+        if !self.reference.is_empty() {
+            ::buffa::types::put_shared_bytes_field(4u32, &self.reference, buf);
+        }
+        if !self.memo.is_empty() {
+            ::buffa::types::put_shared_bytes_field(5u32, &self.memo, buf);
+        }
+    }
+    fn merge_field(
+        &mut self,
+        tag: ::buffa::encoding::Tag,
+        buf: &mut impl ::buffa::bytes::Buf,
+        ctx: ::buffa::DecodeContext<'_>,
+    ) -> ::core::result::Result<(), ::buffa::DecodeError> {
+        #[allow(unused_imports)]
+        use ::buffa::bytes::Buf as _;
+        #[allow(unused_imports)]
+        use ::buffa::Enumeration as _;
+        match tag.field_number() {
+            1u32 => {
+                ::buffa::encoding::check_wire_type(
+                    tag,
+                    ::buffa::encoding::WireType::Varint,
+                )?;
+                self.version = ::buffa::types::decode_uint32(buf)?;
+            }
+            2u32 => {
+                ::buffa::encoding::check_wire_type(
+                    tag,
+                    ::buffa::encoding::WireType::Varint,
+                )?;
+                self.fee_token_id = ::buffa::types::decode_uint32(buf)?;
+            }
+            3u32 => {
+                ::buffa::encoding::check_wire_type(
+                    tag,
+                    ::buffa::encoding::WireType::LengthDelimited,
+                )?;
+                ::buffa::Message::merge_length_delimited(
+                    self.fee_limit.get_or_insert_default(),
+                    buf,
+                    ctx,
+                )?;
+            }
+            4u32 => {
+                ::buffa::encoding::check_wire_type(
+                    tag,
+                    ::buffa::encoding::WireType::LengthDelimited,
+                )?;
+                ::buffa::types::merge_bytes(&mut self.reference, buf)?;
+            }
+            5u32 => {
+                ::buffa::encoding::check_wire_type(
+                    tag,
+                    ::buffa::encoding::WireType::LengthDelimited,
+                )?;
+                ::buffa::types::merge_bytes(&mut self.memo, buf)?;
+            }
+            _ => {
+                ::buffa::encoding::skip_field_depth(tag, buf, ctx.depth())?;
+            }
+        }
+        ::core::result::Result::Ok(())
+    }
+    fn clear(&mut self) {
+        self.version = 0u32;
+        self.fee_token_id = 0u32;
+        self.fee_limit = ::buffa::MessageField::none();
+        self.reference.clear();
+        self.memo.clear();
+    }
+}
+/// MorphL1MessageConfig represents the extra fields of a Morph L1 message transaction, a transaction
+/// queued on the L1 chain and later included by the sequencer in an L2 block.
+#[derive(Clone, PartialEq, Default)]
+pub struct MorphL1MessageConfig {
+    /// QueueIndex is the position of this message in Morph's L1 message queue. The chain requires
+    /// L1 messages to be included in strictly increasing queue index order, refer to
+    /// \[BlockHeader.morph_next_l1_msg_index\] to know at which index the next block resumes.
+    ///
+    /// Field 1: `queue_index`
+    pub queue_index: u64,
+}
+impl ::core::fmt::Debug for MorphL1MessageConfig {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+        f.debug_struct("MorphL1MessageConfig")
+            .field("queue_index", &self.queue_index)
+            .finish()
+    }
+}
+impl MorphL1MessageConfig {
+    /// Protobuf type URL for this message, for use with `Any::pack` and
+    /// `Any::unpack_if`.
+    ///
+    /// Format: `type.googleapis.com/<fully.qualified.TypeName>`
+    pub const TYPE_URL: &'static str = "type.googleapis.com/sf.ethereum.type.v2.MorphL1MessageConfig";
+}
+::buffa::impl_default_instance!(MorphL1MessageConfig);
+impl ::buffa::MessageName for MorphL1MessageConfig {
+    const PACKAGE: &'static str = "sf.ethereum.type.v2";
+    const NAME: &'static str = "MorphL1MessageConfig";
+    const FULL_NAME: &'static str = "sf.ethereum.type.v2.MorphL1MessageConfig";
+    const TYPE_URL: &'static str = "type.googleapis.com/sf.ethereum.type.v2.MorphL1MessageConfig";
+}
+impl ::buffa::Message for MorphL1MessageConfig {
+    /// Returns the total encoded size in bytes.
+    ///
+    /// Accumulates in `u64` (which cannot overflow for in-memory
+    /// data) and saturates to `u32` at return, so a message whose
+    /// encoded size exceeds the 2 GiB protobuf limit yields a value
+    /// above [`::buffa::MAX_MESSAGE_BYTES`] that the encode entry
+    /// points reject, never a silently wrapped size.
+    #[allow(clippy::let_and_return)]
+    fn compute_size(&self, _cache: &mut ::buffa::SizeCache) -> u32 {
+        #[allow(unused_imports)]
+        use ::buffa::Enumeration as _;
+        let mut size = 0u64;
+        if self.queue_index != 0u64 {
+            size += 1u64 + ::buffa::types::uint64_encoded_len(self.queue_index) as u64;
+        }
+        ::buffa::saturate_size(size)
+    }
+    fn write_to(
+        &self,
+        _cache: &mut ::buffa::SizeCache,
+        buf: &mut impl ::buffa::EncodeSink,
+    ) {
+        #[allow(unused_imports)]
+        use ::buffa::Enumeration as _;
+        if self.queue_index != 0u64 {
+            ::buffa::types::put_uint64_field(1u32, self.queue_index, buf);
+        }
+    }
+    fn merge_field(
+        &mut self,
+        tag: ::buffa::encoding::Tag,
+        buf: &mut impl ::buffa::bytes::Buf,
+        ctx: ::buffa::DecodeContext<'_>,
+    ) -> ::core::result::Result<(), ::buffa::DecodeError> {
+        #[allow(unused_imports)]
+        use ::buffa::bytes::Buf as _;
+        #[allow(unused_imports)]
+        use ::buffa::Enumeration as _;
+        match tag.field_number() {
+            1u32 => {
+                ::buffa::encoding::check_wire_type(
+                    tag,
+                    ::buffa::encoding::WireType::Varint,
+                )?;
+                self.queue_index = ::buffa::types::decode_uint64(buf)?;
+            }
+            _ => {
+                ::buffa::encoding::skip_field_depth(tag, buf, ctx.depth())?;
+            }
+        }
+        ::core::result::Result::Ok(())
+    }
+    fn clear(&mut self) {
+        self.queue_index = 0u64;
     }
 }
 /// AccessTuple represents a list of storage keys for a given contract's address and is used
@@ -3237,6 +3738,16 @@ pub struct TransactionReceipt {
     ///
     /// Field 6: `blob_gas_price`
     pub blob_gas_price: ::buffa::MessageField<BigInt, ::buffa::Inline<BigInt>>,
+    /// MorphReceiptConfig holds the Morph specific values that were resolved while executing the
+    /// transaction, mainly the L1 data fee and the oracle values used to charge the fee token.
+    ///
+    /// Morph specific, unset on all other chains.
+    ///
+    /// Field 7: `morph_receipt_config`
+    pub morph_receipt_config: ::buffa::MessageField<
+        MorphReceiptConfig,
+        ::buffa::Inline<MorphReceiptConfig>,
+    >,
 }
 impl ::core::fmt::Debug for TransactionReceipt {
     fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
@@ -3247,6 +3758,7 @@ impl ::core::fmt::Debug for TransactionReceipt {
             .field("logs", &self.logs)
             .field("blob_gas_used", &self.blob_gas_used)
             .field("blob_gas_price", &self.blob_gas_price)
+            .field("morph_receipt_config", &self.morph_receipt_config)
             .finish()
     }
 }
@@ -3317,6 +3829,14 @@ impl ::buffa::Message for TransactionReceipt {
                 += 1u64 + ::buffa::encoding::varint_len(inner_size as u64) as u64
                     + inner_size as u64;
         }
+        if self.morph_receipt_config.is_set() {
+            let __slot = __cache.reserve();
+            let inner_size = self.morph_receipt_config.compute_size(__cache);
+            __cache.set(__slot, inner_size);
+            size
+                += 1u64 + ::buffa::encoding::varint_len(inner_size as u64) as u64
+                    + inner_size as u64;
+        }
         ::buffa::saturate_size(size)
     }
     fn write_to(
@@ -3353,6 +3873,14 @@ impl ::buffa::Message for TransactionReceipt {
                 buf,
             );
             self.blob_gas_price.write_to(__cache, buf);
+        }
+        if self.morph_receipt_config.is_set() {
+            ::buffa::types::put_len_delimited_header(
+                7u32,
+                u64::from(__cache.consume_next()),
+                buf,
+            );
+            self.morph_receipt_config.write_to(__cache, buf);
         }
     }
     fn merge_field(
@@ -3419,6 +3947,17 @@ impl ::buffa::Message for TransactionReceipt {
                     ctx,
                 )?;
             }
+            7u32 => {
+                ::buffa::encoding::check_wire_type(
+                    tag,
+                    ::buffa::encoding::WireType::LengthDelimited,
+                )?;
+                ::buffa::Message::merge_length_delimited(
+                    self.morph_receipt_config.get_or_insert_default(),
+                    buf,
+                    ctx,
+                )?;
+            }
             _ => {
                 ::buffa::encoding::skip_field_depth(tag, buf, ctx.depth())?;
             }
@@ -3432,6 +3971,187 @@ impl ::buffa::Message for TransactionReceipt {
         self.logs.clear();
         self.blob_gas_used = ::core::option::Option::None;
         self.blob_gas_price = ::buffa::MessageField::none();
+        self.morph_receipt_config = ::buffa::MessageField::none();
+    }
+}
+/// MorphReceiptConfig represents the Morph specific fields recorded on the receipt of a transaction.
+#[derive(Clone, PartialEq, Default)]
+pub struct MorphReceiptConfig {
+    /// L1Fee is the fee, in the native token, paid to cover the cost of posting this transaction's
+    /// data to the L1 chain. It is populated for every Morph transaction except L1 messages, which
+    /// are prepaid on L1. For a MorphTx paying with a fee token, it is included in the token debit.
+    ///
+    /// Field 1: `l1_fee`
+    pub l1_fee: ::buffa::MessageField<BigInt, ::buffa::Inline<BigInt>>,
+    /// FeeRate is the oracle rate used to convert the gas cost expressed in the native token into
+    /// units of the transaction's fee token.
+    ///
+    /// This will is populated only if `TransactionTrace.Type == TRX_TYPE_MORPH` and
+    /// \[MorphTxConfig.fee_token_id\] is not 0.
+    ///
+    /// Field 2: `fee_rate`
+    pub fee_rate: ::buffa::MessageField<BigInt, ::buffa::Inline<BigInt>>,
+    /// TokenScale is the scaling factor of the transaction's fee token. Together with 'fee_rate', a
+    /// native amount converts to `ceil(native_amount * token_scale / fee_rate)` token units. The fee is
+    /// debited upfront for the gas limit plus the L1 fee, and the unused part is refunded through a
+    /// separate conversion, which rounds down with a carried rounding credit once the upgrade that
+    /// activates MorphTx version 2 is live. The net amount charged is therefore not a single
+    /// conversion of the gas used.
+    ///
+    /// This will is populated only if `TransactionTrace.Type == TRX_TYPE_MORPH` and
+    /// \[MorphTxConfig.fee_token_id\] is not 0.
+    ///
+    /// Field 3: `token_scale`
+    pub token_scale: ::buffa::MessageField<BigInt, ::buffa::Inline<BigInt>>,
+}
+impl ::core::fmt::Debug for MorphReceiptConfig {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+        f.debug_struct("MorphReceiptConfig")
+            .field("l1_fee", &self.l1_fee)
+            .field("fee_rate", &self.fee_rate)
+            .field("token_scale", &self.token_scale)
+            .finish()
+    }
+}
+impl MorphReceiptConfig {
+    /// Protobuf type URL for this message, for use with `Any::pack` and
+    /// `Any::unpack_if`.
+    ///
+    /// Format: `type.googleapis.com/<fully.qualified.TypeName>`
+    pub const TYPE_URL: &'static str = "type.googleapis.com/sf.ethereum.type.v2.MorphReceiptConfig";
+}
+::buffa::impl_default_instance!(MorphReceiptConfig);
+impl ::buffa::MessageName for MorphReceiptConfig {
+    const PACKAGE: &'static str = "sf.ethereum.type.v2";
+    const NAME: &'static str = "MorphReceiptConfig";
+    const FULL_NAME: &'static str = "sf.ethereum.type.v2.MorphReceiptConfig";
+    const TYPE_URL: &'static str = "type.googleapis.com/sf.ethereum.type.v2.MorphReceiptConfig";
+}
+impl ::buffa::Message for MorphReceiptConfig {
+    /// Returns the total encoded size in bytes.
+    ///
+    /// Accumulates in `u64` (which cannot overflow for in-memory
+    /// data) and saturates to `u32` at return, so a message whose
+    /// encoded size exceeds the 2 GiB protobuf limit yields a value
+    /// above [`::buffa::MAX_MESSAGE_BYTES`] that the encode entry
+    /// points reject, never a silently wrapped size.
+    #[allow(clippy::let_and_return)]
+    fn compute_size(&self, __cache: &mut ::buffa::SizeCache) -> u32 {
+        #[allow(unused_imports)]
+        use ::buffa::Enumeration as _;
+        let mut size = 0u64;
+        if self.l1_fee.is_set() {
+            let __slot = __cache.reserve();
+            let inner_size = self.l1_fee.compute_size(__cache);
+            __cache.set(__slot, inner_size);
+            size
+                += 1u64 + ::buffa::encoding::varint_len(inner_size as u64) as u64
+                    + inner_size as u64;
+        }
+        if self.fee_rate.is_set() {
+            let __slot = __cache.reserve();
+            let inner_size = self.fee_rate.compute_size(__cache);
+            __cache.set(__slot, inner_size);
+            size
+                += 1u64 + ::buffa::encoding::varint_len(inner_size as u64) as u64
+                    + inner_size as u64;
+        }
+        if self.token_scale.is_set() {
+            let __slot = __cache.reserve();
+            let inner_size = self.token_scale.compute_size(__cache);
+            __cache.set(__slot, inner_size);
+            size
+                += 1u64 + ::buffa::encoding::varint_len(inner_size as u64) as u64
+                    + inner_size as u64;
+        }
+        ::buffa::saturate_size(size)
+    }
+    fn write_to(
+        &self,
+        __cache: &mut ::buffa::SizeCache,
+        buf: &mut impl ::buffa::EncodeSink,
+    ) {
+        #[allow(unused_imports)]
+        use ::buffa::Enumeration as _;
+        if self.l1_fee.is_set() {
+            ::buffa::types::put_len_delimited_header(
+                1u32,
+                u64::from(__cache.consume_next()),
+                buf,
+            );
+            self.l1_fee.write_to(__cache, buf);
+        }
+        if self.fee_rate.is_set() {
+            ::buffa::types::put_len_delimited_header(
+                2u32,
+                u64::from(__cache.consume_next()),
+                buf,
+            );
+            self.fee_rate.write_to(__cache, buf);
+        }
+        if self.token_scale.is_set() {
+            ::buffa::types::put_len_delimited_header(
+                3u32,
+                u64::from(__cache.consume_next()),
+                buf,
+            );
+            self.token_scale.write_to(__cache, buf);
+        }
+    }
+    fn merge_field(
+        &mut self,
+        tag: ::buffa::encoding::Tag,
+        buf: &mut impl ::buffa::bytes::Buf,
+        ctx: ::buffa::DecodeContext<'_>,
+    ) -> ::core::result::Result<(), ::buffa::DecodeError> {
+        #[allow(unused_imports)]
+        use ::buffa::bytes::Buf as _;
+        #[allow(unused_imports)]
+        use ::buffa::Enumeration as _;
+        match tag.field_number() {
+            1u32 => {
+                ::buffa::encoding::check_wire_type(
+                    tag,
+                    ::buffa::encoding::WireType::LengthDelimited,
+                )?;
+                ::buffa::Message::merge_length_delimited(
+                    self.l1_fee.get_or_insert_default(),
+                    buf,
+                    ctx,
+                )?;
+            }
+            2u32 => {
+                ::buffa::encoding::check_wire_type(
+                    tag,
+                    ::buffa::encoding::WireType::LengthDelimited,
+                )?;
+                ::buffa::Message::merge_length_delimited(
+                    self.fee_rate.get_or_insert_default(),
+                    buf,
+                    ctx,
+                )?;
+            }
+            3u32 => {
+                ::buffa::encoding::check_wire_type(
+                    tag,
+                    ::buffa::encoding::WireType::LengthDelimited,
+                )?;
+                ::buffa::Message::merge_length_delimited(
+                    self.token_scale.get_or_insert_default(),
+                    buf,
+                    ctx,
+                )?;
+            }
+            _ => {
+                ::buffa::encoding::skip_field_depth(tag, buf, ctx.depth())?;
+            }
+        }
+        ::core::result::Result::Ok(())
+    }
+    fn clear(&mut self) {
+        self.l1_fee = ::buffa::MessageField::none();
+        self.fee_rate = ::buffa::MessageField::none();
+        self.token_scale = ::buffa::MessageField::none();
     }
 }
 #[derive(Clone, PartialEq, Default)]
@@ -3702,7 +4422,23 @@ pub struct Call {
     pub executed_code: bool,
     /// Field 16: `suicide`
     pub suicide: bool,
-    /// hex representation of the hash -\> preimage
+    /// Keccak preimages produced by the KECCAK256 opcode during this call, as a map of the
+    /// hex representation of the hash -\> hex representation of the preimage. Neither side
+    /// carries a `0x` prefix.
+    ///
+    /// The map exists so a consumer can walk a storage slot back to the expression that
+    /// produced it, and only preimages of 256 bytes or less are recorded. Solidity's slot
+    /// derivations are all small:
+    ///
+    /// - 32 bytes for a dynamic array, or for a `bytes`/`string` longer than 31 bytes
+    /// - 64 bytes for a mapping with a value-type key, one hash per level of nesting
+    /// - 32 bytes plus the key for a `mapping(string => V)` or `mapping(bytes => V)`
+    ///
+    /// 256 bytes covers all of those, with room for a 224-byte dynamic key. A preimage
+    /// larger than that comes from a contract hashing its own data rather than deriving a
+    /// slot, and is left out of the map entirely rather than truncated: a truncated
+    /// preimage does not hash back to its key, which is worse for a consumer than no entry.
+    ///
     /// Note: not populated by the Monad tracer, the Monad execution layer does not emit keccak preimage events
     ///
     /// Field 20: `keccak_preimages`
