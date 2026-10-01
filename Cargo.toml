@@ -19,7 +19,7 @@ substreams-ethereum = { version = "0.12.0-beta.1", path = "./substreams-ethereum
 substreams-ethereum-abigen = { version = "0.12.0-beta.1", path = "./abigen" }
 substreams-ethereum-core = { version = "0.12.0-beta.1", path = "./core" }
 substreams-ethereum-derive = { version = "0.12.0-beta.1", path = "./derive" }
-substreams = { version = "0.8.0-beta" }
+substreams = { version = "0.8.0" }
 
 [profile.release]
 lto = true

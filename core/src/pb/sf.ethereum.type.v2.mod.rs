@@ -63,6 +63,18 @@ pub use self::__buffa::view::TransactionTraceOwnedView;
 #[doc(inline)]
 pub use self::__buffa::lazy_view::TransactionTraceLazyView;
 #[doc(inline)]
+pub use self::__buffa::view::MorphTxConfigView;
+#[doc(inline)]
+pub use self::__buffa::view::MorphTxConfigOwnedView;
+#[doc(inline)]
+pub use self::__buffa::lazy_view::MorphTxConfigLazyView;
+#[doc(inline)]
+pub use self::__buffa::view::MorphL1MessageConfigView;
+#[doc(inline)]
+pub use self::__buffa::view::MorphL1MessageConfigOwnedView;
+#[doc(inline)]
+pub use self::__buffa::lazy_view::MorphL1MessageConfigLazyView;
+#[doc(inline)]
 pub use self::__buffa::view::AccessTupleView;
 #[doc(inline)]
 pub use self::__buffa::view::AccessTupleOwnedView;
@@ -80,6 +92,12 @@ pub use self::__buffa::view::TransactionReceiptView;
 pub use self::__buffa::view::TransactionReceiptOwnedView;
 #[doc(inline)]
 pub use self::__buffa::lazy_view::TransactionReceiptLazyView;
+#[doc(inline)]
+pub use self::__buffa::view::MorphReceiptConfigView;
+#[doc(inline)]
+pub use self::__buffa::view::MorphReceiptConfigOwnedView;
+#[doc(inline)]
+pub use self::__buffa::lazy_view::MorphReceiptConfigLazyView;
 #[doc(inline)]
 pub use self::__buffa::view::LogView;
 #[doc(inline)]
