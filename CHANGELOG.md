@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.12.0](https://github.com/streamingfast/substreams-ethereum/releases/tag/v0.12.0)
+
+* Stable release of [`0.12.0-beta.1`](https://github.com/streamingfast/substreams-ethereum/releases/tag/v0.12.0-beta.1).
+  Its entry below covers the `prost` to `buffa` migration and the `ethabi` removal.
+
+* Bumped the toolchain to 1.93.
+
 ## [0.12.0-beta.1](https://github.com/streamingfast/substreams-ethereum/releases/tag/v0.12.0-beta.1)
 
 * Encoding and decoding no longer go through `ethabi`. Generated events and functions read and write
