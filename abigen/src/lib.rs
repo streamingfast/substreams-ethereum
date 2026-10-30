@@ -70,18 +70,23 @@ fn rust_type_indexed(input: &ParamType) -> proc_macro2::TokenStream {
     }
 }
 
+/// Emits the Rust type of a parameter.
+///
+/// A generated struct takes its name from the ABI, so a function or event named `result`
+/// puts a `Result` struct in the module its generated code lives in. That is why generated
+/// code spells out std types in full, here and everywhere else.
 fn rust_type(input: &ParamType) -> proc_macro2::TokenStream {
     match *input {
-        ParamType::Address => quote! { Vec<u8> },
-        ParamType::Bytes => quote! { Vec<u8> },
+        ParamType::Address => quote! { ::std::vec::Vec<u8> },
+        ParamType::Bytes => quote! { ::std::vec::Vec<u8> },
         ParamType::FixedBytes(size) => quote! { [u8; #size] },
         ParamType::Int(_) => quote! { substreams::scalar::BigInt },
         ParamType::Uint(_) => quote! { substreams::scalar::BigInt },
         ParamType::Bool => quote! { bool },
-        ParamType::String => quote! { String },
+        ParamType::String => quote! { ::std::string::String },
         ParamType::Array(ref kind) => {
             let t = rust_type(&*kind);
-            quote! { Vec<#t> }
+            quote! { ::std::vec::Vec<#t> }
         }
         ParamType::FixedArray(ref kind, size) => {
             let t = rust_type(&*kind);
@@ -519,7 +524,7 @@ fn read_at(
                         #data, #offset, #name
                     )?;
 
-                    let mut out = Vec::with_capacity(count.min(1024));
+                    let mut out = ::std::vec::Vec::with_capacity(count.min(1024));
                     let mut at = 0usize;
                     for _ in 0..count {
                         out.push(#element);

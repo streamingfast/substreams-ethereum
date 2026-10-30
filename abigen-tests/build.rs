@@ -1,7 +1,7 @@
 use substreams_ethereum::Abigen;
 
 fn main() -> Result<(), anyhow::Error> {
-    let abis = vec!["tests"];
+    let abis = vec!["tests", "std_names"];
 
     for abi in abis {
         // All `path` arguments is relative to crate's Cargo.toml directory, in this example, it's 'abigen'

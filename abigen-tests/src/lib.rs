@@ -2227,3 +2227,47 @@ mod encode_parity {
         );
     }
 }
+
+#[cfg(test)]
+mod std_names {
+    use crate::abi::std_names::{events, functions};
+    use pretty_assertions::assert_eq;
+    use substreams::hex;
+    use substreams::scalar::BigInt;
+    use substreams_ethereum::pb;
+
+    #[test]
+    fn it_round_trips_a_function_named_after_a_std_type() {
+        let result = functions::Result {
+            id: [7u8; 31],
+            index: BigInt::from(3),
+        };
+
+        let call = pb::eth::v2::Call {
+            input: result.encode(),
+            ..Default::default()
+        };
+
+        assert_eq!(functions::Result::decode(&call), Ok(result));
+    }
+
+    #[test]
+    fn it_decodes_an_event_named_after_a_std_type() {
+        let log = pb::eth::v2::Log {
+            topics: vec![
+                vec![0u8; 32],
+                hex!("000000000000000000000000db0de9288cf0713de91371969efcc9969dd94117").to_vec(),
+            ],
+            data: hex!("000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000056c6162656c000000000000000000000000000000000000000000000000000000").to_vec(),
+            ..Default::default()
+        };
+
+        assert_eq!(
+            events::Result::decode(&log),
+            Ok(events::Result {
+                owner: hex!("db0de9288cf0713de91371969efcc9969dd94117").to_vec(),
+                label: "label".to_string(),
+            })
+        );
+    }
+}

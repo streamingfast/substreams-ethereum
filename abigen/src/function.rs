@@ -140,11 +140,11 @@ impl<'a> From<(String, &'a crate::abi::Function)> for Function {
                 );
 
                 quote! {
-                    pub fn output_call(call: &substreams_ethereum::pb::eth::v2::Call) -> Result<#output_result, String> {
+                    pub fn output_call(call: &substreams_ethereum::pb::eth::v2::Call) -> ::std::result::Result<#output_result, ::std::string::String> {
                         Self::output(call.return_data.as_ref())
                     }
 
-                    pub fn output(data: &[u8]) -> Result<#output_result, String> {
+                    pub fn output(data: &[u8]) -> ::std::result::Result<#output_result, ::std::string::String> {
                         Ok(#decode_input)
                     }
                 }
@@ -165,11 +165,11 @@ impl<'a> From<(String, &'a crate::abi::Function)> for Function {
                     .collect();
 
                 quote! {
-                    pub fn output_call(call: &substreams_ethereum::pb::eth::v2::Call) -> Result<#output_result, String> {
+                    pub fn output_call(call: &substreams_ethereum::pb::eth::v2::Call) -> ::std::result::Result<#output_result, ::std::string::String> {
                         Self::output(call.return_data.as_ref())
                     }
 
-                    pub fn output(data: &[u8]) -> Result<#output_result, String> {
+                    pub fn output(data: &[u8]) -> ::std::result::Result<#output_result, ::std::string::String> {
                         Ok((#(#output_tuple_decoded_fields),*))
                     }
                 }
@@ -225,7 +225,7 @@ impl Function {
         let call_implementation = match self.outputs.count {
             0 => quote! {},
             _ => quote! {
-                pub fn call(&self, address: Vec<u8>) -> Option<#outputs_result> {
+                pub fn call(&self, address: ::std::vec::Vec<u8>) -> ::std::option::Option<#outputs_result> {
                     use substreams_ethereum::pb::eth::rpc;
 
                     let rpc_calls = rpc::RpcCalls {
@@ -263,7 +263,7 @@ impl Function {
             0 => quote! {},
             _ => quote! {
                 impl substreams_ethereum::rpc::RPCDecodable<#outputs_result> for #camel_name {
-                    fn output(data: &[u8]) -> Result<#outputs_result, String> {
+                    fn output(data: &[u8]) -> ::std::result::Result<#outputs_result, ::std::string::String> {
                     Self::output(data)
                     }
                 }
@@ -289,7 +289,7 @@ impl Function {
             impl #camel_name {
                 const METHOD_ID: [u8; 4] = [#(#signature_hash_bytes),*];
 
-                pub fn decode(call: &substreams_ethereum::pb::eth::v2::Call) -> Result<Self, String> {
+                pub fn decode(call: &substreams_ethereum::pb::eth::v2::Call) -> ::std::result::Result<Self, ::std::string::String> {
                     #decoded_input_values
 
                     Ok(Self {
@@ -297,8 +297,8 @@ impl Function {
                     })
                 }
 
-                pub fn encode(&self) -> Vec<u8> {
-                    let mut out: Vec<u8> = Vec::with_capacity(4 + #head_width);
+                pub fn encode(&self) -> ::std::vec::Vec<u8> {
+                    let mut out: ::std::vec::Vec<u8> = ::std::vec::Vec::with_capacity(4 + #head_width);
                     out.extend(Self::METHOD_ID);
 
                     let base = substreams_ethereum::abi::reserve_head(&mut out, #head_width);
@@ -324,10 +324,10 @@ impl Function {
                 fn match_call(call: &substreams_ethereum::pb::eth::v2::Call) -> bool {
                     Self::match_call(call)
                 }
-                fn decode(call: &substreams_ethereum::pb::eth::v2::Call) -> Result<Self, String> {
+                fn decode(call: &substreams_ethereum::pb::eth::v2::Call) -> ::std::result::Result<Self, ::std::string::String> {
                     Self::decode(call)
                 }
-                fn encode(&self) -> Vec<u8> {
+                fn encode(&self) -> ::std::vec::Vec<u8> {
                     self.encode()
                 }
             }

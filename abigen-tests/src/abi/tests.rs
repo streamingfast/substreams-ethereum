@@ -6,14 +6,14 @@
 pub mod functions {
     #[derive(Debug, Clone, PartialEq)]
     pub struct FixedArrayAddressArrayAddressReturnsUint256String {
-        pub param0: [Vec<u8>; 2usize],
-        pub param1: Vec<Vec<u8>>,
+        pub param0: [::std::vec::Vec<u8>; 2usize],
+        pub param1: ::std::vec::Vec<::std::vec::Vec<u8>>,
     }
     impl FixedArrayAddressArrayAddressReturnsUint256String {
         const METHOD_ID: [u8; 4] = [222u8, 196u8, 49u8, 26u8];
         pub fn decode(
             call: &substreams_ethereum::pb::eth::v2::Call,
-        ) -> Result<Self, String> {
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             let maybe_data = call.input.get(4..);
             if maybe_data.is_none() {
                 return Err("no data to decode".to_string());
@@ -40,7 +40,7 @@ pub mod functions {
                         64,
                         "param1",
                     )?;
-                    let mut out = Vec::with_capacity(count.min(1024));
+                    let mut out = ::std::vec::Vec::with_capacity(count.min(1024));
                     let mut at = 0usize;
                     for _ in 0..count {
                         out.push(
@@ -52,8 +52,10 @@ pub mod functions {
                 },
             })
         }
-        pub fn encode(&self) -> Vec<u8> {
-            let mut out: Vec<u8> = Vec::with_capacity(4 + 96usize);
+        pub fn encode(&self) -> ::std::vec::Vec<u8> {
+            let mut out: ::std::vec::Vec<u8> = ::std::vec::Vec::with_capacity(
+                4 + 96usize,
+            );
             out.extend(Self::METHOD_ID);
             let base = substreams_ethereum::abi::reserve_head(&mut out, 96usize);
             for (index, element) in self.param0.iter().enumerate() {
@@ -87,12 +89,18 @@ pub mod functions {
         }
         pub fn output_call(
             call: &substreams_ethereum::pb::eth::v2::Call,
-        ) -> Result<(substreams::scalar::BigInt, String), String> {
+        ) -> ::std::result::Result<
+            (substreams::scalar::BigInt, ::std::string::String),
+            ::std::string::String,
+        > {
             Self::output(call.return_data.as_ref())
         }
         pub fn output(
             data: &[u8],
-        ) -> Result<(substreams::scalar::BigInt, String), String> {
+        ) -> ::std::result::Result<
+            (substreams::scalar::BigInt, ::std::string::String),
+            ::std::string::String,
+        > {
             Ok((
                 substreams_ethereum::abi::read_uint(data, 0, "output")?,
                 substreams_ethereum::abi::read_string(data, 32, "output")?,
@@ -106,8 +114,8 @@ pub mod functions {
         }
         pub fn call(
             &self,
-            address: Vec<u8>,
-        ) -> Option<(substreams::scalar::BigInt, String)> {
+            address: ::std::vec::Vec<u8>,
+        ) -> ::std::option::Option<(substreams::scalar::BigInt, ::std::string::String)> {
             use substreams_ethereum::pb::eth::rpc;
             let rpc_calls = rpc::RpcCalls {
                 calls: vec![rpc::RpcCall { to_addr : address, data : self.encode(), }],
@@ -138,29 +146,35 @@ pub mod functions {
         }
         fn decode(
             call: &substreams_ethereum::pb::eth::v2::Call,
-        ) -> Result<Self, String> {
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             Self::decode(call)
         }
-        fn encode(&self) -> Vec<u8> {
+        fn encode(&self) -> ::std::vec::Vec<u8> {
             self.encode()
         }
     }
-    impl substreams_ethereum::rpc::RPCDecodable<(substreams::scalar::BigInt, String)>
-    for FixedArrayAddressArrayAddressReturnsUint256String {
-        fn output(data: &[u8]) -> Result<(substreams::scalar::BigInt, String), String> {
+    impl substreams_ethereum::rpc::RPCDecodable<
+        (substreams::scalar::BigInt, ::std::string::String),
+    > for FixedArrayAddressArrayAddressReturnsUint256String {
+        fn output(
+            data: &[u8],
+        ) -> ::std::result::Result<
+            (substreams::scalar::BigInt, ::std::string::String),
+            ::std::string::String,
+        > {
             Self::output(data)
         }
     }
     #[derive(Debug, Clone, PartialEq)]
     pub struct FixedArrayAddressArrayUint256ReturnsUint256String {
-        pub param0: [Vec<u8>; 2usize],
-        pub param1: Vec<substreams::scalar::BigInt>,
+        pub param0: [::std::vec::Vec<u8>; 2usize],
+        pub param1: ::std::vec::Vec<substreams::scalar::BigInt>,
     }
     impl FixedArrayAddressArrayUint256ReturnsUint256String {
         const METHOD_ID: [u8; 4] = [136u8, 229u8, 164u8, 109u8];
         pub fn decode(
             call: &substreams_ethereum::pb::eth::v2::Call,
-        ) -> Result<Self, String> {
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             let maybe_data = call.input.get(4..);
             if maybe_data.is_none() {
                 return Err("no data to decode".to_string());
@@ -187,7 +201,7 @@ pub mod functions {
                         64,
                         "param1",
                     )?;
-                    let mut out = Vec::with_capacity(count.min(1024));
+                    let mut out = ::std::vec::Vec::with_capacity(count.min(1024));
                     let mut at = 0usize;
                     for _ in 0..count {
                         out.push(
@@ -199,8 +213,10 @@ pub mod functions {
                 },
             })
         }
-        pub fn encode(&self) -> Vec<u8> {
-            let mut out: Vec<u8> = Vec::with_capacity(4 + 96usize);
+        pub fn encode(&self) -> ::std::vec::Vec<u8> {
+            let mut out: ::std::vec::Vec<u8> = ::std::vec::Vec::with_capacity(
+                4 + 96usize,
+            );
             out.extend(Self::METHOD_ID);
             let base = substreams_ethereum::abi::reserve_head(&mut out, 96usize);
             for (index, element) in self.param0.iter().enumerate() {
@@ -234,12 +250,18 @@ pub mod functions {
         }
         pub fn output_call(
             call: &substreams_ethereum::pb::eth::v2::Call,
-        ) -> Result<(substreams::scalar::BigInt, String), String> {
+        ) -> ::std::result::Result<
+            (substreams::scalar::BigInt, ::std::string::String),
+            ::std::string::String,
+        > {
             Self::output(call.return_data.as_ref())
         }
         pub fn output(
             data: &[u8],
-        ) -> Result<(substreams::scalar::BigInt, String), String> {
+        ) -> ::std::result::Result<
+            (substreams::scalar::BigInt, ::std::string::String),
+            ::std::string::String,
+        > {
             Ok((
                 substreams_ethereum::abi::read_uint(data, 0, "output")?,
                 substreams_ethereum::abi::read_string(data, 32, "output")?,
@@ -253,8 +275,8 @@ pub mod functions {
         }
         pub fn call(
             &self,
-            address: Vec<u8>,
-        ) -> Option<(substreams::scalar::BigInt, String)> {
+            address: ::std::vec::Vec<u8>,
+        ) -> ::std::option::Option<(substreams::scalar::BigInt, ::std::string::String)> {
             use substreams_ethereum::pb::eth::rpc;
             let rpc_calls = rpc::RpcCalls {
                 calls: vec![rpc::RpcCall { to_addr : address, data : self.encode(), }],
@@ -285,37 +307,43 @@ pub mod functions {
         }
         fn decode(
             call: &substreams_ethereum::pb::eth::v2::Call,
-        ) -> Result<Self, String> {
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             Self::decode(call)
         }
-        fn encode(&self) -> Vec<u8> {
+        fn encode(&self) -> ::std::vec::Vec<u8> {
             self.encode()
         }
     }
-    impl substreams_ethereum::rpc::RPCDecodable<(substreams::scalar::BigInt, String)>
-    for FixedArrayAddressArrayUint256ReturnsUint256String {
-        fn output(data: &[u8]) -> Result<(substreams::scalar::BigInt, String), String> {
+    impl substreams_ethereum::rpc::RPCDecodable<
+        (substreams::scalar::BigInt, ::std::string::String),
+    > for FixedArrayAddressArrayUint256ReturnsUint256String {
+        fn output(
+            data: &[u8],
+        ) -> ::std::result::Result<
+            (substreams::scalar::BigInt, ::std::string::String),
+            ::std::string::String,
+        > {
             Self::output(data)
         }
     }
     #[derive(Debug, Clone, PartialEq)]
     pub struct FunAll {
-        pub param0: Vec<u8>,
-        pub param1: Vec<u8>,
+        pub param0: ::std::vec::Vec<u8>,
+        pub param1: ::std::vec::Vec<u8>,
         pub param2: [u8; 8usize],
         pub param3: [u8; 32usize],
         pub param4: substreams::scalar::BigInt,
         pub param5: substreams::scalar::BigInt,
         pub param6: bool,
-        pub param7: String,
-        pub param8: [Vec<u8>; 2usize],
-        pub param9: Vec<Vec<u8>>,
+        pub param7: ::std::string::String,
+        pub param8: [::std::vec::Vec<u8>; 2usize],
+        pub param9: ::std::vec::Vec<::std::vec::Vec<u8>>,
     }
     impl FunAll {
         const METHOD_ID: [u8; 4] = [26u8, 249u8, 60u8, 49u8];
         pub fn decode(
             call: &substreams_ethereum::pb::eth::v2::Call,
-        ) -> Result<Self, String> {
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             let maybe_data = call.input.get(4..);
             if maybe_data.is_none() {
                 return Err("no data to decode".to_string());
@@ -354,7 +382,7 @@ pub mod functions {
                         320,
                         "param9",
                     )?;
-                    let mut out = Vec::with_capacity(count.min(1024));
+                    let mut out = ::std::vec::Vec::with_capacity(count.min(1024));
                     let mut at = 0usize;
                     for _ in 0..count {
                         out.push(
@@ -366,8 +394,10 @@ pub mod functions {
                 },
             })
         }
-        pub fn encode(&self) -> Vec<u8> {
-            let mut out: Vec<u8> = Vec::with_capacity(4 + 352usize);
+        pub fn encode(&self) -> ::std::vec::Vec<u8> {
+            let mut out: ::std::vec::Vec<u8> = ::std::vec::Vec::with_capacity(
+                4 + 352usize,
+            );
             out.extend(Self::METHOD_ID);
             let base = substreams_ethereum::abi::reserve_head(&mut out, 352usize);
             substreams_ethereum::abi::write_address_at(&mut out, base + 0, &self.param0);
@@ -440,22 +470,22 @@ pub mod functions {
         }
         fn decode(
             call: &substreams_ethereum::pb::eth::v2::Call,
-        ) -> Result<Self, String> {
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             Self::decode(call)
         }
-        fn encode(&self) -> Vec<u8> {
+        fn encode(&self) -> ::std::vec::Vec<u8> {
             self.encode()
         }
     }
     #[derive(Debug, Clone, PartialEq)]
     pub struct FunBytesArray {
-        pub a: Vec<Vec<u8>>,
+        pub a: ::std::vec::Vec<::std::vec::Vec<u8>>,
     }
     impl FunBytesArray {
         const METHOD_ID: [u8; 4] = [57u8, 253u8, 155u8, 147u8];
         pub fn decode(
             call: &substreams_ethereum::pb::eth::v2::Call,
-        ) -> Result<Self, String> {
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             let maybe_data = call.input.get(4..);
             if maybe_data.is_none() {
                 return Err("no data to decode".to_string());
@@ -468,7 +498,7 @@ pub mod functions {
                         0,
                         "a",
                     )?;
-                    let mut out = Vec::with_capacity(count.min(1024));
+                    let mut out = ::std::vec::Vec::with_capacity(count.min(1024));
                     let mut at = 0usize;
                     for _ in 0..count {
                         out.push(substreams_ethereum::abi::read_bytes(tail, at, "a")?);
@@ -478,8 +508,10 @@ pub mod functions {
                 },
             })
         }
-        pub fn encode(&self) -> Vec<u8> {
-            let mut out: Vec<u8> = Vec::with_capacity(4 + 32usize);
+        pub fn encode(&self) -> ::std::vec::Vec<u8> {
+            let mut out: ::std::vec::Vec<u8> = ::std::vec::Vec::with_capacity(
+                4 + 32usize,
+            );
             out.extend(Self::METHOD_ID);
             let base = substreams_ethereum::abi::reserve_head(&mut out, 32usize);
             {
@@ -525,22 +557,22 @@ pub mod functions {
         }
         fn decode(
             call: &substreams_ethereum::pb::eth::v2::Call,
-        ) -> Result<Self, String> {
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             Self::decode(call)
         }
-        fn encode(&self) -> Vec<u8> {
+        fn encode(&self) -> ::std::vec::Vec<u8> {
             self.encode()
         }
     }
     #[derive(Debug, Clone, PartialEq)]
     pub struct FunDynamicBoolArray {
-        pub param0: Vec<bool>,
+        pub param0: ::std::vec::Vec<bool>,
     }
     impl FunDynamicBoolArray {
         const METHOD_ID: [u8; 4] = [176u8, 230u8, 21u8, 120u8];
         pub fn decode(
             call: &substreams_ethereum::pb::eth::v2::Call,
-        ) -> Result<Self, String> {
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             let maybe_data = call.input.get(4..);
             if maybe_data.is_none() {
                 return Err("no data to decode".to_string());
@@ -553,7 +585,7 @@ pub mod functions {
                         0,
                         "param0",
                     )?;
-                    let mut out = Vec::with_capacity(count.min(1024));
+                    let mut out = ::std::vec::Vec::with_capacity(count.min(1024));
                     let mut at = 0usize;
                     for _ in 0..count {
                         out.push(
@@ -565,8 +597,10 @@ pub mod functions {
                 },
             })
         }
-        pub fn encode(&self) -> Vec<u8> {
-            let mut out: Vec<u8> = Vec::with_capacity(4 + 32usize);
+        pub fn encode(&self) -> ::std::vec::Vec<u8> {
+            let mut out: ::std::vec::Vec<u8> = ::std::vec::Vec::with_capacity(
+                4 + 32usize,
+            );
             out.extend(Self::METHOD_ID);
             let base = substreams_ethereum::abi::reserve_head(&mut out, 32usize);
             {
@@ -605,10 +639,10 @@ pub mod functions {
         }
         fn decode(
             call: &substreams_ethereum::pb::eth::v2::Call,
-        ) -> Result<Self, String> {
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             Self::decode(call)
         }
-        fn encode(&self) -> Vec<u8> {
+        fn encode(&self) -> ::std::vec::Vec<u8> {
             self.encode()
         }
     }
@@ -620,7 +654,7 @@ pub mod functions {
         const METHOD_ID: [u8; 4] = [91u8, 51u8, 87u8, 255u8];
         pub fn decode(
             call: &substreams_ethereum::pb::eth::v2::Call,
-        ) -> Result<Self, String> {
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             let maybe_data = call.input.get(4..);
             if maybe_data.is_none() {
                 return Err("no data to decode".to_string());
@@ -630,8 +664,10 @@ pub mod functions {
                 arg0: substreams_ethereum::abi::read_int(data, 0, "arg0")?,
             })
         }
-        pub fn encode(&self) -> Vec<u8> {
-            let mut out: Vec<u8> = Vec::with_capacity(4 + 32usize);
+        pub fn encode(&self) -> ::std::vec::Vec<u8> {
+            let mut out: ::std::vec::Vec<u8> = ::std::vec::Vec::with_capacity(
+                4 + 32usize,
+            );
             out.extend(Self::METHOD_ID);
             let base = substreams_ethereum::abi::reserve_head(&mut out, 32usize);
             substreams_ethereum::abi::write_int_at(&mut out, base + 0, &self.arg0);
@@ -651,10 +687,10 @@ pub mod functions {
         }
         fn decode(
             call: &substreams_ethereum::pb::eth::v2::Call,
-        ) -> Result<Self, String> {
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             Self::decode(call)
         }
-        fn encode(&self) -> Vec<u8> {
+        fn encode(&self) -> ::std::vec::Vec<u8> {
             self.encode()
         }
     }
@@ -666,7 +702,7 @@ pub mod functions {
         const METHOD_ID: [u8; 4] = [247u8, 10u8, 247u8, 59u8];
         pub fn decode(
             call: &substreams_ethereum::pb::eth::v2::Call,
-        ) -> Result<Self, String> {
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             let maybe_data = call.input.get(4..);
             if maybe_data.is_none() {
                 return Err("no data to decode".to_string());
@@ -676,8 +712,10 @@ pub mod functions {
                 param0: substreams_ethereum::abi::read_int(data, 0, "param0")?,
             })
         }
-        pub fn encode(&self) -> Vec<u8> {
-            let mut out: Vec<u8> = Vec::with_capacity(4 + 32usize);
+        pub fn encode(&self) -> ::std::vec::Vec<u8> {
+            let mut out: ::std::vec::Vec<u8> = ::std::vec::Vec::with_capacity(
+                4 + 32usize,
+            );
             out.extend(Self::METHOD_ID);
             let base = substreams_ethereum::abi::reserve_head(&mut out, 32usize);
             substreams_ethereum::abi::write_int_at(&mut out, base + 0, &self.param0);
@@ -697,10 +735,10 @@ pub mod functions {
         }
         fn decode(
             call: &substreams_ethereum::pb::eth::v2::Call,
-        ) -> Result<Self, String> {
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             Self::decode(call)
         }
-        fn encode(&self) -> Vec<u8> {
+        fn encode(&self) -> ::std::vec::Vec<u8> {
             self.encode()
         }
     }
@@ -712,7 +750,7 @@ pub mod functions {
         const METHOD_ID: [u8; 4] = [215u8, 140u8, 170u8, 179u8];
         pub fn decode(
             call: &substreams_ethereum::pb::eth::v2::Call,
-        ) -> Result<Self, String> {
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             let maybe_data = call.input.get(4..);
             if maybe_data.is_none() {
                 return Err("no data to decode".to_string());
@@ -722,8 +760,10 @@ pub mod functions {
                 param0: substreams_ethereum::abi::read_int(data, 0, "param0")?,
             })
         }
-        pub fn encode(&self) -> Vec<u8> {
-            let mut out: Vec<u8> = Vec::with_capacity(4 + 32usize);
+        pub fn encode(&self) -> ::std::vec::Vec<u8> {
+            let mut out: ::std::vec::Vec<u8> = ::std::vec::Vec::with_capacity(
+                4 + 32usize,
+            );
             out.extend(Self::METHOD_ID);
             let base = substreams_ethereum::abi::reserve_head(&mut out, 32usize);
             substreams_ethereum::abi::write_int_at(&mut out, base + 0, &self.param0);
@@ -743,10 +783,10 @@ pub mod functions {
         }
         fn decode(
             call: &substreams_ethereum::pb::eth::v2::Call,
-        ) -> Result<Self, String> {
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             Self::decode(call)
         }
-        fn encode(&self) -> Vec<u8> {
+        fn encode(&self) -> ::std::vec::Vec<u8> {
             self.encode()
         }
     }
@@ -758,7 +798,7 @@ pub mod functions {
         const METHOD_ID: [u8; 4] = [48u8, 54u8, 230u8, 135u8];
         pub fn decode(
             call: &substreams_ethereum::pb::eth::v2::Call,
-        ) -> Result<Self, String> {
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             let maybe_data = call.input.get(4..);
             if maybe_data.is_none() {
                 return Err("no data to decode".to_string());
@@ -768,8 +808,10 @@ pub mod functions {
                 param0: substreams_ethereum::abi::read_int(data, 0, "param0")?,
             })
         }
-        pub fn encode(&self) -> Vec<u8> {
-            let mut out: Vec<u8> = Vec::with_capacity(4 + 32usize);
+        pub fn encode(&self) -> ::std::vec::Vec<u8> {
+            let mut out: ::std::vec::Vec<u8> = ::std::vec::Vec::with_capacity(
+                4 + 32usize,
+            );
             out.extend(Self::METHOD_ID);
             let base = substreams_ethereum::abi::reserve_head(&mut out, 32usize);
             substreams_ethereum::abi::write_int_at(&mut out, base + 0, &self.param0);
@@ -789,10 +831,10 @@ pub mod functions {
         }
         fn decode(
             call: &substreams_ethereum::pb::eth::v2::Call,
-        ) -> Result<Self, String> {
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             Self::decode(call)
         }
-        fn encode(&self) -> Vec<u8> {
+        fn encode(&self) -> ::std::vec::Vec<u8> {
             self.encode()
         }
     }
@@ -807,7 +849,7 @@ pub mod functions {
         const METHOD_ID: [u8; 4] = [219u8, 97u8, 126u8, 143u8];
         pub fn decode(
             call: &substreams_ethereum::pb::eth::v2::Call,
-        ) -> Result<Self, String> {
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             let maybe_data = call.input.get(4..);
             if maybe_data.is_none() {
                 return Err("no data to decode".to_string());
@@ -820,8 +862,10 @@ pub mod functions {
                 param3: substreams_ethereum::abi::read_int(data, 96, "param3")?,
             })
         }
-        pub fn encode(&self) -> Vec<u8> {
-            let mut out: Vec<u8> = Vec::with_capacity(4 + 128usize);
+        pub fn encode(&self) -> ::std::vec::Vec<u8> {
+            let mut out: ::std::vec::Vec<u8> = ::std::vec::Vec::with_capacity(
+                4 + 128usize,
+            );
             out.extend(Self::METHOD_ID);
             let base = substreams_ethereum::abi::reserve_head(&mut out, 128usize);
             substreams_ethereum::abi::write_int_at(&mut out, base + 0, &self.param0);
@@ -844,24 +888,24 @@ pub mod functions {
         }
         fn decode(
             call: &substreams_ethereum::pb::eth::v2::Call,
-        ) -> Result<Self, String> {
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             Self::decode(call)
         }
-        fn encode(&self) -> Vec<u8> {
+        fn encode(&self) -> ::std::vec::Vec<u8> {
             self.encode()
         }
     }
     #[derive(Debug, Clone, PartialEq)]
     pub struct FunMixedLeadingDynamic {
-        pub a: String,
+        pub a: ::std::string::String,
         pub b: substreams::scalar::BigInt,
-        pub c: Vec<u8>,
+        pub c: ::std::vec::Vec<u8>,
     }
     impl FunMixedLeadingDynamic {
         const METHOD_ID: [u8; 4] = [119u8, 238u8, 177u8, 144u8];
         pub fn decode(
             call: &substreams_ethereum::pb::eth::v2::Call,
-        ) -> Result<Self, String> {
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             let maybe_data = call.input.get(4..);
             if maybe_data.is_none() {
                 return Err("no data to decode".to_string());
@@ -873,8 +917,10 @@ pub mod functions {
                 c: substreams_ethereum::abi::read_bytes(data, 64, "c")?,
             })
         }
-        pub fn encode(&self) -> Vec<u8> {
-            let mut out: Vec<u8> = Vec::with_capacity(4 + 96usize);
+        pub fn encode(&self) -> ::std::vec::Vec<u8> {
+            let mut out: ::std::vec::Vec<u8> = ::std::vec::Vec::with_capacity(
+                4 + 96usize,
+            );
             out.extend(Self::METHOD_ID);
             let base = substreams_ethereum::abi::reserve_head(&mut out, 96usize);
             {
@@ -904,10 +950,10 @@ pub mod functions {
         }
         fn decode(
             call: &substreams_ethereum::pb::eth::v2::Call,
-        ) -> Result<Self, String> {
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             Self::decode(call)
         }
-        fn encode(&self) -> Vec<u8> {
+        fn encode(&self) -> ::std::vec::Vec<u8> {
             self.encode()
         }
     }
@@ -917,21 +963,25 @@ pub mod functions {
         const METHOD_ID: [u8; 4] = [122u8, 55u8, 25u8, 240u8];
         pub fn decode(
             call: &substreams_ethereum::pb::eth::v2::Call,
-        ) -> Result<Self, String> {
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             Ok(Self {})
         }
-        pub fn encode(&self) -> Vec<u8> {
-            let mut out: Vec<u8> = Vec::with_capacity(4 + 0usize);
+        pub fn encode(&self) -> ::std::vec::Vec<u8> {
+            let mut out: ::std::vec::Vec<u8> = ::std::vec::Vec::with_capacity(
+                4 + 0usize,
+            );
             out.extend(Self::METHOD_ID);
             let base = substreams_ethereum::abi::reserve_head(&mut out, 0usize);
             out
         }
         pub fn output_call(
             call: &substreams_ethereum::pb::eth::v2::Call,
-        ) -> Result<String, String> {
+        ) -> ::std::result::Result<::std::string::String, ::std::string::String> {
             Self::output(call.return_data.as_ref())
         }
-        pub fn output(data: &[u8]) -> Result<String, String> {
+        pub fn output(
+            data: &[u8],
+        ) -> ::std::result::Result<::std::string::String, ::std::string::String> {
             Ok(substreams_ethereum::abi::read_string(data, 0, "output")?)
         }
         pub fn match_call(call: &substreams_ethereum::pb::eth::v2::Call) -> bool {
@@ -940,7 +990,10 @@ pub mod functions {
                 None => false,
             }
         }
-        pub fn call(&self, address: Vec<u8>) -> Option<String> {
+        pub fn call(
+            &self,
+            address: ::std::vec::Vec<u8>,
+        ) -> ::std::option::Option<::std::string::String> {
             use substreams_ethereum::pb::eth::rpc;
             let rpc_calls = rpc::RpcCalls {
                 calls: vec![rpc::RpcCall { to_addr : address, data : self.encode(), }],
@@ -970,15 +1023,18 @@ pub mod functions {
         }
         fn decode(
             call: &substreams_ethereum::pb::eth::v2::Call,
-        ) -> Result<Self, String> {
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             Self::decode(call)
         }
-        fn encode(&self) -> Vec<u8> {
+        fn encode(&self) -> ::std::vec::Vec<u8> {
             self.encode()
         }
     }
-    impl substreams_ethereum::rpc::RPCDecodable<String> for FunReturnsString1 {
-        fn output(data: &[u8]) -> Result<String, String> {
+    impl substreams_ethereum::rpc::RPCDecodable<::std::string::String>
+    for FunReturnsString1 {
+        fn output(
+            data: &[u8],
+        ) -> ::std::result::Result<::std::string::String, ::std::string::String> {
             Self::output(data)
         }
     }
@@ -988,21 +1044,25 @@ pub mod functions {
         const METHOD_ID: [u8; 4] = [122u8, 55u8, 25u8, 240u8];
         pub fn decode(
             call: &substreams_ethereum::pb::eth::v2::Call,
-        ) -> Result<Self, String> {
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             Ok(Self {})
         }
-        pub fn encode(&self) -> Vec<u8> {
-            let mut out: Vec<u8> = Vec::with_capacity(4 + 0usize);
+        pub fn encode(&self) -> ::std::vec::Vec<u8> {
+            let mut out: ::std::vec::Vec<u8> = ::std::vec::Vec::with_capacity(
+                4 + 0usize,
+            );
             out.extend(Self::METHOD_ID);
             let base = substreams_ethereum::abi::reserve_head(&mut out, 0usize);
             out
         }
         pub fn output_call(
             call: &substreams_ethereum::pb::eth::v2::Call,
-        ) -> Result<String, String> {
+        ) -> ::std::result::Result<::std::string::String, ::std::string::String> {
             Self::output(call.return_data.as_ref())
         }
-        pub fn output(data: &[u8]) -> Result<String, String> {
+        pub fn output(
+            data: &[u8],
+        ) -> ::std::result::Result<::std::string::String, ::std::string::String> {
             Ok(substreams_ethereum::abi::read_string(data, 0, "output")?)
         }
         pub fn match_call(call: &substreams_ethereum::pb::eth::v2::Call) -> bool {
@@ -1011,7 +1071,10 @@ pub mod functions {
                 None => false,
             }
         }
-        pub fn call(&self, address: Vec<u8>) -> Option<String> {
+        pub fn call(
+            &self,
+            address: ::std::vec::Vec<u8>,
+        ) -> ::std::option::Option<::std::string::String> {
             use substreams_ethereum::pb::eth::rpc;
             let rpc_calls = rpc::RpcCalls {
                 calls: vec![rpc::RpcCall { to_addr : address, data : self.encode(), }],
@@ -1041,15 +1104,18 @@ pub mod functions {
         }
         fn decode(
             call: &substreams_ethereum::pb::eth::v2::Call,
-        ) -> Result<Self, String> {
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             Self::decode(call)
         }
-        fn encode(&self) -> Vec<u8> {
+        fn encode(&self) -> ::std::vec::Vec<u8> {
             self.encode()
         }
     }
-    impl substreams_ethereum::rpc::RPCDecodable<String> for FunReturnsString2 {
-        fn output(data: &[u8]) -> Result<String, String> {
+    impl substreams_ethereum::rpc::RPCDecodable<::std::string::String>
+    for FunReturnsString2 {
+        fn output(
+            data: &[u8],
+        ) -> ::std::result::Result<::std::string::String, ::std::string::String> {
             Self::output(data)
         }
     }
@@ -1059,21 +1125,31 @@ pub mod functions {
         const METHOD_ID: [u8; 4] = [133u8, 3u8, 47u8, 124u8];
         pub fn decode(
             call: &substreams_ethereum::pb::eth::v2::Call,
-        ) -> Result<Self, String> {
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             Ok(Self {})
         }
-        pub fn encode(&self) -> Vec<u8> {
-            let mut out: Vec<u8> = Vec::with_capacity(4 + 0usize);
+        pub fn encode(&self) -> ::std::vec::Vec<u8> {
+            let mut out: ::std::vec::Vec<u8> = ::std::vec::Vec::with_capacity(
+                4 + 0usize,
+            );
             out.extend(Self::METHOD_ID);
             let base = substreams_ethereum::abi::reserve_head(&mut out, 0usize);
             out
         }
         pub fn output_call(
             call: &substreams_ethereum::pb::eth::v2::Call,
-        ) -> Result<(String, String), String> {
+        ) -> ::std::result::Result<
+            (::std::string::String, ::std::string::String),
+            ::std::string::String,
+        > {
             Self::output(call.return_data.as_ref())
         }
-        pub fn output(data: &[u8]) -> Result<(String, String), String> {
+        pub fn output(
+            data: &[u8],
+        ) -> ::std::result::Result<
+            (::std::string::String, ::std::string::String),
+            ::std::string::String,
+        > {
             Ok((
                 substreams_ethereum::abi::read_string(data, 0, "output")?,
                 substreams_ethereum::abi::read_string(data, 32, "output")?,
@@ -1085,7 +1161,10 @@ pub mod functions {
                 None => false,
             }
         }
-        pub fn call(&self, address: Vec<u8>) -> Option<(String, String)> {
+        pub fn call(
+            &self,
+            address: ::std::vec::Vec<u8>,
+        ) -> ::std::option::Option<(::std::string::String, ::std::string::String)> {
             use substreams_ethereum::pb::eth::rpc;
             let rpc_calls = rpc::RpcCalls {
                 calls: vec![rpc::RpcCall { to_addr : address, data : self.encode(), }],
@@ -1115,28 +1194,34 @@ pub mod functions {
         }
         fn decode(
             call: &substreams_ethereum::pb::eth::v2::Call,
-        ) -> Result<Self, String> {
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             Self::decode(call)
         }
-        fn encode(&self) -> Vec<u8> {
+        fn encode(&self) -> ::std::vec::Vec<u8> {
             self.encode()
         }
     }
-    impl substreams_ethereum::rpc::RPCDecodable<(String, String)>
-    for FunReturnsStringString {
-        fn output(data: &[u8]) -> Result<(String, String), String> {
+    impl substreams_ethereum::rpc::RPCDecodable<
+        (::std::string::String, ::std::string::String),
+    > for FunReturnsStringString {
+        fn output(
+            data: &[u8],
+        ) -> ::std::result::Result<
+            (::std::string::String, ::std::string::String),
+            ::std::string::String,
+        > {
             Self::output(data)
         }
     }
     #[derive(Debug, Clone, PartialEq)]
     pub struct FunString {
-        pub first: String,
+        pub first: ::std::string::String,
     }
     impl FunString {
         const METHOD_ID: [u8; 4] = [176u8, 217u8, 68u8, 25u8];
         pub fn decode(
             call: &substreams_ethereum::pb::eth::v2::Call,
-        ) -> Result<Self, String> {
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             let maybe_data = call.input.get(4..);
             if maybe_data.is_none() {
                 return Err("no data to decode".to_string());
@@ -1146,8 +1231,10 @@ pub mod functions {
                 first: substreams_ethereum::abi::read_string(data, 0, "first")?,
             })
         }
-        pub fn encode(&self) -> Vec<u8> {
-            let mut out: Vec<u8> = Vec::with_capacity(4 + 32usize);
+        pub fn encode(&self) -> ::std::vec::Vec<u8> {
+            let mut out: ::std::vec::Vec<u8> = ::std::vec::Vec::with_capacity(
+                4 + 32usize,
+            );
             out.extend(Self::METHOD_ID);
             let base = substreams_ethereum::abi::reserve_head(&mut out, 32usize);
             {
@@ -1174,22 +1261,22 @@ pub mod functions {
         }
         fn decode(
             call: &substreams_ethereum::pb::eth::v2::Call,
-        ) -> Result<Self, String> {
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             Self::decode(call)
         }
-        fn encode(&self) -> Vec<u8> {
+        fn encode(&self) -> ::std::vec::Vec<u8> {
             self.encode()
         }
     }
     #[derive(Debug, Clone, PartialEq)]
     pub struct FunStringArray {
-        pub a: Vec<String>,
+        pub a: ::std::vec::Vec<::std::string::String>,
     }
     impl FunStringArray {
         const METHOD_ID: [u8; 4] = [248u8, 30u8, 18u8, 38u8];
         pub fn decode(
             call: &substreams_ethereum::pb::eth::v2::Call,
-        ) -> Result<Self, String> {
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             let maybe_data = call.input.get(4..);
             if maybe_data.is_none() {
                 return Err("no data to decode".to_string());
@@ -1202,7 +1289,7 @@ pub mod functions {
                         0,
                         "a",
                     )?;
-                    let mut out = Vec::with_capacity(count.min(1024));
+                    let mut out = ::std::vec::Vec::with_capacity(count.min(1024));
                     let mut at = 0usize;
                     for _ in 0..count {
                         out.push(substreams_ethereum::abi::read_string(tail, at, "a")?);
@@ -1212,8 +1299,10 @@ pub mod functions {
                 },
             })
         }
-        pub fn encode(&self) -> Vec<u8> {
-            let mut out: Vec<u8> = Vec::with_capacity(4 + 32usize);
+        pub fn encode(&self) -> ::std::vec::Vec<u8> {
+            let mut out: ::std::vec::Vec<u8> = ::std::vec::Vec::with_capacity(
+                4 + 32usize,
+            );
             out.extend(Self::METHOD_ID);
             let base = substreams_ethereum::abi::reserve_head(&mut out, 32usize);
             {
@@ -1259,23 +1348,23 @@ pub mod functions {
         }
         fn decode(
             call: &substreams_ethereum::pb::eth::v2::Call,
-        ) -> Result<Self, String> {
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             Self::decode(call)
         }
-        fn encode(&self) -> Vec<u8> {
+        fn encode(&self) -> ::std::vec::Vec<u8> {
             self.encode()
         }
     }
     #[derive(Debug, Clone, PartialEq)]
     pub struct FunStringArrayThenUint {
-        pub a: Vec<String>,
+        pub a: ::std::vec::Vec<::std::string::String>,
         pub b: substreams::scalar::BigInt,
     }
     impl FunStringArrayThenUint {
         const METHOD_ID: [u8; 4] = [89u8, 18u8, 7u8, 96u8];
         pub fn decode(
             call: &substreams_ethereum::pb::eth::v2::Call,
-        ) -> Result<Self, String> {
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             let maybe_data = call.input.get(4..);
             if maybe_data.is_none() {
                 return Err("no data to decode".to_string());
@@ -1288,7 +1377,7 @@ pub mod functions {
                         0,
                         "a",
                     )?;
-                    let mut out = Vec::with_capacity(count.min(1024));
+                    let mut out = ::std::vec::Vec::with_capacity(count.min(1024));
                     let mut at = 0usize;
                     for _ in 0..count {
                         out.push(substreams_ethereum::abi::read_string(tail, at, "a")?);
@@ -1299,8 +1388,10 @@ pub mod functions {
                 b: substreams_ethereum::abi::read_uint(data, 32, "b")?,
             })
         }
-        pub fn encode(&self) -> Vec<u8> {
-            let mut out: Vec<u8> = Vec::with_capacity(4 + 64usize);
+        pub fn encode(&self) -> ::std::vec::Vec<u8> {
+            let mut out: ::std::vec::Vec<u8> = ::std::vec::Vec::with_capacity(
+                4 + 64usize,
+            );
             out.extend(Self::METHOD_ID);
             let base = substreams_ethereum::abi::reserve_head(&mut out, 64usize);
             {
@@ -1347,22 +1438,22 @@ pub mod functions {
         }
         fn decode(
             call: &substreams_ethereum::pb::eth::v2::Call,
-        ) -> Result<Self, String> {
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             Self::decode(call)
         }
-        fn encode(&self) -> Vec<u8> {
+        fn encode(&self) -> ::std::vec::Vec<u8> {
             self.encode()
         }
     }
     #[derive(Debug, Clone, PartialEq)]
     pub struct FunStringFixedArray {
-        pub a: [String; 2usize],
+        pub a: [::std::string::String; 2usize],
     }
     impl FunStringFixedArray {
         const METHOD_ID: [u8; 4] = [221u8, 63u8, 80u8, 130u8];
         pub fn decode(
             call: &substreams_ethereum::pb::eth::v2::Call,
-        ) -> Result<Self, String> {
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             let maybe_data = call.input.get(4..);
             if maybe_data.is_none() {
                 return Err("no data to decode".to_string());
@@ -1382,8 +1473,10 @@ pub mod functions {
                 },
             })
         }
-        pub fn encode(&self) -> Vec<u8> {
-            let mut out: Vec<u8> = Vec::with_capacity(4 + 32usize);
+        pub fn encode(&self) -> ::std::vec::Vec<u8> {
+            let mut out: ::std::vec::Vec<u8> = ::std::vec::Vec::with_capacity(
+                4 + 32usize,
+            );
             out.extend(Self::METHOD_ID);
             let base = substreams_ethereum::abi::reserve_head(&mut out, 32usize);
             {
@@ -1427,23 +1520,23 @@ pub mod functions {
         }
         fn decode(
             call: &substreams_ethereum::pb::eth::v2::Call,
-        ) -> Result<Self, String> {
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             Self::decode(call)
         }
-        fn encode(&self) -> Vec<u8> {
+        fn encode(&self) -> ::std::vec::Vec<u8> {
             self.encode()
         }
     }
     #[derive(Debug, Clone, PartialEq)]
     pub struct FunStringString {
-        pub first: String,
-        pub second: String,
+        pub first: ::std::string::String,
+        pub second: ::std::string::String,
     }
     impl FunStringString {
         const METHOD_ID: [u8; 4] = [16u8, 173u8, 235u8, 27u8];
         pub fn decode(
             call: &substreams_ethereum::pb::eth::v2::Call,
-        ) -> Result<Self, String> {
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             let maybe_data = call.input.get(4..);
             if maybe_data.is_none() {
                 return Err("no data to decode".to_string());
@@ -1454,8 +1547,10 @@ pub mod functions {
                 second: substreams_ethereum::abi::read_string(data, 32, "second")?,
             })
         }
-        pub fn encode(&self) -> Vec<u8> {
-            let mut out: Vec<u8> = Vec::with_capacity(4 + 64usize);
+        pub fn encode(&self) -> ::std::vec::Vec<u8> {
+            let mut out: ::std::vec::Vec<u8> = ::std::vec::Vec::with_capacity(
+                4 + 64usize,
+            );
             out.extend(Self::METHOD_ID);
             let base = substreams_ethereum::abi::reserve_head(&mut out, 64usize);
             {
@@ -1490,22 +1585,22 @@ pub mod functions {
         }
         fn decode(
             call: &substreams_ethereum::pb::eth::v2::Call,
-        ) -> Result<Self, String> {
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             Self::decode(call)
         }
-        fn encode(&self) -> Vec<u8> {
+        fn encode(&self) -> ::std::vec::Vec<u8> {
             self.encode()
         }
     }
     #[derive(Debug, Clone, PartialEq)]
     pub struct FunTupleAddress {
-        pub param0: (Vec<u8>,),
+        pub param0: (::std::vec::Vec<u8>,),
     }
     impl FunTupleAddress {
         const METHOD_ID: [u8; 4] = [163u8, 105u8, 163u8, 201u8];
         pub fn decode(
             call: &substreams_ethereum::pb::eth::v2::Call,
-        ) -> Result<Self, String> {
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             let maybe_data = call.input.get(4..);
             if maybe_data.is_none() {
                 return Err("no data to decode".to_string());
@@ -1525,8 +1620,10 @@ pub mod functions {
                 },
             })
         }
-        pub fn encode(&self) -> Vec<u8> {
-            let mut out: Vec<u8> = Vec::with_capacity(4 + 32usize);
+        pub fn encode(&self) -> ::std::vec::Vec<u8> {
+            let mut out: ::std::vec::Vec<u8> = ::std::vec::Vec::with_capacity(
+                4 + 32usize,
+            );
             out.extend(Self::METHOD_ID);
             let base = substreams_ethereum::abi::reserve_head(&mut out, 32usize);
             {
@@ -1552,22 +1649,22 @@ pub mod functions {
         }
         fn decode(
             call: &substreams_ethereum::pb::eth::v2::Call,
-        ) -> Result<Self, String> {
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             Self::decode(call)
         }
-        fn encode(&self) -> Vec<u8> {
+        fn encode(&self) -> ::std::vec::Vec<u8> {
             self.encode()
         }
     }
     #[derive(Debug, Clone, PartialEq)]
     pub struct FunTupleArray {
-        pub a: Vec<(String,)>,
+        pub a: ::std::vec::Vec<(::std::string::String,)>,
     }
     impl FunTupleArray {
         const METHOD_ID: [u8; 4] = [105u8, 233u8, 124u8, 13u8];
         pub fn decode(
             call: &substreams_ethereum::pb::eth::v2::Call,
-        ) -> Result<Self, String> {
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             let maybe_data = call.input.get(4..);
             if maybe_data.is_none() {
                 return Err("no data to decode".to_string());
@@ -1580,7 +1677,7 @@ pub mod functions {
                         0,
                         "a",
                     )?;
-                    let mut out = Vec::with_capacity(count.min(1024));
+                    let mut out = ::std::vec::Vec::with_capacity(count.min(1024));
                     let mut at = 0usize;
                     for _ in 0..count {
                         out.push({
@@ -1597,8 +1694,10 @@ pub mod functions {
                 },
             })
         }
-        pub fn encode(&self) -> Vec<u8> {
-            let mut out: Vec<u8> = Vec::with_capacity(4 + 32usize);
+        pub fn encode(&self) -> ::std::vec::Vec<u8> {
+            let mut out: ::std::vec::Vec<u8> = ::std::vec::Vec::with_capacity(
+                4 + 32usize,
+            );
             out.extend(Self::METHOD_ID);
             let base = substreams_ethereum::abi::reserve_head(&mut out, 32usize);
             {
@@ -1661,36 +1760,36 @@ pub mod functions {
         }
         fn decode(
             call: &substreams_ethereum::pb::eth::v2::Call,
-        ) -> Result<Self, String> {
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             Self::decode(call)
         }
-        fn encode(&self) -> Vec<u8> {
+        fn encode(&self) -> ::std::vec::Vec<u8> {
             self.encode()
         }
     }
     #[derive(Clone)]
     pub struct FunTupleMoreThanTwelveFields {
         pub arg0: (
-            Vec<u8>,
-            Vec<u8>,
-            Vec<u8>,
-            Vec<u8>,
-            Vec<u8>,
-            Vec<u8>,
-            Vec<u8>,
-            Vec<u8>,
-            Vec<u8>,
-            Vec<u8>,
-            Vec<u8>,
-            Vec<u8>,
-            Vec<u8>,
+            ::std::vec::Vec<u8>,
+            ::std::vec::Vec<u8>,
+            ::std::vec::Vec<u8>,
+            ::std::vec::Vec<u8>,
+            ::std::vec::Vec<u8>,
+            ::std::vec::Vec<u8>,
+            ::std::vec::Vec<u8>,
+            ::std::vec::Vec<u8>,
+            ::std::vec::Vec<u8>,
+            ::std::vec::Vec<u8>,
+            ::std::vec::Vec<u8>,
+            ::std::vec::Vec<u8>,
+            ::std::vec::Vec<u8>,
         ),
     }
     impl FunTupleMoreThanTwelveFields {
         const METHOD_ID: [u8; 4] = [2u8, 176u8, 207u8, 100u8];
         pub fn decode(
             call: &substreams_ethereum::pb::eth::v2::Call,
-        ) -> Result<Self, String> {
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             let maybe_data = call.input.get(4..);
             if maybe_data.is_none() {
                 return Err("no data to decode".to_string());
@@ -1724,8 +1823,10 @@ pub mod functions {
                 },
             })
         }
-        pub fn encode(&self) -> Vec<u8> {
-            let mut out: Vec<u8> = Vec::with_capacity(4 + 416usize);
+        pub fn encode(&self) -> ::std::vec::Vec<u8> {
+            let mut out: ::std::vec::Vec<u8> = ::std::vec::Vec::with_capacity(
+                4 + 416usize,
+            );
             out.extend(Self::METHOD_ID);
             let base = substreams_ethereum::abi::reserve_head(&mut out, 416usize);
             {
@@ -1811,22 +1912,22 @@ pub mod functions {
         }
         fn decode(
             call: &substreams_ethereum::pb::eth::v2::Call,
-        ) -> Result<Self, String> {
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             Self::decode(call)
         }
-        fn encode(&self) -> Vec<u8> {
+        fn encode(&self) -> ::std::vec::Vec<u8> {
             self.encode()
         }
     }
     #[derive(Debug, Clone, PartialEq)]
     pub struct FunTupleTwoDynamic {
-        pub a: (String, Vec<u8>),
+        pub a: (::std::string::String, ::std::vec::Vec<u8>),
     }
     impl FunTupleTwoDynamic {
         const METHOD_ID: [u8; 4] = [47u8, 44u8, 51u8, 126u8];
         pub fn decode(
             call: &substreams_ethereum::pb::eth::v2::Call,
-        ) -> Result<Self, String> {
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             let maybe_data = call.input.get(4..);
             if maybe_data.is_none() {
                 return Err("no data to decode".to_string());
@@ -1846,8 +1947,10 @@ pub mod functions {
                 },
             })
         }
-        pub fn encode(&self) -> Vec<u8> {
-            let mut out: Vec<u8> = Vec::with_capacity(4 + 32usize);
+        pub fn encode(&self) -> ::std::vec::Vec<u8> {
+            let mut out: ::std::vec::Vec<u8> = ::std::vec::Vec::with_capacity(
+                4 + 32usize,
+            );
             out.extend(Self::METHOD_ID);
             let base = substreams_ethereum::abi::reserve_head(&mut out, 32usize);
             {
@@ -1897,22 +2000,22 @@ pub mod functions {
         }
         fn decode(
             call: &substreams_ethereum::pb::eth::v2::Call,
-        ) -> Result<Self, String> {
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             Self::decode(call)
         }
-        fn encode(&self) -> Vec<u8> {
+        fn encode(&self) -> ::std::vec::Vec<u8> {
             self.encode()
         }
     }
     #[derive(Debug, Clone, PartialEq)]
     pub struct FunTupleWithString {
-        pub a: (String, substreams::scalar::BigInt),
+        pub a: (::std::string::String, substreams::scalar::BigInt),
     }
     impl FunTupleWithString {
         const METHOD_ID: [u8; 4] = [21u8, 244u8, 53u8, 21u8];
         pub fn decode(
             call: &substreams_ethereum::pb::eth::v2::Call,
-        ) -> Result<Self, String> {
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             let maybe_data = call.input.get(4..);
             if maybe_data.is_none() {
                 return Err("no data to decode".to_string());
@@ -1932,8 +2035,10 @@ pub mod functions {
                 },
             })
         }
-        pub fn encode(&self) -> Vec<u8> {
-            let mut out: Vec<u8> = Vec::with_capacity(4 + 32usize);
+        pub fn encode(&self) -> ::std::vec::Vec<u8> {
+            let mut out: ::std::vec::Vec<u8> = ::std::vec::Vec::with_capacity(
+                4 + 32usize,
+            );
             out.extend(Self::METHOD_ID);
             let base = substreams_ethereum::abi::reserve_head(&mut out, 32usize);
             {
@@ -1979,10 +2084,10 @@ pub mod functions {
         }
         fn decode(
             call: &substreams_ethereum::pb::eth::v2::Call,
-        ) -> Result<Self, String> {
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             Self::decode(call)
         }
-        fn encode(&self) -> Vec<u8> {
+        fn encode(&self) -> ::std::vec::Vec<u8> {
             self.encode()
         }
     }
@@ -1994,7 +2099,7 @@ pub mod functions {
         const METHOD_ID: [u8; 4] = [43u8, 21u8, 33u8, 111u8];
         pub fn decode(
             call: &substreams_ethereum::pb::eth::v2::Call,
-        ) -> Result<Self, String> {
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             let maybe_data = call.input.get(4..);
             if maybe_data.is_none() {
                 return Err("no data to decode".to_string());
@@ -2004,8 +2109,10 @@ pub mod functions {
                 param0: substreams_ethereum::abi::read_uint(data, 0, "param0")?,
             })
         }
-        pub fn encode(&self) -> Vec<u8> {
-            let mut out: Vec<u8> = Vec::with_capacity(4 + 32usize);
+        pub fn encode(&self) -> ::std::vec::Vec<u8> {
+            let mut out: ::std::vec::Vec<u8> = ::std::vec::Vec::with_capacity(
+                4 + 32usize,
+            );
             out.extend(Self::METHOD_ID);
             let base = substreams_ethereum::abi::reserve_head(&mut out, 32usize);
             substreams_ethereum::abi::write_uint_at(&mut out, base + 0, &self.param0);
@@ -2025,22 +2132,22 @@ pub mod functions {
         }
         fn decode(
             call: &substreams_ethereum::pb::eth::v2::Call,
-        ) -> Result<Self, String> {
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             Self::decode(call)
         }
-        fn encode(&self) -> Vec<u8> {
+        fn encode(&self) -> ::std::vec::Vec<u8> {
             self.encode()
         }
     }
     #[derive(Debug, Clone, PartialEq)]
     pub struct FunUintNestedArray {
-        pub a: Vec<Vec<substreams::scalar::BigInt>>,
+        pub a: ::std::vec::Vec<::std::vec::Vec<substreams::scalar::BigInt>>,
     }
     impl FunUintNestedArray {
         const METHOD_ID: [u8; 4] = [157u8, 70u8, 163u8, 106u8];
         pub fn decode(
             call: &substreams_ethereum::pb::eth::v2::Call,
-        ) -> Result<Self, String> {
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             let maybe_data = call.input.get(4..);
             if maybe_data.is_none() {
                 return Err("no data to decode".to_string());
@@ -2053,7 +2160,7 @@ pub mod functions {
                         0,
                         "a",
                     )?;
-                    let mut out = Vec::with_capacity(count.min(1024));
+                    let mut out = ::std::vec::Vec::with_capacity(count.min(1024));
                     let mut at = 0usize;
                     for _ in 0..count {
                         out.push({
@@ -2062,7 +2169,9 @@ pub mod functions {
                                 at,
                                 "a",
                             )?;
-                            let mut out = Vec::with_capacity(count.min(1024));
+                            let mut out = ::std::vec::Vec::with_capacity(
+                                count.min(1024),
+                            );
                             let mut at = 0usize;
                             for _ in 0..count {
                                 out.push(
@@ -2078,8 +2187,10 @@ pub mod functions {
                 },
             })
         }
-        pub fn encode(&self) -> Vec<u8> {
-            let mut out: Vec<u8> = Vec::with_capacity(4 + 32usize);
+        pub fn encode(&self) -> ::std::vec::Vec<u8> {
+            let mut out: ::std::vec::Vec<u8> = ::std::vec::Vec::with_capacity(
+                4 + 32usize,
+            );
             out.extend(Self::METHOD_ID);
             let base = substreams_ethereum::abi::reserve_head(&mut out, 32usize);
             {
@@ -2137,10 +2248,10 @@ pub mod functions {
         }
         fn decode(
             call: &substreams_ethereum::pb::eth::v2::Call,
-        ) -> Result<Self, String> {
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             Self::decode(call)
         }
-        fn encode(&self) -> Vec<u8> {
+        fn encode(&self) -> ::std::vec::Vec<u8> {
             self.encode()
         }
     }
@@ -2152,7 +2263,7 @@ pub mod functions {
         const METHOD_ID: [u8; 4] = [113u8, 160u8, 185u8, 111u8];
         pub fn decode(
             call: &substreams_ethereum::pb::eth::v2::Call,
-        ) -> Result<Self, String> {
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             let maybe_data = call.input.get(4..);
             if maybe_data.is_none() {
                 return Err("no data to decode".to_string());
@@ -2162,8 +2273,10 @@ pub mod functions {
                 arg0: substreams_ethereum::abi::read_int(data, 0, "arg0")?,
             })
         }
-        pub fn encode(&self) -> Vec<u8> {
-            let mut out: Vec<u8> = Vec::with_capacity(4 + 32usize);
+        pub fn encode(&self) -> ::std::vec::Vec<u8> {
+            let mut out: ::std::vec::Vec<u8> = ::std::vec::Vec::with_capacity(
+                4 + 32usize,
+            );
             out.extend(Self::METHOD_ID);
             let base = substreams_ethereum::abi::reserve_head(&mut out, 32usize);
             substreams_ethereum::abi::write_int_at(&mut out, base + 0, &self.arg0);
@@ -2183,10 +2296,10 @@ pub mod functions {
         }
         fn decode(
             call: &substreams_ethereum::pb::eth::v2::Call,
-        ) -> Result<Self, String> {
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             Self::decode(call)
         }
-        fn encode(&self) -> Vec<u8> {
+        fn encode(&self) -> ::std::vec::Vec<u8> {
             self.encode()
         }
     }
@@ -2198,7 +2311,7 @@ pub mod functions {
         const METHOD_ID: [u8; 4] = [44u8, 178u8, 156u8, 81u8];
         pub fn decode(
             call: &substreams_ethereum::pb::eth::v2::Call,
-        ) -> Result<Self, String> {
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             let maybe_data = call.input.get(4..);
             if maybe_data.is_none() {
                 return Err("no data to decode".to_string());
@@ -2208,8 +2321,10 @@ pub mod functions {
                 arg0: substreams_ethereum::abi::read_uint(data, 0, "arg0")?,
             })
         }
-        pub fn encode(&self) -> Vec<u8> {
-            let mut out: Vec<u8> = Vec::with_capacity(4 + 32usize);
+        pub fn encode(&self) -> ::std::vec::Vec<u8> {
+            let mut out: ::std::vec::Vec<u8> = ::std::vec::Vec::with_capacity(
+                4 + 32usize,
+            );
             out.extend(Self::METHOD_ID);
             let base = substreams_ethereum::abi::reserve_head(&mut out, 32usize);
             substreams_ethereum::abi::write_uint_at(&mut out, base + 0, &self.arg0);
@@ -2229,10 +2344,10 @@ pub mod functions {
         }
         fn decode(
             call: &substreams_ethereum::pb::eth::v2::Call,
-        ) -> Result<Self, String> {
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             Self::decode(call)
         }
-        fn encode(&self) -> Vec<u8> {
+        fn encode(&self) -> ::std::vec::Vec<u8> {
             self.encode()
         }
     }
@@ -2244,7 +2359,7 @@ pub mod functions {
         const METHOD_ID: [u8; 4] = [207u8, 112u8, 174u8, 135u8];
         pub fn decode(
             call: &substreams_ethereum::pb::eth::v2::Call,
-        ) -> Result<Self, String> {
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             let maybe_data = call.input.get(4..);
             if maybe_data.is_none() {
                 return Err("no data to decode".to_string());
@@ -2254,8 +2369,10 @@ pub mod functions {
                 arg0: substreams_ethereum::abi::read_uint(data, 0, "arg0")?,
             })
         }
-        pub fn encode(&self) -> Vec<u8> {
-            let mut out: Vec<u8> = Vec::with_capacity(4 + 32usize);
+        pub fn encode(&self) -> ::std::vec::Vec<u8> {
+            let mut out: ::std::vec::Vec<u8> = ::std::vec::Vec::with_capacity(
+                4 + 32usize,
+            );
             out.extend(Self::METHOD_ID);
             let base = substreams_ethereum::abi::reserve_head(&mut out, 32usize);
             substreams_ethereum::abi::write_uint_at(&mut out, base + 0, &self.arg0);
@@ -2275,10 +2392,10 @@ pub mod functions {
         }
         fn decode(
             call: &substreams_ethereum::pb::eth::v2::Call,
-        ) -> Result<Self, String> {
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             Self::decode(call)
         }
-        fn encode(&self) -> Vec<u8> {
+        fn encode(&self) -> ::std::vec::Vec<u8> {
             self.encode()
         }
     }
@@ -2290,7 +2407,7 @@ pub mod functions {
         const METHOD_ID: [u8; 4] = [46u8, 173u8, 55u8, 142u8];
         pub fn decode(
             call: &substreams_ethereum::pb::eth::v2::Call,
-        ) -> Result<Self, String> {
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             let maybe_data = call.input.get(4..);
             if maybe_data.is_none() {
                 return Err("no data to decode".to_string());
@@ -2300,8 +2417,10 @@ pub mod functions {
                 arg0: substreams_ethereum::abi::read_int(data, 0, "arg0")?,
             })
         }
-        pub fn encode(&self) -> Vec<u8> {
-            let mut out: Vec<u8> = Vec::with_capacity(4 + 32usize);
+        pub fn encode(&self) -> ::std::vec::Vec<u8> {
+            let mut out: ::std::vec::Vec<u8> = ::std::vec::Vec::with_capacity(
+                4 + 32usize,
+            );
             out.extend(Self::METHOD_ID);
             let base = substreams_ethereum::abi::reserve_head(&mut out, 32usize);
             substreams_ethereum::abi::write_int_at(&mut out, base + 0, &self.arg0);
@@ -2321,10 +2440,10 @@ pub mod functions {
         }
         fn decode(
             call: &substreams_ethereum::pb::eth::v2::Call,
-        ) -> Result<Self, String> {
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             Self::decode(call)
         }
-        fn encode(&self) -> Vec<u8> {
+        fn encode(&self) -> ::std::vec::Vec<u8> {
             self.encode()
         }
     }
@@ -2336,7 +2455,7 @@ pub mod functions {
         const METHOD_ID: [u8; 4] = [140u8, 162u8, 116u8, 137u8];
         pub fn decode(
             call: &substreams_ethereum::pb::eth::v2::Call,
-        ) -> Result<Self, String> {
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             let maybe_data = call.input.get(4..);
             if maybe_data.is_none() {
                 return Err("no data to decode".to_string());
@@ -2346,8 +2465,10 @@ pub mod functions {
                 arg0: substreams_ethereum::abi::read_uint(data, 0, "arg0")?,
             })
         }
-        pub fn encode(&self) -> Vec<u8> {
-            let mut out: Vec<u8> = Vec::with_capacity(4 + 32usize);
+        pub fn encode(&self) -> ::std::vec::Vec<u8> {
+            let mut out: ::std::vec::Vec<u8> = ::std::vec::Vec::with_capacity(
+                4 + 32usize,
+            );
             out.extend(Self::METHOD_ID);
             let base = substreams_ethereum::abi::reserve_head(&mut out, 32usize);
             substreams_ethereum::abi::write_uint_at(&mut out, base + 0, &self.arg0);
@@ -2367,10 +2488,10 @@ pub mod functions {
         }
         fn decode(
             call: &substreams_ethereum::pb::eth::v2::Call,
-        ) -> Result<Self, String> {
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             Self::decode(call)
         }
-        fn encode(&self) -> Vec<u8> {
+        fn encode(&self) -> ::std::vec::Vec<u8> {
             self.encode()
         }
     }
@@ -2382,7 +2503,7 @@ pub mod functions {
         const METHOD_ID: [u8; 4] = [106u8, 55u8, 235u8, 170u8];
         pub fn decode(
             call: &substreams_ethereum::pb::eth::v2::Call,
-        ) -> Result<Self, String> {
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             let maybe_data = call.input.get(4..);
             if maybe_data.is_none() {
                 return Err("no data to decode".to_string());
@@ -2392,8 +2513,10 @@ pub mod functions {
                 arg0: substreams_ethereum::abi::read_int(data, 0, "arg0")?,
             })
         }
-        pub fn encode(&self) -> Vec<u8> {
-            let mut out: Vec<u8> = Vec::with_capacity(4 + 32usize);
+        pub fn encode(&self) -> ::std::vec::Vec<u8> {
+            let mut out: ::std::vec::Vec<u8> = ::std::vec::Vec::with_capacity(
+                4 + 32usize,
+            );
             out.extend(Self::METHOD_ID);
             let base = substreams_ethereum::abi::reserve_head(&mut out, 32usize);
             substreams_ethereum::abi::write_int_at(&mut out, base + 0, &self.arg0);
@@ -2413,10 +2536,10 @@ pub mod functions {
         }
         fn decode(
             call: &substreams_ethereum::pb::eth::v2::Call,
-        ) -> Result<Self, String> {
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             Self::decode(call)
         }
-        fn encode(&self) -> Vec<u8> {
+        fn encode(&self) -> ::std::vec::Vec<u8> {
             self.encode()
         }
     }
@@ -2426,8 +2549,8 @@ pub mod functions {
 pub mod events {
     #[derive(Debug, Clone, PartialEq)]
     pub struct EventAddressIdxString {
-        pub first: Vec<u8>,
-        pub second: String,
+        pub first: ::std::vec::Vec<u8>,
+        pub second: ::std::string::String,
     }
     impl EventAddressIdxString {
         const TOPIC_ID: [u8; 32] = [
@@ -2473,7 +2596,9 @@ pub mod events {
             }
             return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
-        pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+        pub fn decode<L: substreams_ethereum::LogLike>(
+            log: &L,
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             if log.topic_count() != 2usize {
                 return Err(
                     format!(
@@ -2505,16 +2630,18 @@ pub mod events {
         fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
             Self::match_log(log)
         }
-        fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+        fn decode<L: substreams_ethereum::LogLike>(
+            log: &L,
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             Self::decode(log)
         }
     }
     #[derive(Debug, Clone, PartialEq)]
     pub struct EventAddressIdxStringUint256IdxBytes {
-        pub first: Vec<u8>,
-        pub second: String,
+        pub first: ::std::vec::Vec<u8>,
+        pub second: ::std::string::String,
         pub third: substreams::scalar::BigInt,
-        pub fourth: Vec<u8>,
+        pub fourth: ::std::vec::Vec<u8>,
     }
     impl EventAddressIdxStringUint256IdxBytes {
         const TOPIC_ID: [u8; 32] = [
@@ -2560,7 +2687,9 @@ pub mod events {
             }
             return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
-        pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+        pub fn decode<L: substreams_ethereum::LogLike>(
+            log: &L,
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             if log.topic_count() != 3usize {
                 return Err(
                     format!(
@@ -2598,13 +2727,15 @@ pub mod events {
         fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
             Self::match_log(log)
         }
-        fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+        fn decode<L: substreams_ethereum::LogLike>(
+            log: &L,
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             Self::decode(log)
         }
     }
     #[derive(Debug, Clone, PartialEq)]
     pub struct EventAddressIdxUint256Bool {
-        pub first: Vec<u8>,
+        pub first: ::std::vec::Vec<u8>,
         pub second: substreams::scalar::BigInt,
         pub third: bool,
     }
@@ -2652,7 +2783,9 @@ pub mod events {
             }
             return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
-        pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+        pub fn decode<L: substreams_ethereum::LogLike>(
+            log: &L,
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             if log.topic_count() != 2usize {
                 return Err(
                     format!(
@@ -2685,16 +2818,18 @@ pub mod events {
         fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
             Self::match_log(log)
         }
-        fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+        fn decode<L: substreams_ethereum::LogLike>(
+            log: &L,
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             Self::decode(log)
         }
     }
     #[derive(Debug, Clone, PartialEq)]
     pub struct EventAddressIdxUint256Uint256AddressIdx {
-        pub first: Vec<u8>,
+        pub first: ::std::vec::Vec<u8>,
         pub second: substreams::scalar::BigInt,
         pub third: substreams::scalar::BigInt,
-        pub fourth: Vec<u8>,
+        pub fourth: ::std::vec::Vec<u8>,
     }
     impl EventAddressIdxUint256Uint256AddressIdx {
         const TOPIC_ID: [u8; 32] = [
@@ -2740,7 +2875,9 @@ pub mod events {
             }
             return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
-        pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+        pub fn decode<L: substreams_ethereum::LogLike>(
+            log: &L,
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             if log.topic_count() != 3usize {
                 return Err(
                     format!(
@@ -2778,13 +2915,15 @@ pub mod events {
         fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
             Self::match_log(log)
         }
-        fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+        fn decode<L: substreams_ethereum::LogLike>(
+            log: &L,
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             Self::decode(log)
         }
     }
     #[derive(Debug, Clone, PartialEq)]
     pub struct EventAddressUint64BoolBytes4 {
-        pub param0: Vec<u8>,
+        pub param0: ::std::vec::Vec<u8>,
         pub param1: substreams::scalar::BigInt,
         pub param2: bool,
         pub param3: [u8; 4usize],
@@ -2833,7 +2972,9 @@ pub mod events {
             }
             return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
-        pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+        pub fn decode<L: substreams_ethereum::LogLike>(
+            log: &L,
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             if log.topic_count() != 1usize {
                 return Err(
                     format!(
@@ -2865,7 +3006,9 @@ pub mod events {
         fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
             Self::match_log(log)
         }
-        fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+        fn decode<L: substreams_ethereum::LogLike>(
+            log: &L,
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             Self::decode(log)
         }
     }
@@ -2917,7 +3060,9 @@ pub mod events {
             }
             return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
-        pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+        pub fn decode<L: substreams_ethereum::LogLike>(
+            log: &L,
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             if log.topic_count() != 1usize {
                 return Err(
                     format!(
@@ -2944,7 +3089,9 @@ pub mod events {
         fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
             Self::match_log(log)
         }
-        fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+        fn decode<L: substreams_ethereum::LogLike>(
+            log: &L,
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             Self::decode(log)
         }
     }
@@ -2997,7 +3144,9 @@ pub mod events {
             }
             return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
-        pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+        pub fn decode<L: substreams_ethereum::LogLike>(
+            log: &L,
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             if log.topic_count() != 1usize {
                 return Err(
                     format!(
@@ -3025,7 +3174,9 @@ pub mod events {
         fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
             Self::match_log(log)
         }
-        fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+        fn decode<L: substreams_ethereum::LogLike>(
+            log: &L,
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             Self::decode(log)
         }
     }
@@ -3077,7 +3228,9 @@ pub mod events {
             }
             return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
-        pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+        pub fn decode<L: substreams_ethereum::LogLike>(
+            log: &L,
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             if log.topic_count() != 1usize {
                 return Err(
                     format!(
@@ -3106,7 +3259,9 @@ pub mod events {
         fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
             Self::match_log(log)
         }
-        fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+        fn decode<L: substreams_ethereum::LogLike>(
+            log: &L,
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             Self::decode(log)
         }
     }
@@ -3114,7 +3269,7 @@ pub mod events {
     pub struct EventBytes20UintAddressIdx {
         pub first: [u8; 20usize],
         pub second: substreams::scalar::BigInt,
-        pub third: Vec<u8>,
+        pub third: ::std::vec::Vec<u8>,
     }
     impl EventBytes20UintAddressIdx {
         const TOPIC_ID: [u8; 32] = [
@@ -3160,7 +3315,9 @@ pub mod events {
             }
             return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
-        pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+        pub fn decode<L: substreams_ethereum::LogLike>(
+            log: &L,
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             if log.topic_count() != 2usize {
                 return Err(
                     format!(
@@ -3195,7 +3352,9 @@ pub mod events {
         fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
             Self::match_log(log)
         }
-        fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+        fn decode<L: substreams_ethereum::LogLike>(
+            log: &L,
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             Self::decode(log)
         }
     }
@@ -3247,7 +3406,9 @@ pub mod events {
             }
             return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
-        pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+        pub fn decode<L: substreams_ethereum::LogLike>(
+            log: &L,
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             if log.topic_count() != 1usize {
                 return Err(
                     format!(
@@ -3276,7 +3437,9 @@ pub mod events {
         fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
             Self::match_log(log)
         }
-        fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+        fn decode<L: substreams_ethereum::LogLike>(
+            log: &L,
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             Self::decode(log)
         }
     }
@@ -3284,7 +3447,7 @@ pub mod events {
     pub struct EventBytes32UintAddressIdx {
         pub first: [u8; 32usize],
         pub second: substreams::scalar::BigInt,
-        pub third: Vec<u8>,
+        pub third: ::std::vec::Vec<u8>,
     }
     impl EventBytes32UintAddressIdx {
         const TOPIC_ID: [u8; 32] = [
@@ -3330,7 +3493,9 @@ pub mod events {
             }
             return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
-        pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+        pub fn decode<L: substreams_ethereum::LogLike>(
+            log: &L,
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             if log.topic_count() != 2usize {
                 return Err(
                     format!(
@@ -3365,7 +3530,9 @@ pub mod events {
         fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
             Self::match_log(log)
         }
-        fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+        fn decode<L: substreams_ethereum::LogLike>(
+            log: &L,
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             Self::decode(log)
         }
     }
@@ -3417,7 +3584,9 @@ pub mod events {
             }
             return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
-        pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+        pub fn decode<L: substreams_ethereum::LogLike>(
+            log: &L,
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             if log.topic_count() != 1usize {
                 return Err(
                     format!(
@@ -3446,7 +3615,9 @@ pub mod events {
         fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
             Self::match_log(log)
         }
-        fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+        fn decode<L: substreams_ethereum::LogLike>(
+            log: &L,
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             Self::decode(log)
         }
     }
@@ -3498,7 +3669,9 @@ pub mod events {
             }
             return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
-        pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+        pub fn decode<L: substreams_ethereum::LogLike>(
+            log: &L,
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             if log.topic_count() != 1usize {
                 return Err(
                     format!(
@@ -3525,7 +3698,9 @@ pub mod events {
         fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
             Self::match_log(log)
         }
-        fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+        fn decode<L: substreams_ethereum::LogLike>(
+            log: &L,
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             Self::decode(log)
         }
     }
@@ -3577,7 +3752,9 @@ pub mod events {
             }
             return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
-        pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+        pub fn decode<L: substreams_ethereum::LogLike>(
+            log: &L,
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             if log.topic_count() != 1usize {
                 return Err(
                     format!(
@@ -3604,7 +3781,9 @@ pub mod events {
         fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
             Self::match_log(log)
         }
-        fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+        fn decode<L: substreams_ethereum::LogLike>(
+            log: &L,
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             Self::decode(log)
         }
     }
@@ -3656,7 +3835,9 @@ pub mod events {
             }
             return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
-        pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+        pub fn decode<L: substreams_ethereum::LogLike>(
+            log: &L,
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             if log.topic_count() != 2usize {
                 return Err(
                     format!(
@@ -3677,7 +3858,9 @@ pub mod events {
         fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
             Self::match_log(log)
         }
-        fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+        fn decode<L: substreams_ethereum::LogLike>(
+            log: &L,
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             Self::decode(log)
         }
     }
@@ -3729,7 +3912,9 @@ pub mod events {
             }
             return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
-        pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+        pub fn decode<L: substreams_ethereum::LogLike>(
+            log: &L,
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             if log.topic_count() != 1usize {
                 return Err(
                     format!(
@@ -3756,7 +3941,9 @@ pub mod events {
         fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
             Self::match_log(log)
         }
-        fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+        fn decode<L: substreams_ethereum::LogLike>(
+            log: &L,
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             Self::decode(log)
         }
     }
@@ -3808,7 +3995,9 @@ pub mod events {
             }
             return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
-        pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+        pub fn decode<L: substreams_ethereum::LogLike>(
+            log: &L,
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             if log.topic_count() != 1usize {
                 return Err(
                     format!(
@@ -3835,13 +4024,15 @@ pub mod events {
         fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
             Self::match_log(log)
         }
-        fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+        fn decode<L: substreams_ethereum::LogLike>(
+            log: &L,
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             Self::decode(log)
         }
     }
     #[derive(Debug, Clone, PartialEq)]
     pub struct EventSixWords {
-        pub p0: Vec<u8>,
+        pub p0: ::std::vec::Vec<u8>,
         pub p1: substreams::scalar::BigInt,
         pub p2: substreams::scalar::BigInt,
         pub p3: bool,
@@ -3892,7 +4083,9 @@ pub mod events {
             }
             return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
-        pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+        pub fn decode<L: substreams_ethereum::LogLike>(
+            log: &L,
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             if log.topic_count() != 1usize {
                 return Err(
                     format!(
@@ -3926,13 +4119,15 @@ pub mod events {
         fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
             Self::match_log(log)
         }
-        fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+        fn decode<L: substreams_ethereum::LogLike>(
+            log: &L,
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             Self::decode(log)
         }
     }
     #[derive(Debug, Clone, PartialEq)]
     pub struct EventStringIdx {
-        pub param0: substreams_ethereum::IndexedDynamicValue<String>,
+        pub param0: substreams_ethereum::IndexedDynamicValue<::std::string::String>,
     }
     impl EventStringIdx {
         const TOPIC_ID: [u8; 32] = [
@@ -3978,7 +4173,9 @@ pub mod events {
             }
             return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
-        pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+        pub fn decode<L: substreams_ethereum::LogLike>(
+            log: &L,
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             if log.topic_count() != 2usize {
                 return Err(
                     format!(
@@ -4001,26 +4198,28 @@ pub mod events {
         fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
             Self::match_log(log)
         }
-        fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+        fn decode<L: substreams_ethereum::LogLike>(
+            log: &L,
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             Self::decode(log)
         }
     }
     #[derive(Clone)]
     pub struct EventTupleMoreThanTwelveFields {
         pub param0: (
-            Vec<u8>,
-            Vec<u8>,
-            Vec<u8>,
-            Vec<u8>,
-            Vec<u8>,
-            Vec<u8>,
-            Vec<u8>,
-            Vec<u8>,
-            Vec<u8>,
-            Vec<u8>,
-            Vec<u8>,
-            Vec<u8>,
-            Vec<u8>,
+            ::std::vec::Vec<u8>,
+            ::std::vec::Vec<u8>,
+            ::std::vec::Vec<u8>,
+            ::std::vec::Vec<u8>,
+            ::std::vec::Vec<u8>,
+            ::std::vec::Vec<u8>,
+            ::std::vec::Vec<u8>,
+            ::std::vec::Vec<u8>,
+            ::std::vec::Vec<u8>,
+            ::std::vec::Vec<u8>,
+            ::std::vec::Vec<u8>,
+            ::std::vec::Vec<u8>,
+            ::std::vec::Vec<u8>,
         ),
     }
     impl EventTupleMoreThanTwelveFields {
@@ -4067,7 +4266,9 @@ pub mod events {
             }
             return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
-        pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+        pub fn decode<L: substreams_ethereum::LogLike>(
+            log: &L,
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             if log.topic_count() != 1usize {
                 return Err(
                     format!(
@@ -4119,13 +4320,15 @@ pub mod events {
         fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
             Self::match_log(log)
         }
-        fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+        fn decode<L: substreams_ethereum::LogLike>(
+            log: &L,
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             Self::decode(log)
         }
     }
     #[derive(Debug, Clone, PartialEq)]
     pub struct EventUArrayBool {
-        pub param0: Vec<bool>,
+        pub param0: ::std::vec::Vec<bool>,
     }
     impl EventUArrayBool {
         const TOPIC_ID: [u8; 32] = [
@@ -4171,7 +4374,9 @@ pub mod events {
             }
             return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
-        pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+        pub fn decode<L: substreams_ethereum::LogLike>(
+            log: &L,
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             if log.topic_count() != 1usize {
                 return Err(
                     format!(
@@ -4195,7 +4400,7 @@ pub mod events {
                         0,
                         "param0",
                     )?;
-                    let mut out = Vec::with_capacity(count.min(1024));
+                    let mut out = ::std::vec::Vec::with_capacity(count.min(1024));
                     let mut at = 0usize;
                     for _ in 0..count {
                         out.push(
@@ -4213,7 +4418,9 @@ pub mod events {
         fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
             Self::match_log(log)
         }
-        fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+        fn decode<L: substreams_ethereum::LogLike>(
+            log: &L,
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             Self::decode(log)
         }
     }
@@ -4268,7 +4475,9 @@ pub mod events {
             }
             return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
-        pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+        pub fn decode<L: substreams_ethereum::LogLike>(
+            log: &L,
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             if log.topic_count() != 1usize {
                 return Err(
                     format!(
@@ -4306,13 +4515,15 @@ pub mod events {
         fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
             Self::match_log(log)
         }
-        fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+        fn decode<L: substreams_ethereum::LogLike>(
+            log: &L,
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             Self::decode(log)
         }
     }
     #[derive(Debug, Clone, PartialEq)]
     pub struct EventUFixedArrayString {
-        pub param0: [String; 2usize],
+        pub param0: [::std::string::String; 2usize],
     }
     impl EventUFixedArrayString {
         const TOPIC_ID: [u8; 32] = [
@@ -4358,7 +4569,9 @@ pub mod events {
             }
             return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
-        pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+        pub fn decode<L: substreams_ethereum::LogLike>(
+            log: &L,
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             if log.topic_count() != 1usize {
                 return Err(
                     format!(
@@ -4395,13 +4608,15 @@ pub mod events {
         fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
             Self::match_log(log)
         }
-        fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+        fn decode<L: substreams_ethereum::LogLike>(
+            log: &L,
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             Self::decode(log)
         }
     }
     #[derive(Debug, Clone, PartialEq)]
     pub struct EventUFixedArraySubDynamic {
-        pub param0: [Vec<u8>; 2usize],
+        pub param0: [::std::vec::Vec<u8>; 2usize],
     }
     impl EventUFixedArraySubDynamic {
         const TOPIC_ID: [u8; 32] = [
@@ -4447,7 +4662,9 @@ pub mod events {
             }
             return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
-        pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+        pub fn decode<L: substreams_ethereum::LogLike>(
+            log: &L,
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             if log.topic_count() != 1usize {
                 return Err(
                     format!(
@@ -4484,13 +4701,15 @@ pub mod events {
         fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
             Self::match_log(log)
         }
-        fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+        fn decode<L: substreams_ethereum::LogLike>(
+            log: &L,
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             Self::decode(log)
         }
     }
     #[derive(Debug, Clone, PartialEq)]
     pub struct EventUFixedArraySubFixed {
-        pub param0: [Vec<u8>; 2usize],
+        pub param0: [::std::vec::Vec<u8>; 2usize],
     }
     impl EventUFixedArraySubFixed {
         const TOPIC_ID: [u8; 32] = [
@@ -4536,7 +4755,9 @@ pub mod events {
             }
             return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
-        pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+        pub fn decode<L: substreams_ethereum::LogLike>(
+            log: &L,
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             if log.topic_count() != 1usize {
                 return Err(
                     format!(
@@ -4577,7 +4798,9 @@ pub mod events {
         fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
             Self::match_log(log)
         }
-        fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+        fn decode<L: substreams_ethereum::LogLike>(
+            log: &L,
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             Self::decode(log)
         }
     }
@@ -4629,7 +4852,9 @@ pub mod events {
             }
             return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
-        pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+        pub fn decode<L: substreams_ethereum::LogLike>(
+            log: &L,
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             if log.topic_count() != 1usize {
                 return Err(
                     format!(
@@ -4671,13 +4896,15 @@ pub mod events {
         fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
             Self::match_log(log)
         }
-        fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+        fn decode<L: substreams_ethereum::LogLike>(
+            log: &L,
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             Self::decode(log)
         }
     }
     #[derive(Debug, Clone, PartialEq)]
     pub struct EventUTupleAddress {
-        pub param0: (Vec<u8>,),
+        pub param0: (::std::vec::Vec<u8>,),
     }
     impl EventUTupleAddress {
         const TOPIC_ID: [u8; 32] = [
@@ -4723,7 +4950,9 @@ pub mod events {
             }
             return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
-        pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+        pub fn decode<L: substreams_ethereum::LogLike>(
+            log: &L,
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             if log.topic_count() != 1usize {
                 return Err(
                     format!(
@@ -4761,13 +4990,15 @@ pub mod events {
         fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
             Self::match_log(log)
         }
-        fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+        fn decode<L: substreams_ethereum::LogLike>(
+            log: &L,
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             Self::decode(log)
         }
     }
     #[derive(Debug, Clone, PartialEq)]
     pub struct EventUTupleAllFixed {
-        pub param0: (Vec<u8>, substreams::scalar::BigInt, bool),
+        pub param0: (::std::vec::Vec<u8>, substreams::scalar::BigInt, bool),
     }
     impl EventUTupleAllFixed {
         const TOPIC_ID: [u8; 32] = [
@@ -4813,7 +5044,9 @@ pub mod events {
             }
             return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
-        pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+        pub fn decode<L: substreams_ethereum::LogLike>(
+            log: &L,
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             if log.topic_count() != 1usize {
                 return Err(
                     format!(
@@ -4855,7 +5088,9 @@ pub mod events {
         fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
             Self::match_log(log)
         }
-        fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+        fn decode<L: substreams_ethereum::LogLike>(
+            log: &L,
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             Self::decode(log)
         }
     }
@@ -4907,7 +5142,9 @@ pub mod events {
             }
             return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
-        pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+        pub fn decode<L: substreams_ethereum::LogLike>(
+            log: &L,
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             if log.topic_count() != 1usize {
                 return Err(
                     format!(
@@ -4945,7 +5182,9 @@ pub mod events {
         fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
             Self::match_log(log)
         }
-        fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+        fn decode<L: substreams_ethereum::LogLike>(
+            log: &L,
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             Self::decode(log)
         }
     }
@@ -4997,7 +5236,9 @@ pub mod events {
             }
             return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
-        pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+        pub fn decode<L: substreams_ethereum::LogLike>(
+            log: &L,
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             if log.topic_count() != 1usize {
                 return Err(
                     format!(
@@ -5024,7 +5265,9 @@ pub mod events {
         fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
             Self::match_log(log)
         }
-        fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+        fn decode<L: substreams_ethereum::LogLike>(
+            log: &L,
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             Self::decode(log)
         }
     }
@@ -5076,7 +5319,9 @@ pub mod events {
             }
             return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
-        pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+        pub fn decode<L: substreams_ethereum::LogLike>(
+            log: &L,
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             if log.topic_count() != 1usize {
                 return Err(
                     format!(
@@ -5103,7 +5348,9 @@ pub mod events {
         fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
             Self::match_log(log)
         }
-        fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+        fn decode<L: substreams_ethereum::LogLike>(
+            log: &L,
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             Self::decode(log)
         }
     }
@@ -5155,7 +5402,9 @@ pub mod events {
             }
             return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
-        pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+        pub fn decode<L: substreams_ethereum::LogLike>(
+            log: &L,
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             if log.topic_count() != 1usize {
                 return Err(
                     format!(
@@ -5182,7 +5431,9 @@ pub mod events {
         fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
             Self::match_log(log)
         }
-        fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+        fn decode<L: substreams_ethereum::LogLike>(
+            log: &L,
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             Self::decode(log)
         }
     }
@@ -5237,7 +5488,9 @@ pub mod events {
             }
             return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
-        pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+        pub fn decode<L: substreams_ethereum::LogLike>(
+            log: &L,
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             if log.topic_count() != 1usize {
                 return Err(
                     format!(
@@ -5267,13 +5520,15 @@ pub mod events {
         fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
             Self::match_log(log)
         }
-        fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+        fn decode<L: substreams_ethereum::LogLike>(
+            log: &L,
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             Self::decode(log)
         }
     }
     #[derive(Debug, Clone, PartialEq)]
     pub struct EventWithOverloads1 {
-        pub first: Vec<u8>,
+        pub first: ::std::vec::Vec<u8>,
     }
     impl EventWithOverloads1 {
         const TOPIC_ID: [u8; 32] = [
@@ -5319,7 +5574,9 @@ pub mod events {
             }
             return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
-        pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+        pub fn decode<L: substreams_ethereum::LogLike>(
+            log: &L,
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             if log.topic_count() != 2usize {
                 return Err(
                     format!(
@@ -5342,13 +5599,15 @@ pub mod events {
         fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
             Self::match_log(log)
         }
-        fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+        fn decode<L: substreams_ethereum::LogLike>(
+            log: &L,
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             Self::decode(log)
         }
     }
     #[derive(Debug, Clone, PartialEq)]
     pub struct EventWithOverloads2 {
-        pub second: substreams_ethereum::IndexedDynamicValue<String>,
+        pub second: substreams_ethereum::IndexedDynamicValue<::std::string::String>,
     }
     impl EventWithOverloads2 {
         const TOPIC_ID: [u8; 32] = [
@@ -5394,7 +5653,9 @@ pub mod events {
             }
             return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
-        pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+        pub fn decode<L: substreams_ethereum::LogLike>(
+            log: &L,
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             if log.topic_count() != 2usize {
                 return Err(
                     format!(
@@ -5417,7 +5678,9 @@ pub mod events {
         fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
             Self::match_log(log)
         }
-        fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+        fn decode<L: substreams_ethereum::LogLike>(
+            log: &L,
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             Self::decode(log)
         }
     }
@@ -5469,7 +5732,9 @@ pub mod events {
             }
             return log.topic(0).expect("bounds already checked") == Self::TOPIC_ID;
         }
-        pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+        pub fn decode<L: substreams_ethereum::LogLike>(
+            log: &L,
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             if log.topic_count() != 2usize {
                 return Err(
                     format!(
@@ -5492,7 +5757,9 @@ pub mod events {
         fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
             Self::match_log(log)
         }
-        fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+        fn decode<L: substreams_ethereum::LogLike>(
+            log: &L,
+        ) -> ::std::result::Result<Self, ::std::string::String> {
             Self::decode(log)
         }
     }
