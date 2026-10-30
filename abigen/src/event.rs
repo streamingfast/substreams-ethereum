@@ -248,7 +248,7 @@ impl Event {
                         == Self::TOPIC_ID;
                 }
 
-                pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+                pub fn decode<L: substreams_ethereum::LogLike>(log: &L) -> ::std::result::Result<Self, ::std::string::String> {
                     // Reading an indexed parameter indexes into the topics, so the count
                     // is checked here too: `decode` is public and callable without
                     // `match_log` having run first.
@@ -275,7 +275,7 @@ impl Event {
                 fn match_log<L: substreams_ethereum::LogLike>(log: &L) -> bool {
                     Self::match_log(log)
                 }
-                fn decode<L: substreams_ethereum::LogLike>(log: &L) -> Result<Self, String> {
+                fn decode<L: substreams_ethereum::LogLike>(log: &L) -> ::std::result::Result<Self, ::std::string::String> {
                     Self::decode(log)
                 }
             }
@@ -352,7 +352,7 @@ mod tests {
                     }
                     pub fn decode<L: substreams_ethereum::LogLike>(
                         log: &L
-                    ) -> Result<Self, String> {
+                    ) -> ::std::result::Result<Self, ::std::string::String> {
                         if log.topic_count() != 1usize {
                             return Err(
                                 format!(
@@ -371,7 +371,7 @@ mod tests {
                     }
                     fn decode<L: substreams_ethereum::LogLike>(
                         log: &L
-                    ) -> Result<Self, String> {
+                    ) -> ::std::result::Result<Self, ::std::string::String> {
                         Self::decode(log)
                     }
                 }
@@ -398,7 +398,7 @@ mod tests {
             quote! {
                 #[derive(Debug, Clone, PartialEq)]
                 pub struct One {
-                    pub foo: Vec<u8>
+                    pub foo: ::std::vec::Vec<u8>
                 }
                 impl One {
                     const TOPIC_ID: [u8; 32] = [
@@ -447,7 +447,7 @@ mod tests {
                     }
                     pub fn decode<L: substreams_ethereum::LogLike>(
                         log: &L
-                    ) -> Result<Self, String> {
+                    ) -> ::std::result::Result<Self, ::std::string::String> {
                         if log.topic_count() != 2usize {
                             return Err(
                                 format!(
@@ -472,7 +472,7 @@ mod tests {
                     }
                     fn decode<L: substreams_ethereum::LogLike>(
                         log: &L
-                    ) -> Result<Self, String> {
+                    ) -> ::std::result::Result<Self, ::std::string::String> {
                         Self::decode(log)
                     }
                 }
@@ -511,8 +511,8 @@ mod tests {
             quote! {
                 #[derive(Debug, Clone, PartialEq)]
                 pub struct Transfer {
-                    pub from: Vec<u8>,
-                    pub to: Vec<u8>,
+                    pub from: ::std::vec::Vec<u8>,
+                    pub to: ::std::vec::Vec<u8>,
                     pub quantity: substreams::scalar::BigInt
                 }
                 impl Transfer {
@@ -562,7 +562,7 @@ mod tests {
                     }
                     pub fn decode<L: substreams_ethereum::LogLike>(
                         log: &L
-                    ) -> Result<Self, String> {
+                    ) -> ::std::result::Result<Self, ::std::string::String> {
                         if log.topic_count() != 3usize {
                             return Err(
                                 format!(
@@ -605,7 +605,7 @@ mod tests {
                     }
                     fn decode<L: substreams_ethereum::LogLike>(
                         log: &L
-                    ) -> Result<Self, String> {
+                    ) -> ::std::result::Result<Self, ::std::string::String> {
                         Self::decode(log)
                     }
                 }
@@ -644,8 +644,8 @@ mod tests {
             quote! {
                 #[derive(Debug, Clone, PartialEq)]
                 pub struct Transfer {
-                    pub from: Vec<u8>,
-                    pub to: Vec<u8>,
+                    pub from: ::std::vec::Vec<u8>,
+                    pub to: ::std::vec::Vec<u8>,
                     pub token_id: substreams::scalar::BigInt
                 }
                 impl Transfer {
@@ -695,7 +695,7 @@ mod tests {
                     }
                     pub fn decode<L: substreams_ethereum::LogLike>(
                         log: &L
-                    ) -> Result<Self, String> {
+                    ) -> ::std::result::Result<Self, ::std::string::String> {
                         if log.topic_count() != 4usize {
                             return Err(
                                 format!(
@@ -730,7 +730,7 @@ mod tests {
                     }
                     fn decode<L: substreams_ethereum::LogLike>(
                         log: &L
-                    ) -> Result<Self, String> {
+                    ) -> ::std::result::Result<Self, ::std::string::String> {
                         Self::decode(log)
                     }
                 }

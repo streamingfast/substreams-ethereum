@@ -1,0 +1,69 @@
+[
+  {
+    "inputs": [
+      { "name": "id", "type": "bytes31" },
+      { "name": "index", "type": "uint256" }
+    ],
+    "name": "result",
+    "outputs": [{ "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "name": "owner", "type": "address" }],
+    "name": "option",
+    "outputs": [
+      { "name": "", "type": "string" },
+      { "name": "", "type": "uint256[]" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "name": "data", "type": "bytes" },
+      { "name": "values", "type": "uint256[]" }
+    ],
+    "name": "vec",
+    "outputs": [{ "name": "", "type": "bytes" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "name": "label", "type": "string" }],
+    "name": "String",
+    "outputs": [{ "name": "", "type": "string" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true, "name": "owner", "type": "address" },
+      { "indexed": false, "name": "label", "type": "string" }
+    ],
+    "name": "Result",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true, "name": "label", "type": "string" },
+      { "indexed": false, "name": "data", "type": "bytes" }
+    ],
+    "name": "Option",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [{ "indexed": false, "name": "values", "type": "uint256[]" }],
+    "name": "Vec",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [{ "indexed": false, "name": "label", "type": "string" }],
+    "name": "String",
+    "type": "event"
+  }
+]
